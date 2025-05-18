@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>抽獎程式 - 網頁單機公益版</title>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 50%;
+    }
+
+    th,
+    td {
+      border: 1px solid black;
+      padding: 8px;
+      text-align: left;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>抽獎設定</h2>
+
+  <table id="ticketBooks">
+    <tr>
+      <th>摸彩券本</th>
+      <th>起始序號</th>
+      <th>結束序號</th>
+      <th>操作</th>
+    </tr>
+  </table>
+  <button onclick="addTicketBook()">新增摸彩券本</button>
+
+  <div id="errorMessage"></div>
+  <p>每本序號請注意不能重疊或重複。</p>
+
+  <h2>獎項設定</h2>
+
+  <table id="prizeTable">
+    <tr>
+      <th>獎項名稱</th>
+      <th>正取名額</th>
+      <th>備取名額(0為不啟用)</th>
+      <th>操作</th>
+    </tr>
+  </table>
+
+  <button onclick="addPrizeCategory()">新增獎項類別</button>
+
+  <button onclick="startLottery()" id="startLotteryButton">開始抽獎</button>
+
+  <button onclick="exportResults()" id="exportResultsButton" disabled>匯出中獎名單</button>
+
+  <h2>中獎名單</h2>
+
+  <div id="results"></div>
+
+  <script>
+    function addTicketBook() {
+      // 新增摸彩券本設定列
+      let table = document.getElementById("ticketBooks");
+      let nextBookNumber = table.rows.length;  // 預設下一個彩券本編號
+
+      // 檢查現有彩券本編號，找出缺失的編號
+      let existingNumbers = new Set();
+      for (let i = 1; i < table.rows.length; i++) {
+          let bookNumber = parseInt(table.rows[i].cells[0].innerText.split(" ")[1]);
+          existingNumbers.add(bookNumber);
+      }
+      for (let i = 1; i <= nextBookNumber; i++) {
+          if (!existingNumbers.has(i)) {
+              nextBookNumber = i;  // 使用缺失的編號
+              break;
+          }
+      }
+
+      let row = table.insertRow(-1);
+      let cell1 = row.insertCell(0);
+      let cell2 = row.insertCell(1);
+      let cell3 = row.insertCell(2);
+      let cell4 = row.insertCell(3);
+      cell1.innerHTML = "摸彩券本 " + nextBookNumber; // 使用計算出的編號
+      cell2.innerHTML = '<input type="number" min="1" value="1">';
+      cell3.innerHTML = '<input type="number" min="1" value="50">';
+      cell4.innerHTML = '<button onclick="deleteRow(this)">刪除</button>';
+    }
+
+    function addPrizeCategory() {
+      // 新增獎項設定列
+      let table = document.getElementById("prizeTable");
+      let row = table.insertRow(-1);
+      let cell1 = row.insertCell(0);
+      let cell2 = row.insertCell(1);
+      let cell3 = row.insertCell(2); // 新增備取名額欄位
+      let cell4 = row.insertCell(3);
+      cell1.innerHTML = '<input type="text" placeholder="輸入獎項名稱">';
+      cell2.innerHTML = '<input type="number" min="0" value="1">';
+      cell3.innerHTML = '<input type="number" min="0" value="0">'; // 備取名額預設為 0
+      cell4.innerHTML = '<button onclick="deleteRow(this)">刪除</button>';
+    }
+
+    function deleteRow(btn) {
+      // 刪除設定列
+      let row = btn.parentNode.parentNode;
+      row.parentNode.removeChild(row);
+    }
+
+    function startLottery() {
+      let ticketBooksTable = document.getElementById("ticketBooks");
+      let prizeTable = document.getElementById("prizeTable");
+      let prizes = [];
+      let winners = {};
+      let allTickets = new Set(); // 使用 Set 來檢查重複
+      let errorMessageDiv = document.getElementById("errorMessage");
+      errorMessageDiv.innerHTML = "";
+      let errorMessages = []; // errorMessages陣列儲存所有錯誤訊息
+
+      // 驗證摸彩券本設定列的輸入框是否空白
+      for (let i = 1; i < ticketBooksTable.rows.length; i++) {
+        let bookNumber = ticketBooksTable.rows[i].cells[0].innerText.split(" ")[1]; // 抓取彩券本編號
+        let start = ticketBooksTable.rows[i].cells[1].children[0].value;
+        let end = ticketBooksTable.rows[i].cells[2].children[0].value;
+        if (start.trim() === "") {
+          errorMessages.push(`<p class="error">錯誤：摸彩券本 ${bookNumber} 的起始序號不可為空白。</p>`);
+        }
+        if (end.trim() === "") {
+          errorMessages.push(`<p class="error">錯誤：摸彩券本 ${bookNumber} 的結束序號不可為空白。</p>`);
+        }
+
+        // 將起始序號和結束序號轉換為數字
+        start = parseInt(start);
+        end = parseInt(end);
+
+        // 驗證結束序號是否小於起始序號
+        if (end < start) {
+          errorMessages.push('<p class="error">錯誤：摸彩券結束序號不能小於起始序號。</p>');
+        }
+
+        // 驗證序號是否重疊 allTickets.has(j) 檢查序號是否已經存在於 Set 中，如果存在則顯示錯誤訊息
+        for (let j = start; j <= end; j++) {
+          if (allTickets.has(j)) {
+            errorMessages.push('<p class="error">錯誤：摸彩券序號發現重疊。</p>');
+            break;
+          }
+          allTickets.add(j);
+        }
+      }
+
+      // 驗證獎項設定列的輸入框
+      for (let i = 1; i < prizeTable.rows.length; i++) {
+        let prizeName = prizeTable.rows[i].cells[0].children[0].value.trim();
+        let prizeCount = prizeTable.rows[i].cells[1].children[0].value.trim();
+        let backupCount = prizeTable.rows[i].cells[2].children[0].value.trim();
+
+        // 檢查輸入框是否為空白
+        if (prizeName === "" || prizeCount === "" || backupCount === "") {
+          errorMessages.push('<p class="error">錯誤：獎項輸入框不可為空白。</p>');
+        }
+      }
+
+      // 檢查errorMessages陣列是否有任何訊息，如果有，就一次性顯示所有錯誤訊息。如果發現任何錯誤，停止抽獎
+      if (errorMessages.length > 0) {
+        errorMessageDiv.innerHTML = errorMessages.join("");
+        return; 
+      }
+
+      // 將 Set 轉換回 Array
+      allTickets = Array.from(allTickets);
+
+      // 讀取獎項設定 (包含正取和備取)和計算獎品總數 (包含正取和備取)
+      let totalPrizeCount = 0;
+      for (let i = 1; i < prizeTable.rows.length; i++) {
+        let prizeName = prizeTable.rows[i].cells[0].children[0].value;
+        let prizeCount = parseInt(prizeTable.rows[i].cells[1].children[0].value);  // 讀取正取名額
+        let backupCount = parseInt(prizeTable.rows[i].cells[2].children[0].value); // 讀取備取名額
+        totalPrizeCount += prizeCount; // 正取名額(檢查驗證用)
+        totalPrizeCount += backupCount; // 備取名額(檢查驗證用)
+        prizes.push({name: prizeName, count: prizeCount, backupCount: backupCount});
+      }
+
+      // 檢查抽獎總次數是否少於獎品總數
+      if (allTickets.length < totalPrizeCount) {
+        errorMessageDiv.innerHTML = '<p class="error">注意：抽獎總次數比獎品數量(正取+備取)還少，請調整獎品數量否則獎項無法完全抽出。已停止抽獎。</p>';
+        return; // 停止抽獎
+      }
+
+      // 依照名額排序獎項 (從多到少)
+      prizes.sort((a, b) => (b.count + b.backupCount) - (a.count + a.backupCount));
+
+      // 抽獎 (第一輪：正取)
+      let totalCount = allTickets.length;
+      for (let prize of prizes) {
+        winners[prize.name] = [];
+        for (let i = 0; i < prize.count; i++) {
+          if (allTickets.length === 0) break;
+          let randomIndex = Math.floor(Math.random() * allTickets.length);
+          let winner = allTickets.splice(randomIndex, 1)[0];
+          winners[prize.name].push(winner);
+        }
+      }
+
+      // 抽獎 (第二輪：備取)
+      for (let prize of prizes) {
+        for (let i = 0; i < prize.backupCount; i++) {
+          if (allTickets.length === 0) break;
+          let randomIndex = Math.floor(Math.random() * allTickets.length);
+          let winner = allTickets.splice(randomIndex, 1)[0];
+          winners[prize.name].push(winner + " 備" + (i + 1)); // 加入備取順位
+        }
+      }
+
+      // 顯示中獎名單
+      let resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
+
+      // 顯示抽獎總次數
+      resultsDiv.innerHTML += `<p>本次參加抽獎總計數為：${totalCount}</p>`;
+
+      for (let prizeName in winners) {
+        resultsDiv.innerHTML += `<h3>${prizeName}</h3>`;
+        resultsDiv.innerHTML += `<p>${winners[prizeName].join(", ")}</p>`;
+      }
+
+      // 抽獎完成後，啟用匯出按鈕，禁用開始抽獎按鈕
+      document.getElementById("exportResultsButton").disabled = false;
+      document.getElementById("startLotteryButton").disabled = true;
+    }
+
+    function exportResults() {
+      // 匯出中獎名單到 .txt 檔案
+      let resultsDiv = document.getElementById("results");
+      let resultsText = resultsDiv.innerText;
+      let blob = new Blob([resultsText], {type: "text/plain;charset=utf-8"});
+      let link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "lottery_results.txt";
+      link.click();
+    }
+  </script>
+  <footer>
+    <p>此為抽獎程式 - 網頁單機公益版V1.3 fan666rog&Gemini編寫</p>
+  </footer>
+</body>
+
+</html>

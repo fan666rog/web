@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>貪食蛇</title>
+  <style>
+    body {
+      background-color: #f0f0f0;
+      text-align: center;
+      font-family: sans-serif;
+    }
+
+    canvas {
+      background-color: #eee;
+      border: 2px solid #333;
+      box-shadow: 3px 3px 5px #888888;
+    }
+
+    #scoreboard {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+
+    button {
+      background-color: #4CAF50;
+      /* 綠色 */
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 10px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    button:disabled {
+      background-color: #ddd;
+      /* 灰色 */
+      cursor: default;
+    }
+
+    /* 遊戲說明樣式 */
+    #gameInstructions {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin: 10px auto;
+      width: 80%;
+      max-width: 400px;
+      background-color: #fff;
+      display: none;
+      /* 預設隱藏 */
+    }
+
+    #blueDotTimer { /* 藍色點計時器樣式 */
+      font-size: 16px; /* 設定字體大小 */
+      display: none; /* 預設隱藏 */
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>貪食蛇</h1>
+
+  <div>
+    <button id="startGameBtn">開始遊戲</button>
+    <button id="pauseBtn" disabled>暫停/繼續</button>
+    <button id="instructionsBtn">遊戲說明</button>
+  </div>
+
+  <canvas id="myCanvas" width="400" height="400"></canvas>
+  <div id="blueDotTimer">藍色點剩餘時間：<span id="blueDotTime">0</span> 秒</div>
+  <div id="scoreboard">分數：0</div>
+  <div id="gameInstructions">
+    <h2>遊戲說明</h2>
+    <p>使用方向鍵控制蛇的移動方向。</p>
+    <p>吃到紅色食物可以得分並增長蛇的長度。</p>
+    <p>吃到藍色點可以消除2-5格障礙物(亂數)。</p>
+    <p>當有障礙物時，藍色的點不定時出現，而且有時效性!</p>
+    <p>避免撞到牆壁、自己或障礙物。</p>
+  </div>
+
+  <script>
+    // 著作權標註
+    // 貪食蛇遊戲V1.06
+    // 作者：fan666rog&Gemini編著
+
+    const canvas = document.getElementById('myCanvas');
+    const ctx = canvas.getContext('2d');
+    const startGameBtn = document.getElementById('startGameBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+
+    const snakeSize = 10; // 蛇的每個部分的大小 (像素)
+    let snake = [{ x: 200, y: 200 }]; // 蛇的初始位置 (包含一個部分)
+    let dx = snakeSize; // 蛇的水平移動速度 (初始向右移動)
+    let dy = 0; // 蛇的垂直移動速度 (初始沒有垂直移動)
+    let foodX, foodY; // 食物的位置
+    let score = 0; // 遊戲分數
+    let gameRunning = false; // 遊戲是否正在運行
+    let gameLoopInterval; // 儲存遊戲迴圈的 interval ID
+    let obstacles = []; // 儲存障礙物位置的陣列
+    let blueDotX, blueDotY; // 藍色點的位置
+    let blueDotTimer; // 藍色點的倒數計時器
+    let blueDotVisible = false; // 藍色點是否可見
+
+    function generateFood() {
+      // 隨機產生食物的位置，並確保食物不與蛇或障礙物重疊
+      let overlap;
+      do {
+        overlap = false;
+        foodX = Math.floor(Math.random() * (canvas.width / snakeSize)) * snakeSize;
+        foodY = Math.floor(Math.random() * (canvas.height / snakeSize)) * snakeSize;
+        snake.forEach(segment => {
+          if (segment.x === foodX && segment.y === foodY) {
+            overlap = true;
+          }
+        });
+        obstacles.forEach(obstacle => {
+          if (obstacle.x === foodX && obstacle.y === foodY) {
+            overlap = true;
+          }
+        });
+      } while (overlap);
+    }
+
+    function generateObstacle() {
+      // 產生新的障礙物 (線狀或塊狀)
+      const obstacleLength = Math.floor(Math.random() * 5) + 3;
+      // 障礙物長度為 3 到 7 個點
+      const obstacleType = Math.floor(Math.random() * 2);
+      // 0: 線狀, 1: 塊狀
+      let obstacleX, obstacleY;
+      let overlap;
+      let attempts = 0; // 增加計數器
+      do {
+        overlap = false;
+        obstacleX = Math.floor(Math.random() * (canvas.width / snakeSize)) * snakeSize;
+        obstacleY = Math.floor(Math.random() * (canvas.height / snakeSize)) * snakeSize;
+        // 檢查障礙物是否與蛇或食物重疊
+        for (let i = 0; i < obstacleLength; i++) {
+          let x, y;
+          if (obstacleType === 0) { // 線狀
+            x = obstacleX + i * snakeSize;
+            y = obstacleY;
+          } else { // 塊狀
+            x = obstacleX + (i % 3) * snakeSize;
+            y = obstacleY + Math.floor(i / 3) * snakeSize;
+          }
+          // 迴圈遍歷蛇的每個部分，檢查障礙物和蛇是否重疊
+          snake.forEach(segment => {
+            if (segment.x === x && segment.y === y) {
+              overlap = true;
+            }
+          });
+
+          // 檢查障礙物是否與食物重疊
+          if (x === foodX && y === foodY) {
+            overlap = true;
+            break; // 如果與食物重疊，則跳出迴圈
+          }
+          // 迴圈遍歷現有的障礙物，檢查障礙物是否重疊
+          obstacles.forEach(obstacle => {
+            if (obstacle.x === x && obstacle.y === y) {
+              overlap = true;
+            }
+          });
+          if (overlap) break;
+        }
+        attempts++; // 增加嘗試次數
+      } while (overlap && attempts < 100); // 限制嘗試次數
+
+      // 如果嘗試次數超過限制，則放棄生成
+      if (attempts >= 100) {
+        return;
+      }
+      // 新增障礙物到 obstacles 陣列
+      for (let i = 0; i < obstacleLength; i++) {
+        if (obstacleType === 0) { // 線狀
+          obstacles.push({ x: obstacleX + i * snakeSize, y: obstacleY });
+        } else { // 塊狀
+          obstacles.push({ x: obstacleX + (i % 3) * snakeSize, y: obstacleY + Math.floor(i / 3) * snakeSize });
+        }
+      }
+    }
+
+    function generateBlueDot() {
+      // 產生藍色點，並確保藍色點不與蛇或障礙物重疊
+      if (obstacles.length >= 2 && !blueDotVisible) { // 畫面中至少有兩個障礙物且藍色點不可見
+        let overlap;
+        do {
+          overlap = false;
+          blueDotX = Math.floor(Math.random() * (canvas.width / snakeSize)) * snakeSize;
+          blueDotY = Math.floor(Math.random() * (canvas.height / snakeSize)) * snakeSize;
+          snake.forEach(segment => {
+            if (segment.x === blueDotX && segment.y === blueDotY) {
+              overlap = true;
+            }
+          });
+          obstacles.forEach(obstacle => {
+            if (obstacle.x === blueDotX && obstacle.y === blueDotY) {
+              overlap = true;
+            }
+          });
+        } while (overlap);
+        blueDotVisible = true;
+        blueDotTimer = 10 + Math.random() * 5; // 10-15 秒隨機倒數計時
+      }
+    }
+
+    function updateBlueDot() {
+      // 更新藍色點的倒數計時器，如果時間到則隱藏藍色點
+      if (blueDotVisible) {
+        blueDotTimer -= 0.1;
+        // 每 100 毫秒減少 0.1 秒
+        if (blueDotTimer <= 0) {
+          blueDotVisible = false;
+          blueDotTimer = 0; // 將計時器歸零
+        }
+      }
+    }
+
+    function drawBlueDot() {
+      // 繪製藍色點和倒數計時
+      if (blueDotVisible) {
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(blueDotX, blueDotY, snakeSize, snakeSize);
+        // 將計時器顯示在記分板上方
+        document.getElementById('blueDotTimer').style.display = 'block';
+        document.getElementById('blueDotTime').textContent = blueDotTimer.toFixed(1);
+      } else {
+        // 藍色點消失時，將計時器歸零
+        document.getElementById('blueDotTimer').style.display = 'none';
+      }
+    }
+
+    function drawGame() {
+      // 清除畫布並繪製遊戲元素 (食物、蛇、障礙物、藍色點)
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'red';
+      ctx.fillRect(foodX, foodY, snakeSize, snakeSize); // 繪製食物
+      ctx.fillStyle = 'green';
+      snake.forEach(function (part) {
+        // 繪製蛇
+        ctx.fillRect(part.x, part.y, snakeSize, snakeSize);
+        ctx.strokeRect(part.x, part.y, snakeSize, snakeSize);
+      });
+      // 繪製障礙物
+      ctx.fillStyle = 'black';
+      obstacles.forEach(obstacle => {
+        ctx.fillRect(obstacle.x, obstacle.y, snakeSize, snakeSize);
+      });
+      drawBlueDot(); // 繪製藍色點
+      document.getElementById('scoreboard').textContent = "分數：" + score; // 更新分數
+    }
+
+    function checkGameOver() {
+      // 檢查遊戲是否結束 (撞到牆壁、自己或障礙物)
+      if (snake[0].x < 0 || snake[0].x >= canvas.width || snake[0].y < 0 || snake[0].y >= canvas.height) {
+        return true;
+      }
+      for (let i = 1; i < snake.length; i++) {
+        if (snake[0].x === snake[i].x && snake[0].y === snake[i].y) {
+          return true;
+        }
+      }
+      for (let i = 0; i < obstacles.length; i++) {
+        if (snake[0].x === obstacles[i].x && snake[0].y === obstacles[i].y) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function gameLoop() {
+      // 遊戲主迴圈
+      if (checkGameOver()) {
+        clearInterval(gameLoopInterval);
+        alert('遊戲結束! 你的分數是: ' + score);
+        gameRunning = false;
+        startGameBtn.disabled = false;
+        pauseBtn.disabled = true;
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+      snake.unshift(head);
+      if (head.x === foodX && head.y === foodY) {
+        score++;
+        generateFood();
+        if (score % 5 === 0) { // 每 5 分新增一個障礙物
+          generateObstacle();
+        }
+      } else {
+        snake.pop();
+      }
+
+      // 檢查是否吃到藍色點
+      if (blueDotVisible && head.x === blueDotX && head.y === blueDotY) {
+        blueDotVisible = false;
+        // 移除 2-5 個障礙物
+        const obstaclesToRemove = Math.floor(Math.random() * 4) + 2; // 2-5 個 數字為亂數產生
+        if (obstacles.length >= obstaclesToRemove) {
+          for (let i = 0; i < obstaclesToRemove; i++) {
+            obstacles.shift();
+          }
+        } else {
+          obstacles = []; // 移除所有障礙物 (如果少於 obstaclesToRemove 個)
+        }
+      }
+      updateBlueDot();
+      drawGame();
+    }
+
+    function handleKeyPress(event) {
+      // 處理鍵盤輸入 (方向鍵控制蛇的方向)
+      const LEFT_KEY = 37;
+      const UP_KEY = 38;
+      const RIGHT_KEY = 39;
+      const DOWN_KEY = 40;
+      const keyPressed = event.keyCode;
+      const goingUp = dy === -snakeSize;
+      const goingDown = dy === snakeSize;
+      const goingRight = dx === snakeSize;
+      const goingLeft = dx === -snakeSize;
+
+      if (keyPressed === LEFT_KEY && !goingRight) {
+        dx = -snakeSize;
+        dy = 0;
+      } else if (keyPressed === UP_KEY && !goingDown) {
+        dx = 0;
+        dy = -snakeSize;
+      } else if (keyPressed === RIGHT_KEY && !goingLeft) {
+        dx = snakeSize;
+        dy = 0;
+      } else if (keyPressed === DOWN_KEY && !goingUp) {
+        dx = 0;
+        dy = snakeSize;
+      }
+    }
+
+    startGameBtn.addEventListener('click', function () {
+      // 開始遊戲
+      gameRunning = true;
+      startGameBtn.disabled = true;
+      pauseBtn.disabled = false;
+      snake = [{ x: 200, y: 200 }];
+      dx = snakeSize;
+      dy = 0;
+      score = 0;
+      obstacles = []; // 重置障礙物
+      blueDotVisible = false; // 重置藍色點
+      generateFood();
+      drawGame();
+      gameLoopInterval = setInterval(gameLoop, 100);
+      //每 25-50 秒檢查一次是否要出現藍色點
+      setInterval(generateBlueDot, (25 + Math.random() * 25) * 1000);
+    });
+    pauseBtn.addEventListener('click', function () {
+      // 暫停/繼續遊戲
+      if (gameRunning) {
+        clearInterval(gameLoopInterval);
+        gameRunning = false;
+        pauseBtn.textContent = '繼續遊戲';
+      } else {
+        gameLoopInterval = setInterval(gameLoop, 100);
+        gameRunning = true;
+        pauseBtn.textContent = '暫停遊戲';
+      }
+    });
+    const instructionsBtn = document.getElementById('instructionsBtn');
+    const gameInstructions = document.getElementById('gameInstructions');
+    gameInstructions.style.display = 'none';
+    instructionsBtn.addEventListener('click', function () {
+      // 顯示/隱藏遊戲說明
+      if (gameInstructions.style.display === 'none') {
+        gameInstructions.style.display = 'block'; // 顯示遊戲說明
+      } else {
+        gameInstructions.style.display = 'none'; // 隱藏遊戲說明
+      }
+    });
+    window.addEventListener('keydown', handleKeyPress);
+  </script>
+
+</body>
+
+</html>

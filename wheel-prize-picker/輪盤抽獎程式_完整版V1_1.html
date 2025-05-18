@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">  
+<head>
+<meta charset="UTF-8">
+<title>輪盤抽獎V1.1</title>
+<style>
+/* fan666rog&Gemini編寫  */
+/* CSS 樣式 (保持不變) */
+/* 整體容器樣式 */
+#wheel-container {
+    position: relative; /* 相對定位，為了讓指針可以絕對定位 */
+    width: 300px;     /* 輪盤寬度 */
+    height: 300px;    /* 輪盤高度 */
+    margin: 50px auto;  /* 上下 50px 外距，水平置中 */
+    border: 5px solid #ccc;  /* 灰色邊框 */
+    border-radius: 50%;     /* 圓形邊框 */
+    overflow: hidden;       /* 隱藏超出範圍的內容 */
+}
+
+/* 輪盤畫布樣式 */
+#wheel {
+    width: 100%;  /* 填滿容器 */
+    height: 100%; /* 填滿容器 */
+}
+
+/* 指針樣式 */
+#pointer {
+    position: absolute; /* 絕對定位 */
+    left: 50%;          /* 水平居中 */
+    top: 0;             /* 頂部對齊 */
+    transform: translateX(-50%);  /* 水平方向修正偏移，確保指針對準中心 */
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;   /* 透明左邊框 */
+    border-right: 15px solid transparent;  /* 透明右邊框 */
+    border-top: 30px solid red;           /* 紅色上邊框 (形成三角形) */
+    z-index: 2;                         /* 確保指針在輪盤上方 */
+}
+
+/* 開始抽獎按鈕樣式 */
+#spin-button {
+    display: block;        /* 區塊元素 (獨佔一行) */
+    margin: 20px auto;     /* 上下 20px 外距，水平置中 */
+    padding: 10px 20px;    /* 內距 */
+    background-color: #4CAF50; /* 綠色背景 */
+    color: white;           /* 白色文字 */
+    border: none;          /* 無邊框 */
+    border-radius: 5px;     /* 圓角 */
+    cursor: pointer;        /* 滑鼠懸停時顯示指標 */
+    font-size: 16px;       /* 字體大小 */
+}
+
+/* 按鈕禁用狀態樣式 */
+#spin-button:disabled {
+    background-color: #cccccc; /* 淺灰色背景 */
+    cursor: not-allowed;       /* 禁用游標 */
+}
+
+/* 抽獎結果顯示區樣式 */
+#result {
+    text-align: center;      /* 文字置中 */
+    font-size: 20px;         /* 字體大小 */
+    margin-top: 20px;        /* 上外距 */
+    font-weight: bold;        /* 粗體 */
+}
+
+/* 獎品輸入區樣式 */
+#prize-input-area {
+    margin: 20px auto;      /* 上下 20px 外距，水平置中 */
+    text-align: center;      /* 文字置中 */
+}
+
+/* 獎品輸入框樣式 */
+#prize-input-area input {
+    margin: 5px;            /* 外距 */
+    padding: 5px;           /* 內距 */
+    width: 150px;          /* 寬度 */
+}
+
+/* 「抽中後移除獎項」開關樣式 */
+#remove-after-hit-container {
+  text-align: center;      /* 文字置中 */
+  margin-bottom: 10px;     /* 下外距 */
+}
+</style>
+</head>
+<body>
+
+<h1>輪盤抽獎</h1>
+
+<div id="remove-after-hit-container">
+    <label for="remove-after-hit">抽中後移除獎項：</label>
+    <input type="checkbox" id="remove-after-hit">
+</div>
+
+<div id="prize-input-area">
+    <input type="text" class="prize-input" placeholder="獎品 1">
+    <input type="text" class="prize-input" placeholder="獎品 2">
+    <input type="text" class="prize-input" placeholder="獎品 3">
+    <input type="text" class="prize-input" placeholder="獎品 4">
+    <input type="text" class="prize-input" placeholder="獎品 5">
+    <input type="text" class="prize-input" placeholder="獎品 6">
+    <input type="text" class="prize-input" placeholder="獎品 7">
+    <input type="text" class="prize-input" placeholder="獎品 8">
+    <button id="update-prizes">更新獎項</button>
+</div>
+
+<div id="wheel-container">
+    <canvas id="wheel" width="300" height="300"></canvas>  <div id="pointer"></div>  </div>
+
+<button id="spin-button">開始抽獎</button>
+
+<div id="result"></div>
+
+<script>
+// 預設獎項 (如果使用者沒有輸入，則使用這些)
+let prizes = [
+    "獎品 A", "獎品 B", "獎品 C", "銘謝惠顧",
+    "獎品 D", "獎品 E", "獎品 F", "再來一次"
+];
+
+// 取得 HTML 元素
+const wheel = document.getElementById('wheel');          // 輪盤畫布
+const spinButton = document.getElementById('spin-button');    // 開始抽獎按鈕
+const resultDiv = document.getElementById('result');        // 顯示結果的區域
+const ctx = wheel.getContext('2d');                       // 2D 繪圖環境
+const wheelRadius = wheel.width / 2;                     // 輪盤半徑
+let isSpinning = false;                                  // 標記輪盤是否正在旋轉
+let currentRotation = 0;                                 // 目前輪盤的旋轉角度
+const updatePrizesButton = document.getElementById('update-prizes'); // 更新獎項按鈕
+const removeAfterHitCheckbox = document.getElementById('remove-after-hit'); // 「抽中後移除」的核取方塊
+let removeAfterHit = false;                                           // 是否啟用「抽中後移除」功能的標記
+
+/**
+ * 產生一組不重複的顏色序列，確保相鄰扇區顏色不同。
+ * @param {number} numPrizes - 獎項數量 (扇區數量).
+ * @returns {string[]} -  顏色序列陣列 (例如: ['#f8e71c', '#9ae7b8', ...]).
+ */
+function getValidColors(numPrizes) {
+    const colors = ['#f8e71c', '#9ae7b8', '#a6cff5', '#f5b3a6']; // 淺色系四色方案
+    const validColors = [];
+
+    for (let i = 0; i < numPrizes; i++) {
+        let color;
+        do {
+            color = colors[Math.floor(Math.random() * colors.length)];
+        } while (
+            (i > 0 && color === validColors[i - 1]) || // 與前一個顏色相同
+            (i === numPrizes - 1 && color === validColors[0]) // 最後一個與第一個相同
+        );
+        validColors.push(color);
+    }
+    return validColors;
+}
+
+
+/**
+ * 繪製輪盤
+ */
+function drawWheel() {
+    const numPrizes = prizes.length;       // 獎項數量
+    const anglePerPrize = 360 / numPrizes;  // 每個獎項所佔的角度
+
+    ctx.clearRect(0, 0, wheel.width, wheel.height); // 清空畫布
+
+    const validColors = getValidColors(numPrizes); // 獲取有效的顏色序列
+
+    // 逐一繪製每個扇區
+    for (let i = 0; i < numPrizes; i++) {
+        const startAngle = i * anglePerPrize * Math.PI / 180;          // 扇區起始角度 (弧度)
+        const endAngle = (i + 1) * anglePerPrize * Math.PI / 180;      // 扇區結束角度 (弧度)
+
+        ctx.beginPath();                                             // 開始繪製路徑
+        ctx.moveTo(wheelRadius, wheelRadius);                         // 移動到圓心
+        ctx.arc(wheelRadius, wheelRadius, wheelRadius, startAngle, endAngle); // 畫弧
+        ctx.closePath();                                             // 關閉路徑
+
+        ctx.fillStyle = validColors[i];                                // 設定扇區顏色
+        ctx.fill();                                                   // 填滿扇區
+
+       // 繪製獎項文字 (從圓心向外排列，帶省略)
+        ctx.save();
+        ctx.translate(wheelRadius, wheelRadius);  // 移動到圓心
+        ctx.rotate(startAngle + anglePerPrize / 2 * Math.PI / 180); // 旋轉到扇區的中線
+        ctx.textAlign = 'center'; // 文字水平居中
+        ctx.textBaseline = 'middle'; // 文字垂直居中
+        ctx.fillStyle = 'black';// 文字顏色
+        ctx.font = 'bold 14px Arial';   // 文字大小
+
+        // 調整文字的起始位置
+        const textStart = wheelRadius * 0.6;  // 從輪盤半徑的 60% 位置開始
+
+        // 文字省略處理
+        let displayText = prizes[i];
+        if (displayText.length > 7) {
+            displayText = displayText.substring(0, 7) + "..."; // 超過 7 個字就截斷並加上省略號
+        }
+
+        ctx.fillText(displayText, textStart, 0);
+        ctx.restore();
+    }
+}
+
+
+
+/**
+ * 開始抽獎 (旋轉輪盤)
+ */
+function spinWheel() {
+    if (isSpinning) return;  // 如果輪盤正在旋轉，則不執行任何動作
+    isSpinning = true;       // 設定旋轉標記
+    spinButton.disabled = true;  // 開始旋轉時先停用按鈕
+
+    // 隨機產生一個獎項索引
+    const prizeIndex = Math.floor(Math.random() * prizes.length);
+    const numPrizes = prizes.length;          // 獎項數量
+    const anglePerPrize = 360 / numPrizes;  // 每個獎項所佔的角度
+
+    // 計算輪盤停止時的目標角度
+    const baseRotation = 360 * 5; // 基本旋轉圈數 (至少 5 圈)
+    const targetRotation = baseRotation + (numPrizes - prizeIndex) * anglePerPrize + 90 - anglePerPrize / 2 + 180; // 90度是指到正上方 + 180是讓它跑到正上方
+
+    let startTime = null;   // 動畫開始時間
+    const duration = 4000;  // 動畫持續時間 (4 秒)
+
+    /**
+     * 動畫函數 (使用 requestAnimationFrame)
+     * @param {number} currentTime - 目前時間戳記
+     */
+    function animate(currentTime) {
+        if (!startTime) startTime = currentTime;  // 記錄動畫開始時間
+        const elapsedTime = currentTime - startTime; // 計算經過的時間
+
+        // 根據時間進度計算當前旋轉角度
+        if (elapsedTime < duration) {
+            const rotationProgress = easeOut(elapsedTime / duration);    // 使用 easeOut 緩動函數
+            let currentStepRotation = currentRotation + (targetRotation - currentRotation) * rotationProgress; // 計算旋轉角度
+            wheel.style.transform = `rotate(${currentStepRotation}deg)`;  // 設定輪盤的旋轉角度
+            requestAnimationFrame(animate);                              // 請求下一次動畫更新
+        } else {
+             // 動畫結束
+            currentRotation = targetRotation % 360;  // 確保角度在 0-360 之間
+            wheel.style.transform = `rotate(${currentRotation}deg)`;      // 設定最終角度
+            resultDiv.textContent = `恭喜您抽中：${prizes[prizeIndex]}`;  // 顯示抽獎結果
+
+            // 移除獎項 (如果啟用「抽中後移除」且獎項數大於 1)
+            if (removeAfterHit && prizes.length > 1) {
+                prizes.splice(prizeIndex, 1); // 從陣列中移除抽中的獎項
+                drawWheel();                  // 重新繪製輪盤
+            }
+
+            // 更新按鈕狀態
+            if (prizes.length <= 1 && removeAfterHit) {
+                // 如果啟用移除獎項，且獎項數量 <= 1，則停用
+                resultDiv.textContent += prizes.length === 0 ? "，所有獎項都已抽出！" : "，已抽出最後一個獎項！";
+                spinButton.disabled = true;
+            } else {
+                // 其他情況都啟用 (包括不移除獎項的情況)
+                spinButton.disabled = false;
+            }
+            
+            isSpinning = false; // 旋轉結束
+        }
+    }
+    requestAnimationFrame(animate); // 開始動畫
+}
+
+/**
+ *  easeOut 緩動函數
+ * @param {number} t -  時間進度 (0-1 之間)
+ * @returns {number} - 緩動後的值
+ */
+function easeOut(t) {
+    return 1 - (1 - t) * (1 - t);
+}
+
+/**
+ * 更新獎項
+ */
+function updatePrizes() {
+    const prizeInputs = document.querySelectorAll('.prize-input');  // 取得所有獎項輸入框
+    const newPrizes = [];                                        // 建立一個新的獎項陣列
+
+    // 逐一檢查輸入框，將非空的獎項加入 newPrizes
+    prizeInputs.forEach(input => {
+        if (input.value.trim() !== "") { // 移除空白的獎項
+            newPrizes.push(input.value.trim());  // 去除前後空白後加入陣列
+        }
+    });
+
+    // 如果有輸入獎項，則更新 prizes 陣列並重繪輪盤
+    if (newPrizes.length > 0) {
+        prizes = newPrizes;
+        drawWheel();
+    } else {
+        alert("請至少輸入一個獎項！");  // 如果沒有輸入任何獎項，則顯示提示訊息
+    }
+
+    // 更新獎品後，重新啟用按鈕 (以防之前被停用)
+     if(prizes.length > 1){
+        spinButton.disabled = false;
+     }
+     else{
+        spinButton.disabled = true;
+     }
+}
+
+// 初始繪製輪盤
+drawWheel();
+
+// 事件監聽器
+
+// 開始抽獎按鈕點擊事件
+spinButton.addEventListener('click', spinWheel);
+
+// 更新獎項按鈕點擊事件
+updatePrizesButton.addEventListener('click', updatePrizes);
+
+// 「抽中後移除獎項」核取方塊狀態改變事件
+removeAfterHitCheckbox.addEventListener('change', () => {
+  removeAfterHit = removeAfterHitCheckbox.checked;  // 更新 removeAfterHit 變數
+  //更新獎項後，重新啟用按鈕，如果獎項數量小於等於1則停用
+    if (prizes.length > 1) {
+        spinButton.disabled = false;
+    } else {
+        spinButton.disabled = true;
+    }
+});
+</script>
+
+</body>
+</html>

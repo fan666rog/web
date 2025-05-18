@@ -1,0 +1,338 @@
+body {
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f0f0;
+}
+
+.keyboard-container {
+    background-color: #ddd;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: fit-content;
+}
+
+.keyboard {
+    display: flex;
+    /* flex-direction: row;  不需要显式声明，默认就是 row */
+    gap: 3px; /* 控制按键之间的基本间距 */
+    align-items: flex-end; /* 关键：使所有子元素底部对齐 */
+}
+
+.left-section,
+.right-section {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 右侧区域 */
+.right-section {
+    margin-left: 10px; /* 与左侧区域的间距 */
+}
+
+/* 数字小键盘区域 */
+.numpad-section {
+    display: flex;
+    flex-direction: column;
+    margin-left: 10px; /* 与左侧区域的间距 */
+}
+
+/* 数字小键盘侧边区域 */
+.numpad-side-section {
+    display: flex;
+    flex-direction: column;
+    margin-left: 0px;/*間距*/
+    gap: 3px; /* 新增：设置垂直间距 */
+}
+
+.row {
+    display: flex;
+    margin-bottom: 3px;
+}
+
+.top-row-left {
+    display: flex;
+    gap: 5px;
+}
+
+.f-key-group {
+    display: flex;
+    gap: 5px; /* F 键组内间距 */
+}
+
+.key {
+    width: 45px;
+    height: 45px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+    margin-right: 3px; /* 按键右边距 */
+}
+
+/* 特殊按键尺寸 */
+.tab                  { width: calc(45px * 1.66); }
+.capslock             { width: calc(45px * 2.11); }
+.shift[data-key="ShiftLeft"]  { width: calc(45px * 2.44); }
+.shift[data-key="ShiftRight"] { width: calc(45px * 2.95); }
+.enter                { width: calc(45px * 2.18); }
+.backslash            { width: calc(45px * 1.53); }
+.backspace            { width: calc(45px * 2.17); }
+.space                { width: calc(45px * 7.50); }
+.ctrl, .MetaLeft, .MetaRight  { width: calc(45px * 1.89); }
+.alt                  { width: calc(45px * 1.33); }
+
+/* "+" 键的特殊高度 */
+.numpad-side-section .key[data-key="NumpadAdd"] {
+    height: calc(2 * 45px + 5px); /* 两个按键高度 + 一个间距 */
+}
+
+/* "Enter" 键的特殊高度 */
+.numpad-side-section .numpad-enter {
+    height: calc(2 * 45px + 5px); /* 两个按键高度 + 一个间距 */
+    margin-bottom: 3px; /* 或您需要的间距值 */
+}
+
+
+/* 按下效果 */
+.key.pressed {
+    background-color: #aaa;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    transform: translateY(2px);
+}
+
+/* 禁用的样式 */
+.key.disabled {
+    background-color: #ccc;
+    color: #888;
+    cursor: not-allowed;
+    pointer-events: none;
+    /* 阻止鼠标事件 */
+    border-color: #999;
+}
+
+/* 方向键 */
+.arrow-keys-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.arrow-key-group {
+    display: flex;
+}
+
+.arrow-keys-row {
+    margin-top: auto;
+    /* 方向键推到最下 */
+}
+
+.arrow-keys-container>.key[data-key="ArrowUp"] {
+    margin-bottom: 3px;
+}
+
+/* Esc 键 */
+.key[data-key="Escape"] {
+    margin-right: 51px;
+    /* Esc 与 F1 间距 */
+}
+
+/* NumLock 键 */
+.key[data-key="NumLock"] {
+    margin-right: 3px;
+}
+
+/* 通用间距 */
+.row>* {
+    margin-right: 3px;
+}
+
+.row>*:last-child {
+    margin-right: 0;
+}
+
+/* 模式选择器样式 */
+.mode-selector {
+    margin-bottom: 10px;
+    /* 与键盘的间距 */
+    text-align: center;
+    /* 文本居中 */
+}
+
+/* 数字键区域 */
+.numpad-section .key {
+    width: 45px;
+    /* 统一数字键的宽度 */
+    height: 45px;
+    /* 统一数字键的高度 */
+}
+
+/* 數字鍵右邊區塊 */
+.numpad-side-section .key {
+    width: 45px;
+    /* 统一数字键的宽度 */
+    /*height: 45px;  不再需要單獨設置*/
+    /* 统一数字键的高度 */
+}
+
+.numpad-section .numpad-zero {
+    width: 95px;
+    /* 0 鍵寬度 */
+}
+
+.invisible-key {
+    visibility: hidden;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .key {
+        width: 35px;
+        height: 35px;
+        font-size: 12px;
+    }
+
+    /* 特殊按键尺寸 (响应式) */
+    .tab                  { width: calc(35px * 1.66); }
+    .capslock             { width: calc(35px * 2.11); }
+    .shift[data-key="ShiftLeft"]  { width: calc(35px * 2.44); }
+    .shift[data-key="ShiftRight"] { width: calc(35px * 2.95); }
+    .enter                { width: calc(35px * 2.18); }
+    .backslash            { width: calc(35px * 1.53); }
+    .backspace            { width: calc(35px * 2.17); }
+    .space                { width: calc(35px * 7.50); }
+    .ctrl, .MetaLeft, .MetaRight  { width: calc(35px * 1.89); }
+    .alt                  { width: calc(35px * 1.34); }
+
+    /* Esc 键 (响应式) */
+    .key[data-key="Escape"] {
+        margin-right: 40px;
+    }
+
+    /* NumLock 键 (响应式) */
+    .key[data-key="NumLock"] {
+        margin-right: 2px;
+    }
+
+    /* 通用间距 (响应式) */
+    .row > * {
+        margin-right: 2px;
+    }
+    .row > *:last-child {
+        margin-right: 0;
+    }
+
+    .f-key-group {
+        gap: 3px; /* 减小组内间距 */
+    }
+    .top-row-left{
+        gap: 3px;
+    }
+
+     /* 数字键区域 (响应式) */
+    .numpad-section .key {
+        width: 35px;
+        /* 统一数字键的宽度 */
+        height: 35px;
+        /* 统一数字键的高度 */
+    }
+
+    /* 數字鍵右邊區塊 (响应式) */
+    .numpad-side-section .key{
+        width: 35px;
+        /* 统一数字键的宽度 */
+        /*height: 35px;  不再需要*/
+        /* 统一数字键的高度 */
+    }
+
+    .numpad-section .numpad-zero {
+        width: 75px;
+        /* 0 鍵寬度 */
+    }
+
+    /* "+" 键的特殊高度 */
+    .numpad-side-section .key[data-key="NumpadAdd"] {
+        height: calc(2 * 45px + 5px); /* 两个按键高度 + 一个间距 */
+    }
+
+    /* "Enter" 键的特殊高度 */
+    .numpad-side-section .numpad-enter {
+        height: calc(2 * 45px + 5px); /* 两个按键高度 + 一个间距 */
+        margin-bottom: 3px; /* 或您需要的间距值 */
+    }
+}
+/* === 新增：注意事項樣式 === */
+.notice-section {
+    margin-top: 10px; /* 與上方間距 */
+    margin-bottom: 15px; /* 與下方鍵盤間距 */
+    text-align: center;
+}
+
+.notice-toggle-btn {
+    padding: 5px 10px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #e9e9e9;
+    margin-bottom: 5px;
+}
+
+.notice-content {
+    background-color: #eee;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    text-align: left;
+    font-size: 13px;
+    color: #333;
+    margin-top: 5px;
+    /* 以下為控制顯示/隱藏 */
+    display: block; /* 預設顯示，讓JS控制 */
+}
+
+.notice-content.hidden {
+    display: none;
+}
+/* === /新增：注意事項樣式 === */
+
+
+/* === 新增：版權宣告樣式 === */
+footer {
+    margin-top: 30px; /* 與鍵盤容器的間距 */
+    padding: 10px;
+    text-align: center;
+    font-size: 0.8em;
+    color: #666;
+}
+/* === /新增：版權宣告樣式 === */
+
+/* 調整 body 以容納 footer */
+body {
+    display: flex;
+    flex-direction: column; /* 讓 footer 能在 container 下方 */
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    /* 其他 body 樣式保持不變 */
+    font-family: sans-serif;
+    background-color: #f0f0f0;
+}
+
+/* 可能需要調整 keyboard-container 的下邊距 */
+.keyboard-container {
+    margin-bottom: 20px; /* 為 footer 留出空間 */
+     /* 其他 keyboard-container 樣式保持不變 */
+    background-color: #ddd;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: fit-content;
+}

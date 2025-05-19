@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生辰命評民俗資料查詢</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>生辰命評民俗資料查詢單機版</h1>
+        </header>
+
+        <main>
+            <section class="full-view-controls">
+                <h3>完整資料瀏覽：</h3>
+                <button id="viewAllYearBtn">瀏覽全部「年」資料</button>
+                <button id="viewAllMonthBtn">瀏覽全部「月」資料</button>
+                <button id="viewAllDayBtn">瀏覽全部「日」資料</button>
+                <button id="viewAllHourBtn">瀏覽全部「時辰」資料</button>
+            </section>
+            <section class="query-section">
+                <h2>請以農曆為準，請選擇查詢條件（可多選）</h2>
+                <div class="selection-area">
+                    <fieldset>
+                        <legend>年 (天干地支)</legend>
+                        <div id="yearSelection" class="specific-selection">
+                            <div class="input-group">
+                                <label for="shengxiaoSelect">生肖：</label>
+                                <select id="shengxiaoSelect">
+                                    <option value="">--選擇生肖--</option>
+                                    </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="ganzhiSelect">天干地支：</label>
+                                <select id="ganzhiSelect" disabled>
+                                    <option value="">--請先選生肖--</option>
+                                    </select>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>月</legend>
+                        <div id="monthSelection" class="specific-selection">
+                            <div class="input-group">
+                                <label for="monthSelect">月份：</label>
+                                <select id="monthSelect">
+                                    <option value="">--選擇月份--</option>
+                                    </select>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>日</legend>
+                        <div id="daySelection" class="specific-selection">
+                            <div class="input-group">
+                                <label for="daySelect">日期：</label>
+                                <select id="daySelect">
+                                    <option value="">--選擇日期--</option>
+                                    </select>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>時辰</legend>
+                        <div id="hourSelection" class="specific-selection">
+                            <div class="input-group">
+                                <label for="hourMainSelect">時辰：</label>
+                                <select id="hourMainSelect">
+                                    <option value="">--選擇時辰--</option>
+                                    </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="hourDetailSelect">時辰細分：</label>
+                                <select id="hourDetailSelect" disabled>
+                                    <option value="main">主要描述</option>
+                                    <option value="頭">時頭</option>
+                                    <option value="中">時中</option>
+                                    <option value="末">時末</option>
+                                </select>
+                            </div>
+                        </div>
+                    </fieldset>
+                    
+                    <div class="action-buttons">
+                       <button id="queryButton">查詢所選項目</button>
+                       <button id="resetButton" type="button">清除重選</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="resultSection" class="result-section hidden">
+                <h2>查詢結果</h2>
+                <div id="resultOutput">
+                    </div>
+            </section>
+            <section id="fullDataViewSection" class="full-data-view-section hidden">
+                <button id="backToMainQueryBtn" class="back-button">返回主查詢介面</button>
+                <h2 id="fullDataViewTitle"></h2>
+                <div id="fullDataViewOutput">
+                   </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>資料來源：公開之民俗資料，僅供參考 / fan666rog&Gemini編寫</p>
+            <p>Github: <a href="https://github.com/fan666rog/web" target="_blank">fan666rog/web</a></p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

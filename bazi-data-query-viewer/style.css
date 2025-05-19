@@ -1,0 +1,278 @@
+body {
+    font-family: 'Arial', '微軟正黑體', 'Microsoft JhengHei', sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+.container {
+    width: 80%;
+    max-width: 960px;
+    margin: auto;
+    overflow: hidden;
+    padding: 0 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+header {
+    background: #333;
+    color: #fff;
+    padding: 1rem 0;
+    text-align: center;
+    border-bottom: #77aaff 3px solid;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+main {
+    padding: 20px 0;
+}
+
+.query-section, .result-section, .full-data-view-section { /* 合併通用樣式 */
+    padding: 20px;
+    margin-bottom: 20px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.query-section h2, .result-section h2, .full-data-view-section h2 { /* 合併通用樣式 */
+    text-align: center;
+    color: #333;
+    margin-top: 0;
+}
+
+.selection-area {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+fieldset {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+}
+
+legend {
+    font-weight: bold;
+    color: #333;
+    padding: 0 10px;
+    font-size: 1.2em;
+    background-color: #f9f9f9;
+    margin-left: 10px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.input-group select, .input-group input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* --- 按鈕區域和按鈕樣式修改 --- */
+.action-buttons {
+    display: flex;         /* 啟用 Flexbox 佈局 */
+    gap: 15px;           /* 按鈕之間的間距 */
+    margin-top: 20px;
+}
+
+.action-buttons button {
+    flex-grow: 1;          /* 讓按鈕平分父容器的可用空間 */
+    padding: 12px 10px;    /* 調整 padding，可以根據需要減少左右 padding */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;       /* 可以略微減小字體大小以適應寬度 */
+    transition: background-color 0.3s ease;
+    white-space: nowrap;   /* 強制文字不換行 */
+    text-align: center;    /* 確保文字居中 */
+    min-width: 120px;      /* 設定一個最小寬度，避免過窄 (可調整) */
+}
+
+button#queryButton {
+    background-color: #5cb85c;
+    color: white;
+}
+
+button#queryButton:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+button#queryButton:hover:not(:disabled) {
+    background-color: #4cae4c;
+}
+
+button#resetButton {
+    background-color: #f0ad4e;
+    color: white;
+}
+
+button#resetButton:hover {
+    background-color: #ec971f;
+}
+/* --- 按鈕區域和按鈕樣式修改結束 --- */
+
+
+.specific-selection {
+    padding-left: 0;
+}
+
+.hidden {
+    display: none;
+}
+
+/* --- 完整資料瀏覽區塊的樣式 --- */
+.full-view-controls {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 15px;
+    background-color: #e7e7e7;
+    border-radius: 5px;
+}
+.full-view-controls h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+.full-view-controls button {
+    margin: 5px;
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    white-space: nowrap; /* 確保這些按鈕文字也不換行 */
+}
+.full-view-controls button:hover {
+    background-color: #0056b3;
+}
+
+.back-button {
+    display: block;
+    margin: 0 auto 20px auto;
+    padding: 10px 20px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap; /* 確保返回按鈕文字不換行 */
+}
+.back-button:hover {
+    background-color: #545b62;
+}
+/* --- 完整資料瀏覽區塊的樣式結束 --- */
+
+
+#resultOutput {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #e9e9e9;
+    border-radius: 4px;
+}
+
+.result-block {
+    border-bottom: 1px dashed #bbb;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+.result-block:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+#resultOutput h3 {
+    margin-top: 0;
+    color: #77aaff;
+    margin-bottom: 10px;
+}
+#resultOutput h4 {
+    margin-top: 15px;
+    margin-bottom: 8px;
+    color: #444;
+    font-size: 1.1em;
+}
+#resultOutput h5 {
+    margin-top: 10px;
+    margin-bottom: 5px;
+    color: #555;
+    font-size: 1em;
+    font-weight: bold;
+}
+#resultOutput h6 { /* Style for "又曰：" if used as h6 */
+    font-weight:normal; 
+    font-style:italic; 
+    margin-top:5px; 
+    margin-bottom:3px;
+    color: #555;
+}
+#resultOutput p {
+    margin-bottom: 10px;
+    line-height: 1.7;
+}
+#resultOutput .poem, 
+#resultOutput .career, 
+#resultOutput .range {
+    font-style: italic;
+    color: #555;
+    margin-bottom: 15px;
+    padding-left: 15px;
+    border-left: 2px solid #aaa;
+}
+#resultOutput .range {
+    font-style: normal;
+    color: #666;
+    font-size: 0.9em;
+    display: inline-block;
+    margin-left: 5px;
+    border-left: none;
+    padding-left: 0;
+}
+
+hr.divider { /* 分隔線樣式 */
+    border: 0;
+    height: 1px;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0));
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    background: #333;
+    color: #fff;
+    margin-top: 30px;
+}
+footer a {
+    color: #77aaff;
+    text-decoration: none;
+}
+footer a:hover {
+    text-decoration: underline;
+}

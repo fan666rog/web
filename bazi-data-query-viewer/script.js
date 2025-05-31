@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM Elements
+    // DOM Elements for main query
     const shengxiaoSelect = document.getElementById('shengxiaoSelect');
     const ganzhiSelect = document.getElementById('ganzhiSelect');
     const monthSelect = document.getElementById('monthSelect');
@@ -11,17 +11,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultSectionDiv = document.getElementById('resultSection');
     const resultOutputDiv = document.getElementById('resultOutput');
 
-    // DOM Elements for full data view (保持不變)
+    // DOM Elements for full data view
     const mainQueryAndControlsSection = document.querySelector('.query-section');
-    const mainQueryControls = document.querySelector('.selection-area');
+    const mainQueryControls = document.querySelector('.selection-area'); // The actual selection inputs area
     const fullViewControlsSection = document.querySelector('.full-view-controls');
     const fullDataViewSection = document.getElementById('fullDataViewSection');
     const fullDataViewTitle = document.getElementById('fullDataViewTitle');
     const fullDataViewOutput = document.getElementById('fullDataViewOutput');
     const backToMainQueryBtn = document.getElementById('backToMainQueryBtn');
 
-    // --- 1. Data storage ---
-    const yearData = 
+    // --- 1. Data storage - 在下方貼上您的 JSON 資料 ---
+
+    const yearData =
 [
   {
     "ganzhi": "甲子",
@@ -383,8 +384,9 @@ document.addEventListener('DOMContentLoaded', () => {
     "wuxing": "水",
     "description": "為人剛直，不順人情，財谷如意，六親疏遠，自立權衡，晚景勝前興，創家之命女人持家牲畜旺相，享福延壽之命"
   }
-];
-    const monthData = 
+]   ;
+
+    const monthData =
 {
   "正月": {
     "description": "此月生人，前年四月受胎，立春節後出生\n為人忠厚，富有義心，仁德待人，同情心深，成人之美，犧牲自己，具帶神經質，而對事干難，亦重感情破前程，近官吏敬重，富貴增榮，大事小成，凡事仔細，能招四方財，幼年平常，中年運開，晚年榮富，無剋之命。",
@@ -434,8 +436,9 @@ document.addEventListener('DOMContentLoaded', () => {
     "description": "此月生人，前年三月受胎，小寒節後出生\n為人心直口快，兄弟難可靠，自愁自憂悶，出外風光好，自得四方財，衣祿有足餘，多管他人事，愛顧他人心，受友如鶴群，抱負如天大，志氣像大梅，貧者貧字凳。失敗之根本，初年有其福，中年多辛勞，晚景大吉昌，此是人間福。",
     "poem": "初限勤勞受苦辛，自然末後不求人。好運來時福祿至，夫婦團圓壽百春。"
   }
-};
-    const dayData = 
+}   ;
+
+    const dayData =
 [
   {
     "date": "初一日",
@@ -557,8 +560,9 @@ document.addEventListener('DOMContentLoaded', () => {
     "date": "三十日",
     "description": "此日生人，性格聰明，為人活潑，春風待人，易快親睦，中正不偏，作事輕快，益助他人，犧牲自己，前途無憂，未運隆興，大旺之命。"
   }
-];
-    const hourData = 
+]   ;
+
+    const hourData =
 {
   "子時": {
     "range": "(夜子夜間十一點起至十二點止，早子十二點起至上午一點止)",
@@ -788,7 +792,322 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   }
-};
+}   ;
+
+    const boneWeightData = {
+  "year": { // 數據來源：綜合常見版本，請務必核對！
+    "甲子": 12, "乙丑": 9,  "丙寅": 6,  "丁卯": 7,  "戊辰": 12, "己巳": 5,
+    "庚午": 9,  "辛未": 8,  "壬申": 7,  "癸酉": 8,  "甲戌": 15, "乙亥": 9,
+    "丙子": 16, "丁丑": 8,  "戊寅": 8,  "己卯": 19, "庚辰": 12, "辛巳": 6,
+    "壬午": 8,  "癸未": 7,  "甲申": 5,  "乙酉": 15, "丙戌": 6,  "丁亥": 16,
+    "戊子": 15, "己丑": 7,  "庚寅": 9,  "辛卯": 12, "壬辰": 10, "癸巳": 7,
+    "甲午": 15, "乙未": 6,  "丙申": 5,  "丁酉": 14, "戊戌": 14, "己亥": 9,
+    "庚子": 7,  "辛丑": 7,  "壬寅": 9,  "癸卯": 12, "甲辰": 8,  "乙巳": 7,
+    "丙午": 13, "丁未": 5,  "戊申": 14, "己酉": 5,  "庚戌": 9,  "辛亥": 17,
+    "壬子": 5,  "癸丑": 7,  "甲寅": 12, "乙卯": 8,  "丙辰": 8,  "丁巳": 6,
+    "戊午": 19, "己未": 6,  "庚申": 8,  "辛酉": 16, "壬戌": 10, "癸亥": 7
+  },
+  "month": { // 數據來源：綜合常見版本，請務必核對！
+    "正月": 6,   "二月": 7,   "三月": 18,  "四月": 9,
+    "五月": 5,   "六月": 16,  "七月": 9,   "八月": 15,
+    "九月": 18,  "十月": 8,   "十一月": 9, "十二月": 5
+  },
+  "day": { // 數據來源：綜合常見版本，請務必核對！
+    "初一日": 5,  "初二日": 10, "初三日": 8,  "初四日": 15, "初五日": 16,
+    "初六日": 15, "初七日": 8,  "初八日": 16, "初九日": 8,  "初十日": 16,
+    "十一日": 9,  "十二日": 17, "十三日": 8,  "十四日": 17, "十五日": 10,
+    "十六日": 8,  "十七日": 9,  "十八日": 18, "十九日": 5,  "二十日": 15,
+    "二十一日": 10,"二十二日": 9,  "二十三日": 8,  "二十四日": 9,  "二十五日": 15,
+    "二十六日": 18,"二十七日": 7,  "二十八日": 8,  "二十九日": 16, "三十日": 6
+  },
+  "hour": { // 數據來源：綜合常見版本，請務必核對！
+    "子時": 16,  "丑時": 6,   "寅時": 7,   "卯時": 10,
+    "辰時": 9,   "巳時": 16,  "午時": 10,  "未時": 8,
+    "申時": 8,   "酉時": 9,   "戌時": 6,   "亥時": 6
+  }
+}   ;
+
+    const boneFortuneData = {
+  "21": { // 二兩一錢
+    "weightText": "二兩一錢",
+    "poem": "此人衣食奔波出外之命也。\n短命非業謂大凶，平生災難事重重，\n凶禍頻臨陷逆境，終世困苦事不成。",
+    "explanation": ""
+  },
+  "22": { // 二兩二錢
+    "weightText": "二兩二錢",
+    "poem": "此人幼年勞碌中年清泰之命也。\n身寒骨冷苦伶仃，此命推來行乞人，\n勞勞碌碌無度日，終年打拱過平生。",
+    "explanation": ""
+  },
+  "23": { // 二兩三錢
+    "weightText": "二兩三錢",
+    "poem": "此人先難後易出外求人之命也。\n此命推來骨輕輕，求謀做事事難成，\n妻兒兄弟實難靠，外出他鄉做散人。",
+    "explanation": ""
+  },
+  "24": { // 二兩四錢
+    "weightText": "二兩四錢",
+    "poem": "此人為人智巧多能出家求食之命也。\n此命推來福祿無，門庭困苦總難榮，\n六親骨肉皆無靠，流到他鄉作老翁。",
+    "explanation": ""
+  },
+  "25": { // 二兩五錢
+    "weightText": "二兩五錢",
+    "poem": "此人身閑心不閑九流藝術之命心。\n此命推來祖業微，門庭營度甚艱辛，\n六親骨肉如冰炭，一世勤勞自立人。",
+    "explanation": ""
+  },
+  "26": { // 二兩六錢
+    "weightText": "二兩六錢",
+    "poem": "此人先貧後富勞碌之命也。\n平生衣祿苦中求，獨自營謀事不休，\n離祖出門宜早計，晚來衣祿自無憂。",
+    "explanation": ""
+  },
+  "27": { // 二兩七錢
+    "weightText": "二兩七錢",
+    "poem": "此人聰明近貴衣祿之命也。\n一生做事少商量，難靠祖宗作主張，\n獨馬單槍空做去，早年晚歲總無長。",
+    "explanation": ""
+  },
+  "28": { // 二兩八錢
+    "weightText": "二兩八錢",
+    "poem": "此人自桌為人才能近貴之命也。\n一生做事似飄蓬，祖宗產業在夢中，\n若不過房併改姓，也當移徒二三通。",
+    "explanation": ""
+  },
+  "29": { // 二兩九錢
+    "weightText": "二兩九錢",
+    "poem": "此人才能客商達變智慧之命也。\n初年運限未曾亨，縱有功名在後成，\n須過四旬方可立，移居改姓始為良。",
+    "explanation": ""
+  },
+  "30": { // 三兩
+    "weightText": "三兩",
+    "poem": "此人衣食有餘為人近貴成定之命也。\n勞勞碌碌苦中求，東奔西走何日休，\n若使終身勤與儉，老來稍可免憂愁。",
+    "explanation": ""
+  },
+  "31": { // 三兩一錢
+    "weightText": "三兩一錢",
+    "poem": "此人先貧後富近貴衣食足用之命也。\n忙忙碌碌苦中求，何日雲開見日頭，\n難得祖基家可立，中年衣食漸無憂。",
+    "explanation": ""
+  },
+  "32": { // 三兩二錢
+    "weightText": "三兩二錢",
+    "poem": "此人性巧過人衣食到老近貴之命也。\n初年運蹇事難謀，漸有財源如水流，\n到得中年衣食旺，那時名利一齊收。",
+    "explanation": ""
+  },
+  "33": { // 三兩三錢
+    "weightText": "三兩三錢",
+    "poem": "此人衣食豐滿富貴根基之命也。\n早年做事事難成，百計徒勞枉費心，\n半世自如流水去，後來運到始得金。",
+    "explanation": ""
+  },
+  "34": { // 三兩四錢
+    "weightText": "三兩四錢",
+    "poem": "此人財穀有餘主得內助富貴之命也。\n此命福氣果如何，僧道門中衣祿多，\n離祖出家方可好，終朝拜佛念彌陀。",
+    "explanation": ""
+  },
+  "35": { // 三兩五錢
+    "weightText": "三兩五錢",
+    "poem": "此人先難後易過房入贅近貴之命也。\n生平福量不周全，祖業根基覺少傳，\n營事生涯宜守舊，時來衣食勝從前。",
+    "explanation": ""
+  },
+  "36": { // 三兩六錢
+    "weightText": "三兩六錢",
+    "poem": "此人超群拔類衣祿厚重之命也。\n不須勞碌過平生，獨自成家福不輕，\n早有福星常照命，任君行去百般成。",
+    "explanation": ""
+  },
+  "37": { // 三兩七錢
+    "weightText": "三兩七錢",
+    "poem": "此人聰明富貴有福壽之命也。\n此命般般事不成，弟兄少力自孤成，\n雖然祖業須微有，來得明時去得時。",
+    "explanation": ""
+  },
+  "38": { // 三兩八錢
+    "weightText": "三兩八錢",
+    "poem": "此人財帛豐厚宜稱之命也。\n一生骨肉最清高，早入簧門姓氏標，\n待到年將三十六，藍衫脫去換紅袍。",
+    "explanation": ""
+  },
+  "39": { // 三兩九錢
+    "weightText": "三兩九錢",
+    "poem": "此人利上近貴有福有祿之命也。\n此命少年運不通，勞心做事盡皆空，\n苦心竭力成家計，到得那時在夢中。",
+    "explanation": ""
+  },
+  "40": { // 四兩
+    "weightText": "四兩",
+    "poem": "此人富貴近益生涯鼎盛機關之命也。\n平生衣祿是綿長，件件心中自主張，\n前面風霜多受過，後來必定享安康。",
+    "explanation": ""
+  },
+  "41": { // 四兩一錢
+    "weightText": "四兩一錢",
+    "poem": "此人稅戶近貴專才衣祿之命也。\n此命推來事不同，為人能幹異凡庸，\n中年還有逍遙福，不比前時運未通。",
+    "explanation": ""
+  },
+  "42": { // 四兩二錢
+    "weightText": "四兩二錢",
+    "poem": "此人兵權有職富貴才能之命也。\n得寬懷處且寬懷，何用雙眉皺不開，\n若使中年命運濟，那時名利一齊來。",
+    "explanation": ""
+  },
+  "43": { // 四兩三錢
+    "weightText": "四兩三錢",
+    "poem": "此人財祿厚重白手成家之命也。\n為人心性最聰明，作事軒昂近貴人，\n衣祿一生天數定，不須勞碌過平生。",
+    "explanation": ""
+  },
+  "44": { // 四兩四錢
+    "weightText": "四兩四錢",
+    "poem": "此人才能好學近貴財祿之命也。\n萬事由天莫強求，須知福祿勝前途，\n當年財帛難如意，晚景欣然便不憂。",
+    "explanation": ""
+  },
+  "45": { // 四兩五錢
+    "weightText": "四兩五錢",
+    "poem": "此人福祿豐厚極富且貴之命也。\n富中取貴格求真，明敏才華志自伸，\n福祿壽全家道吉，桂蘭毓秀晚榮臻。",
+    "explanation": ""
+  },
+  "46": { // 四兩六錢
+    "weightText": "四兩六錢",
+    "poem": "此人富貴有餘福壽雙全之命也。\n東西南北盡皆通，出姓移居更覺隆，\n衣祿無虧天數定，中年晚景一般同。",
+    "explanation": ""
+  },
+  "47": { // 四兩七錢
+    "weightText": "四兩七錢",
+    "poem": "此人高官厚祿學業飽滿之命也。\n此命推來旺末年，妻榮子貴自怡然，\n平生原有滔滔福，財源滾滾似水流。",
+    "explanation": ""
+  },
+  "48": { // 四兩八錢
+    "weightText": "四兩八錢",
+    "poem": "此人官員財祿厚重之命也。\n初年運道未曾亨，若是蹉跎再不興，\n兄弟六親皆無靠，一身事業晚年成。",
+    "explanation": ""
+  },
+  "49": { // 四兩九錢
+    "weightText": "四兩九錢",
+    "poem": "此人性巧精神倉庫財祿之命也。\n此命推來福不輕，自成自立顯門庭，\n從來富貴人親近，使婢差奴過一生。",
+    "explanation": ""
+  },
+  "50": { // 五兩
+    "weightText": "五兩",
+    "poem": "此人文武才能錢穀豐盛之命也。\n為名為利終日勞，中年福祿也多遭，\n老來是有財星照，不比前番目下高。",
+    "explanation": ""
+  },
+  "51": { // 五兩一錢
+    "weightText": "五兩一錢",
+    "poem": "此人官職財祿榮華富貴之命也。\n一世榮華事事通，不須勞碌自亨通，\n弟兄叔侄皆如意，家業成時福祿宏。",
+    "explanation": ""
+  },
+  "52": { // 五兩二錢
+    "weightText": "五兩二錢",
+    "poem": "此人掌握兵權富貴長壽之命也。\n一世亨通事事能，不須勞思自然能，\n宗施欣然心皆好，家產豐盈自稱心。",
+    "explanation": ""
+  },
+  "53": { // 五兩三錢
+    "weightText": "五兩三錢",
+    "poem": "此人僧道門中近貴之命也。\n此格推來氣象真，興家發達在其中，\n一生福祿安排定，卻是人間一富翁。",
+    "explanation": ""
+  },
+  "54": { // 五兩四錢
+    "weightText": "五兩四錢",
+    "poem": "此人有威權富貴財祿之命也。\n此命推來厚且清，詩書滿腹看功成，\n豐衣足食自然穩，正是人間有福人。",
+    "explanation": ""
+  },
+  "55": { // 五兩五錢
+    "weightText": "五兩五錢",
+    "poem": "此人官職財祿豐盛之命也。\n策馬揚鞭爭名利，少年作事費籌論，\n一朝福祿源源至，富貴榮華顯六親。",
+    "explanation": ""
+  },
+  "56": { // 五兩六錢
+    "weightText": "五兩六錢",
+    "poem": "此人官職長享榮華富貴之命也。\n此格推來禮義通，終身福祿用無窮，\n甜酸苦辣皆嘗過，滾滾財源穩且豐。",
+    "explanation": ""
+  },
+  "57": { // 五兩七錢
+    "weightText": "五兩七錢",
+    "poem": "此人官職文章壓眾精通之命也。\n福祿盈盈萬事全，一生榮耀顯雙親，\n名揚威震人欽敬，處事逍遙似遇春。", // 此處詩句可能因版本而異
+    "explanation": ""
+  },
+  "58": { // 五兩八錢
+    "weightText": "五兩八錢",
+    "poem": "此人官職旺像才能性質富貴之命也。\n平生福祿自然來，名利雙全福祿偕，\n雁塔題名為貴客，紫袍金帶走金偕。",
+    "explanation": ""
+  },
+  "59": { // 五兩九錢
+    "weightText": "五兩九錢",
+    "poem": "此人官職財祿厚重之命也。\n細推此格妙且清，必定才高禮義通，\n甲第之中應有分，揚鞭走馬顯威榮。",
+    "explanation": ""
+  },
+  "60": { // 六兩
+    "weightText": "六兩",
+    "poem": "此人官職榮華福壽財祿之命也。\n一朝金榜快題名，顯祖榮宗立大功，\n衣食定然原裕足，田園財帛更豐盈。",
+    "explanation": ""
+  },
+  "61": { // 六兩一錢
+    "weightText": "六兩一錢",
+    "poem": "此人法身官掌風雷權柄之命也。\n不做朝中金榜客，定為世上一財翁，\n聰明天賦經書熟，名顯高科自是榮。",
+    "explanation": ""
+  },
+  "62": { // 六兩二錢
+    "weightText": "六兩二錢",
+    "poem": "此人官職有權柄之命也。\n此命生來福不窮，讀書必定顯親宗，\n紫衣金帶為卿相，富貴榮華皆可同。",
+    "explanation": ""
+  },
+  "63": { // 六兩三錢
+    "weightText": "六兩三錢",
+    "poem": "此人指揮太守萬戶封侯之命也。\n命主為官福祿長，得來富貴定非常，\n名題金塔傳金榜，定中高科天下揚。",
+    "explanation": ""
+  },
+  "64": { // 六兩四錢
+    "weightText": "六兩四錢",
+    "poem": "此人官職尚書侍郎之命也。\n此格威權不可當，紫袍金帶坐高堂，\n榮華富貴誰能及，積玉堆金滿儲倉。",
+    "explanation": ""
+  },
+  "65": { // 六兩五錢
+    "weightText": "六兩五錢",
+    "poem": "此人威權發無邊財福祿之命也。\n細推此命福不輕，定國安邦極品人，\n文綉雕梁徵富貴，威聲照耀四方聞。",
+    "explanation": ""
+  },
+  "66": { // 六兩六錢
+    "weightText": "六兩六錢",
+    "poem": "此人公侯駙馬丞相之命也。\n此格人間一福人，堆金積玉滿堂春，\n從來富貴由天定，天笏垂紳謁聖君。",
+    "explanation": ""
+  },
+  "67": { // 六兩七錢
+    "weightText": "六兩七錢",
+    "poem": "此人冠世萬國來朝上格之命也。\n此命生來福自宏，田園家業最高隆，\n平生衣祿豐盈足，一世榮華萬事通。",
+    "explanation": ""
+  },
+  "68": { // 六兩八錢
+    "weightText": "六兩八錢",
+    "poem": "此人溫和幸福富貴極吉之命也。\n富貴由天莫苦求，萬金家計不須謀，\n十年不比前番事，祖業根基水上舟。", // 此處詩句可能與其他版本有差異
+    "explanation": ""
+  },
+  "69": { // 六兩九錢
+    "weightText": "六兩九錢",
+    "poem": "此人惠受高位功名顯達之命也。\n君是人間衣祿星，一生富貴眾人欽，\n縱然福祿由天定，安享榮華過一生。",
+    "explanation": ""
+  },
+  "70": { // 七兩
+    "weightText": "七兩",
+    "poem": "此人權力俱備志望上流之命也。\n此命推來福不輕，何須愁慮苦勞心，\n一生天定衣與祿，富貴榮華過一生。",
+    "explanation": ""
+  },
+  "71": { // 七兩一錢
+    "weightText": "七兩一錢",
+    "poem": "此人大志大業勢如破竹之命也。\n此命生成大不同，公侯卿相在其中，\n一生自有逍遙福，富貴榮華極品隆。",
+    "explanation": ""
+  },
+  "72": { // 七兩二錢 (部分版本有此，為極品之命)
+    "weightText": "七兩二錢",
+    "poem": "此人罕有生帝王之命也。\n此格世界罕有生，十代積善產此人，\n天上紫微星照命，統治萬民樂太平。",
+    "explanation": ""
+  }
+  // 您可以根據您的資料來源，決定是否包含七兩二錢，或是否有其他骨重。
+}   ;
+
+
+    // --- 輔助函式：格式化骨重顯示 ---
+    function formatWeight(qianValue) {
+        if (qianValue === undefined || qianValue === null || isNaN(qianValue) || qianValue < 0) {
+            return "未知"; // 或返回空字串，根據您的偏好
+        }
+        const liang = Math.floor(qianValue / 10);
+        const qian = qianValue % 10;
+        let result = "";
+        if (liang > 0) {
+            result += liang + "兩";
+        }
+        if (qian > 0 || liang === 0) { // 如果只有錢或者兩和錢都有，才顯示錢
+            result += qian + "錢";
+        }
+        return result || "零錢"; // 避免結果為空 (例如骨重剛好是0錢)
+    }
 
     // --- 視圖切換函式 ---
     function showMainQueryView() {
@@ -812,7 +1131,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- 2. Populate Initial Selectors ---
     function populateInitialSelectors() {
-        // ... (填充下拉選單的程式碼) ...
         // Populate Shengxiao for Year
         if (yearData && yearData.length > 0) {
             const shengxiaos = [...new Set(yearData.map(item => item.shengxiao))];
@@ -833,7 +1151,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (monthData && Object.keys(monthData).length > 0) {
             monthSelect.innerHTML = '<option value="">--選擇月份--</option>';
             const monthOrder = ["正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
-            monthOrder.forEach(monthKey => { 
+            monthOrder.forEach(monthKey => {
                 if (monthData[monthKey]) {
                     const option = document.createElement('option');
                     option.value = monthKey;
@@ -858,7 +1176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hourData && Object.keys(hourData).length > 0) {
             hourMainSelect.innerHTML = '<option value="">--選擇時辰--</option>';
             const hourOrder = ["子時", "丑時", "寅時", "卯時", "辰時", "巳時", "午時", "未時", "申時", "酉時", "戌時", "亥時"];
-            hourOrder.forEach(hourKey => { 
+            hourOrder.forEach(hourKey => {
                 if (hourData[hourKey]) {
                     const option = document.createElement('option');
                     option.value = hourKey;
@@ -875,6 +1193,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ganzhiSelect.innerHTML = '<option value="">--請先選生肖--</option>';
             if (this.value === "") {
                 ganzhiSelect.disabled = true;
+                ganzhiSelect.value = ""; // 清空天干地支選擇
                 return;
             }
             const selectedShengxiao = this.value;
@@ -892,7 +1211,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 ganzhiSelect.disabled = true;
             }
-            ganzhiSelect.value = "";
+            ganzhiSelect.value = ""; // 清空天干地支選擇，讓使用者必須選
         });
     }
 
@@ -903,57 +1222,84 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- 4. Query Button Logic ---
+    // --- 4. Query Button Logic (for main query) ---
     if (queryButton) {
         queryButton.addEventListener('click', function() {
-            // ... (查詢邏輯) ...
             resultOutputDiv.innerHTML = '';
             let resultsHtml = '';
             let hasResults = false;
 
             const selectedGanzhi = ganzhiSelect.value;
+            const selectedMonth = monthSelect.value;
+            const selectedDay = daySelect.value;
+            const selectedHour = hourMainSelect.value;
+            const selectedDetail = hourDetailSelect.value;
+
+            let yearW = null, monthW = null, dayW = null, hourW = null;
+
+            if (selectedGanzhi && boneWeightData && boneWeightData.year && boneWeightData.year[selectedGanzhi] !== undefined) {
+                yearW = boneWeightData.year[selectedGanzhi];
+            }
+            if (selectedMonth && boneWeightData && boneWeightData.month && boneWeightData.month[selectedMonth] !== undefined) {
+                monthW = boneWeightData.month[selectedMonth];
+            }
+            if (selectedDay && boneWeightData && boneWeightData.day && boneWeightData.day[selectedDay] !== undefined) {
+                dayW = boneWeightData.day[selectedDay];
+            }
+            if (selectedHour && boneWeightData && boneWeightData.hour && boneWeightData.hour[selectedHour] !== undefined) {
+                hourW = boneWeightData.hour[selectedHour];
+            }
+
             if (selectedGanzhi) {
                 const yearResult = yearData.find(item => item.ganzhi === selectedGanzhi);
                 if (yearResult) {
                     resultsHtml += `<div class="result-block">`;
-                    resultsHtml += displayYearResult(yearResult, true);
+                    resultsHtml += displayYearResult(yearResult, true, yearW);
                     resultsHtml += `</div>`;
                     hasResults = true;
                 }
             }
-            const selectedMonth = monthSelect.value;
             if (selectedMonth) {
                 const monthResult = monthData[selectedMonth];
                 if (monthResult) {
                     resultsHtml += `<div class="result-block">`;
-                    resultsHtml += displayMonthResult(selectedMonth, monthResult, true);
+                    resultsHtml += displayMonthResult(selectedMonth, monthResult, true, monthW);
                     resultsHtml += `</div>`;
                     hasResults = true;
                 }
             }
-            const selectedDay = daySelect.value;
             if (selectedDay) {
                 const dayResult = dayData.find(item => item.date === selectedDay);
                 if (dayResult) {
                     resultsHtml += `<div class="result-block">`;
-                    resultsHtml += displayDayResult(dayResult, true);
+                    resultsHtml += displayDayResult(dayResult, true, dayW);
                     resultsHtml += `</div>`;
                     hasResults = true;
                 }
             }
-            const selectedHour = hourMainSelect.value;
             if (selectedHour) {
                 const hourResult = hourData[selectedHour];
-                const selectedDetail = hourDetailSelect.value;
                 if (hourResult) {
                     resultsHtml += `<div class="result-block">`;
-                    resultsHtml += displayHourResult(selectedHour, hourResult, selectedDetail, true);
+                    resultsHtml += displayHourResult(selectedHour, hourResult, selectedDetail, true, hourW);
                     resultsHtml += `</div>`;
                     hasResults = true;
                 }
             }
 
             if (hasResults) {
+                if (selectedGanzhi && selectedMonth && selectedDay && selectedHour &&
+                    yearW !== null && monthW !== null && dayW !== null && hourW !== null) { // 確保所有骨重都有效
+                    const boneFortuneHtml = calculateAndDisplayBoneWeightFortune(
+                        selectedGanzhi, yearW,
+                        selectedMonth, monthW,
+                        selectedDay, dayW,
+                        selectedHour, hourW
+                    );
+                    if (boneFortuneHtml) {
+                        resultsHtml += boneFortuneHtml;
+                    }
+                }
                 resultOutputDiv.innerHTML = resultsHtml;
                 resultSectionDiv.classList.remove('hidden');
             } else {
@@ -966,7 +1312,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Reset Button Logic ---
     if (resetButton) {
         resetButton.addEventListener('click', function() {
-            // 重設所有下拉選單
             shengxiaoSelect.value = "";
             ganzhiSelect.innerHTML = '<option value="">--請先選生肖--</option>';
             ganzhiSelect.disabled = true;
@@ -975,29 +1320,27 @@ document.addEventListener('DOMContentLoaded', () => {
             hourMainSelect.value = "";
             hourDetailSelect.value = "main";
             hourDetailSelect.disabled = true;
-
-            // 清空並隱藏結果區
             resultOutputDiv.innerHTML = "";
             resultSectionDiv.classList.add('hidden');
-
-            // (可選) 將焦點移回第一個有意義的選擇器
-            // shengxiaoSelect.focus(); 
         });
     }
 
     // --- 5. Display Functions ---
-    // ... (displayYearResult, displayMonthResult, displayDayResult, displayHourResult 函式) ...
-    function displayYearResult(data, returnHtml = false) {
-        const html = `
-            <h3>${data.ganzhi}年生 (肖${data.shengxiao}，五行屬${data.wuxing})</h3>
-            <p>${data.description.replace(/\n/g, '<br>')}</p>
-        `;
+    function displayYearResult(data, returnHtml = false, yearQian = null) {
+        let html = `<h3>${data.ganzhi}年生 (肖${data.shengxiao}，五行屬${data.wuxing})</h3>`;
+        if (yearQian !== null && boneWeightData.year[data.ganzhi] !== undefined) {
+            html += `<p class="item-bone-weight"><strong>本年骨重：</strong> ${formatWeight(yearQian)}</p>`;
+        }
+        html += `<p>${data.description.replace(/\n/g, '<br>')}</p>`;
         if (returnHtml) return html;
-        resultOutputDiv.innerHTML = html; 
+        // resultOutputDiv.innerHTML = html; // Not needed if always called with returnHtml
     }
 
-    function displayMonthResult(monthName, data, returnHtml = false) {
+    function displayMonthResult(monthName, data, returnHtml = false, monthQian = null) {
         let html = `<h3>${monthName}生人</h3>`;
+        if (monthQian !== null && boneWeightData.month[monthName] !== undefined) {
+            html += `<p class="item-bone-weight"><strong>本月骨重：</strong> ${formatWeight(monthQian)}</p>`;
+        }
         if (data.description) {
             html += `<p>${data.description.replace(/\n/g, '<br>')}</p>`;
         }
@@ -1005,20 +1348,24 @@ document.addEventListener('DOMContentLoaded', () => {
             html += `<h4>詩曰：</h4><p class="poem">${data.poem.replace(/\n/g, '<br>')}</p>`;
         }
         if (returnHtml) return html;
-        resultOutputDiv.innerHTML = html;
+        // resultOutputDiv.innerHTML = html;
     }
 
-    function displayDayResult(data, returnHtml = false) {
-        const html = `
-            <h3>${data.date}生</h3>
-            <p>${data.description.replace(/\n/g, '<br>')}</p>
-        `;
+    function displayDayResult(data, returnHtml = false, dayQian = null) {
+        let html = `<h3>${data.date}生</h3>`;
+        if (dayQian !== null && boneWeightData.day[data.date] !== undefined) {
+            html += `<p class="item-bone-weight"><strong>本日骨重：</strong> ${formatWeight(dayQian)}</p>`;
+        }
+        html += `<p>${data.description.replace(/\n/g, '<br>')}</p>`;
         if (returnHtml) return html;
-        resultOutputDiv.innerHTML = html;
+        // resultOutputDiv.innerHTML = html;
     }
 
-    function displayHourResult(hourName, data, detailKey, returnHtml = false) {
+    function displayHourResult(hourName, data, detailKey, returnHtml = false, hourQian = null) {
         let html = `<h3>${hourName} <span class="range">${data.range || ''}</span></h3>`;
+        if (hourQian !== null && boneWeightData.hour[hourName] !== undefined) {
+            html += `<p class="item-bone-weight"><strong>本時辰骨重：</strong> ${formatWeight(hourQian)}</p>`;
+        }
         let mainContentHtml = '';
         let detailContentHtml = '';
         let mainContentAdded = false;
@@ -1053,23 +1400,79 @@ document.addEventListener('DOMContentLoaded', () => {
                 detailContentHtml += `<p>此時辰的 (${subTitle}) 細節資料暫缺。</p>`;
             }
         } else {
-            if (!mainContentAdded) { 
+            if (!mainContentAdded) {
                 mainContentHtml += "<p>此時辰主要描述或事業方面資料暫缺。</p>";
             }
         }
-        
         html += mainContentHtml + detailContentHtml;
-
         if (returnHtml) return html;
-        resultOutputDiv.innerHTML = html;
+        // resultOutputDiv.innerHTML = html;
+    }
+
+    // --- 6. Bone Weight Fortune Calculation and Display ---
+    function calculateAndDisplayBoneWeightFortune(ganzhi, yearQian, month, monthQian, day, dayQian, hour, hourQian) {
+        let totalQian = 0;
+        let calculationDetails = '';
+        let allWeightsValid = true;
+
+        // 直接使用傳入的錢數
+        if (yearQian !== undefined && yearQian !== null) {
+            calculationDetails += `<p><strong>年份 (${ganzhi})：</strong> ${formatWeight(yearQian)}</p>`;
+            totalQian += yearQian;
+        } else { allWeightsValid = false; calculationDetails += `<p><strong>年份 (${ganzhi})：</strong> 骨重資料缺失</p>`; }
+
+        if (monthQian !== undefined && monthQian !== null) {
+            calculationDetails += `<p><strong>月份 (${month})：</strong> ${formatWeight(monthQian)}</p>`;
+            totalQian += monthQian;
+        } else { allWeightsValid = false; calculationDetails += `<p><strong>月份 (${month})：</strong> 骨重資料缺失</p>`; }
+        
+        if (dayQian !== undefined && dayQian !== null) {
+            calculationDetails += `<p><strong>日期 (${day})：</strong> ${formatWeight(dayQian)}</p>`;
+            totalQian += dayQian;
+        } else { allWeightsValid = false; calculationDetails += `<p><strong>日期 (${day})：</strong> 骨重資料缺失</p>`; }
+
+        if (hourQian !== undefined && hourQian !== null) {
+            calculationDetails += `<p><strong>時辰 (${hour})：</strong> ${formatWeight(hourQian)}</p>`;
+            totalQian += hourQian;
+        } else { allWeightsValid = false; calculationDetails += `<p><strong>時辰 (${hour})：</strong> 骨重資料缺失</p>`; }
+
+
+        let html = `<div class="bone-weight-result-block">`;
+        html += `<h3>袁天罡稱骨命評</h3>`;
+        html += `<div class="bone-weight-details">${calculationDetails}</div>`;
+
+        if (!allWeightsValid) {
+            html += `<p class="bone-weight-total"><strong>總骨重：</strong> 無法計算 (部分骨重資料缺失)</p>`;
+            html += `</div>`; // Close bone-weight-result-block
+            return html;
+        }
+        
+        const totalWeightText = formatWeight(totalQian);
+        html += `<p class="bone-weight-total"><strong>總骨重：</strong> ${totalWeightText}</p>`;
+
+        const fortune = boneFortuneData ? boneFortuneData[totalQian.toString()] : null;
+
+        if (fortune) {
+            if (fortune.poem && fortune.poem.trim() !== "") { // 檢查詩詞是否為空
+                 // 使用 fortune.weightText (如果存在) 或剛計算的 totalWeightText 作為詩句前的標題
+                const poemTitle = fortune.weightText || totalWeightText;
+                html += `<h4>命評詩曰 (${poemTitle})：</h4><p class="bone-fortune-poem">${fortune.poem.replace(/\n/g, '<br>')}</p>`;
+            }
+            if (fortune.explanation && fortune.explanation.trim() !== "") {
+                html += `<h4>命評詳解：</h4><p class="bone-fortune-explanation">${fortune.explanation.replace(/\n/g, '<br>')}</p>`;
+            }
+        } else {
+            html += `<p>此總骨重 (${totalWeightText}) 的命評資料暫缺。</p>`;
+        }
+        html += `</div>`; // Close bone-weight-result-block
+        return html;
     }
 
 
-    // --- 6. Functions and Event Listeners for "View All" feature ---
+    // --- 7. Functions and Event Listeners for "View All" feature ---
     if (document.getElementById('viewAllYearBtn')) {
         document.getElementById('viewAllYearBtn').addEventListener('click', () => displayAllData('year'));
     }
-    // ... (其他 'View All' 按鈕的監聽器) ...
     if (document.getElementById('viewAllMonthBtn')) {
         document.getElementById('viewAllMonthBtn').addEventListener('click', () => displayAllData('month'));
     }
@@ -1079,67 +1482,85 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('viewAllHourBtn')) {
         document.getElementById('viewAllHourBtn').addEventListener('click', () => displayAllData('hour'));
     }
-
+    if (document.getElementById('viewAllBoneFortuneBtn')) {
+        document.getElementById('viewAllBoneFortuneBtn').addEventListener('click', displayAllBoneFortunes);
+    }
     if (backToMainQueryBtn) {
         backToMainQueryBtn.addEventListener('click', showMainQueryView);
     }
 
     function displayAllData(type) {
-        // ... (displayAllData 函式) ...
         let html = '';
         let title = '';
         const itemContainerStart = '<div class="data-item-block">';
         const itemContainerEnd = '</div>';
 
         switch (type) {
+            // ... (case 'year', 'month', 'day' 保持不變) ...
             case 'year':
-                title = "全部「年」資料";
-                if (yearData && yearData.length > 0) {
+                title = "全部「年」資料 (含骨重)";
+                if (yearData && yearData.length > 0 && boneWeightData && boneWeightData.year) {
                     yearData.forEach(item => {
                         html += itemContainerStart;
-                        html += displayYearResult(item, true);
+                        const yearW = boneWeightData.year[item.ganzhi];
+                        html += displayYearResult(item, true, yearW);
                         html += itemContainerEnd;
                     });
-                } else { html = "<p>「年」資料未載入或為空。</p>"; }
+                } else { html = "<p>「年」資料或其骨重資料未載入/為空。</p>"; }
                 break;
             case 'month':
-                title = "全部「月」資料";
-                if (monthData && Object.keys(monthData).length > 0) {
+                title = "全部「月」資料 (含骨重)";
+                if (monthData && Object.keys(monthData).length > 0 && boneWeightData && boneWeightData.month) {
                     const monthOrder = ["正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
                     monthOrder.forEach(monthKey => {
                         if (monthData[monthKey]) {
                             html += itemContainerStart;
-                            html += displayMonthResult(monthKey, monthData[monthKey], true);
+                            const monthW = boneWeightData.month[monthKey];
+                            html += displayMonthResult(monthKey, monthData[monthKey], true, monthW);
                             html += itemContainerEnd;
                         }
                     });
-                } else { html = "<p>「月」資料未載入或為空。</p>"; }
+                } else { html = "<p>「月」資料或其骨重資料未載入/為空。</p>"; }
                 break;
             case 'day':
-                title = "全部「日」資料";
-                if (dayData && dayData.length > 0) {
+                title = "全部「日」資料 (含骨重)";
+                if (dayData && dayData.length > 0 && boneWeightData && boneWeightData.day) {
                     dayData.forEach(item => {
                         html += itemContainerStart;
-                        html += displayDayResult(item, true);
+                        const dayW = boneWeightData.day[item.date];
+                        html += displayDayResult(item, true, dayW);
                         html += itemContainerEnd;
                     });
-                } else { html = "<p>「日」資料未載入或為空。</p>"; }
+                } else { html = "<p>「日」資料或其骨重資料未載入/為空。</p>"; }
                 break;
+
             case 'hour':
-                title = "全部「時辰」資料";
-                if (hourData && Object.keys(hourData).length > 0) {
+                title = "全部「時辰」資料 (含骨重及細節)"; // 修改標題以反映內容變化
+                if (hourData && Object.keys(hourData).length > 0 && boneWeightData && boneWeightData.hour) {
                     const hourOrder = ["子時", "丑時", "寅時", "卯時", "辰時", "巳時", "午時", "未時", "申時", "酉時", "戌時", "亥時"];
                     hourOrder.forEach(hourKey => {
                         if (hourData[hourKey]) {
                             const item = hourData[hourKey];
+                            const hourW = boneWeightData.hour[hourKey];
+                            
                             html += itemContainerStart;
                             html += `<h3>${hourKey} <span class="range">${item.range || ''}</span></h3>`;
+
+                            // 顯示單項骨重
+                            if (hourW !== null && boneWeightData.hour[hourKey] !== undefined) {
+                                html += `<p class="item-bone-weight"><strong>本時辰骨重：</strong> ${formatWeight(hourW)}</p>`;
+                            }
+
+                            // 顯示主要描述
                             if (item.main_description && item.main_description.trim() !== "") {
                                 html += `<h4>主要描述：</h4><p>${item.main_description.replace(/\n/g, '<br>')}</p>`;
                             }
+                            // 顯示事業方面
                             if (item.career && item.career.trim() !== "") {
                                 html += `<h4>事業方面：</h4><p class="career">${item.career.replace(/\n/g, '<br>')}</p>`;
                             }
+
+                            // 顯示頭、中、末細節
                             if (item.details) {
                                 ["頭", "中", "末"].forEach(detailKey => {
                                     const detailData = item.details[detailKey];
@@ -1148,12 +1569,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                         if (detailKey === "頭") subTitle = "時頭生";
                                         else if (detailKey === "中") subTitle = "時中生";
                                         else if (detailKey === "末") subTitle = "時末生";
+                                        
                                         html += `<hr class="divider" style="margin-top:10px; margin-bottom:10px;">`;
-                                        html += `<h5>${subTitle} (細分)：</h5>`;
+                                        html += `<h5>${subTitle} (細分)：</h5>`; // 使用 h5
                                         if (detailData.description && detailData.description.trim() !== "") {
                                             html += `<p>${detailData.description.replace(/\n/g, '<br>')}</p>`;
                                         }
                                         if (detailData.poem && detailData.poem.trim() !== "") {
+                                            // 在 script.js 的 displayAllData 函式中，h6 的 style 屬性是直接寫在 HTML 標籤內的
                                             html += `<h6 style="font-weight:normal; font-style:italic; margin-top:5px; margin-bottom:3px;">又曰：</h6><p class="poem">${detailData.poem.replace(/\n/g, '<br>')}</p>`;
                                         }
                                     }
@@ -1162,7 +1585,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             html += itemContainerEnd;
                         }
                     });
-                } else { html = "<p>「時辰」資料未載入或為空。</p>"; }
+                } else { html = "<p>「時辰」資料或其骨重資料未載入/為空。</p>"; }
                 break;
             default:
                 html = "<p>未知的資料類型。</p>";
@@ -1170,8 +1593,43 @@ document.addEventListener('DOMContentLoaded', () => {
         showFullDataView(title);
         if (fullDataViewOutput) fullDataViewOutput.innerHTML = html;
     }
+function displayAllBoneFortunes() {
+    let html = '';
+    const title = "全部「袁天罡稱骨命評」總覽";
+    const itemContainerStart = '<div class="data-item-block">'; // 可以復用現有樣式
+    const itemContainerEnd = '</div>';
 
+    if (boneFortuneData && Object.keys(boneFortuneData).length > 0) {
+        // 為了按骨重排序顯示，我們先獲取所有鍵並排序
+        // 鍵是字串形式的錢數，例如 "21", "22", ..., "72"
+        const sortedWeights = Object.keys(boneFortuneData).sort((a, b) => parseInt(a) - parseInt(b));
 
+        sortedWeights.forEach(weightKey => {
+            const fortune = boneFortuneData[weightKey];
+            if (fortune) {
+                html += itemContainerStart;
+                // 顯示總骨重 (例如：二兩一錢)
+                html += `<h3>${fortune.weightText || formatWeight(parseInt(weightKey))}</h3>`;
+
+                // 顯示命評詩句
+                if (fortune.poem && fortune.poem.trim() !== "") {
+                    // 詩句前的 "XXX之命" 斷語應該已經包含在 fortune.poem 的開頭了
+                    html += `<h4>命評詩曰：</h4><p class="bone-fortune-poem">${fortune.poem.replace(/\n/g, '<br>')}</p>`;
+                }
+                // 顯示命評詳解
+                if (fortune.explanation && fortune.explanation.trim() !== "") {
+                    html += `<h4>命評詳解：</h4><p class="bone-fortune-explanation">${fortune.explanation.replace(/\n/g, '<br>')}</p>`;
+                }
+                html += itemContainerEnd;
+            }
+        });
+    } else {
+        html = "<p>「稱骨命評」資料未載入或為空。</p>";
+    }
+
+    showFullDataView(title); // 使用現有的函式切換視圖並設定標題
+    if (fullDataViewOutput) fullDataViewOutput.innerHTML = html; // 將生成的 HTML 放入顯示區
+}
     // --- Initial setup ---
     populateInitialSelectors();
     showMainQueryView(); // 預設顯示主查詢介面

@@ -90,24 +90,23 @@ legend {
     box-sizing: border-box;
 }
 
-/* --- 按鈕區域和按鈕樣式修改 --- */
 .action-buttons {
-    display: flex;         /* 啟用 Flexbox 佈局 */
-    gap: 15px;           /* 按鈕之間的間距 */
+    display: flex;
+    gap: 15px;
     margin-top: 20px;
 }
 
 .action-buttons button {
-    flex-grow: 1;          /* 讓按鈕平分父容器的可用空間 */
-    padding: 12px 10px;    /* 調整 padding，可以根據需要減少左右 padding */
+    flex-grow: 1;
+    padding: 12px 10px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 1rem;       /* 可以略微減小字體大小以適應寬度 */
+    font-size: 1rem;
     transition: background-color 0.3s ease;
-    white-space: nowrap;   /* 強制文字不換行 */
-    text-align: center;    /* 確保文字居中 */
-    min-width: 120px;      /* 設定一個最小寬度，避免過窄 (可調整) */
+    white-space: nowrap;
+    text-align: center;
+    min-width: 120px;
 }
 
 button#queryButton {
@@ -132,8 +131,6 @@ button#resetButton {
 button#resetButton:hover {
     background-color: #ec971f;
 }
-/* --- 按鈕區域和按鈕樣式修改結束 --- */
-
 
 .specific-selection {
     padding-left: 0;
@@ -157,14 +154,14 @@ button#resetButton:hover {
 }
 .full-view-controls button {
     margin: 5px;
-    padding: 10px 15px;
+    padding: 10px 10px;
     background-color: #007bff;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.95rem;
-    white-space: nowrap; /* 確保這些按鈕文字也不換行 */
+    font-size: 0.9rem;
+    white-space: nowrap;
 }
 .full-view-controls button:hover {
     background-color: #0056b3;
@@ -179,72 +176,79 @@ button#resetButton:hover {
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    white-space: nowrap; /* 確保返回按鈕文字不換行 */
+    white-space: nowrap;
 }
 .back-button:hover {
     background-color: #545b62;
 }
-/* --- 完整資料瀏覽區塊的樣式結束 --- */
 
-
-#resultOutput {
+/* --- 查詢結果與完整資料瀏覽共用樣式 --- */
+#resultOutput, #fullDataViewOutput {
     margin-top: 20px;
     padding: 15px;
     background-color: #e9e9e9;
     border-radius: 4px;
 }
 
-.result-block {
+.result-block, .data-item-block { /* 用於分隔每個獨立的查詢結果或總覽條目 */
     border-bottom: 1px dashed #bbb;
     padding-bottom: 20px;
     margin-bottom: 20px;
 }
 
-.result-block:last-child {
+.result-block:last-child, .data-item-block:last-child {
     border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
 }
 
-#resultOutput h3 {
+#resultOutput h3, #fullDataViewOutput h3 { /* 民俗命評結果主標題 */
     margin-top: 0;
     color: #77aaff;
     margin-bottom: 10px;
 }
-#resultOutput h4 {
+#resultOutput h4, #fullDataViewOutput h4 { /* 民俗命評結果次標題 (如詩曰、事業) */
     margin-top: 15px;
     margin-bottom: 8px;
     color: #444;
     font-size: 1.1em;
 }
-#resultOutput h5 {
+#resultOutput h5, #fullDataViewOutput h5 { /* 民俗命評結果更小標題 (如又曰) */
     margin-top: 10px;
     margin-bottom: 5px;
     color: #555;
     font-size: 1em;
     font-weight: bold;
 }
-#resultOutput h6 { /* Style for "又曰：" if used as h6 */
-    font-weight:normal; 
-    font-style:italic; 
-    margin-top:5px; 
+#resultOutput h6, #fullDataViewOutput h6 { /* 例如 "又曰：" 用在總覽時辰中 */
+    font-weight:normal;
+    font-style:italic;
+    margin-top:5px;
     margin-bottom:3px;
     color: #555;
 }
-#resultOutput p {
+#resultOutput p, #fullDataViewOutput p {
     margin-bottom: 10px;
     line-height: 1.7;
 }
 #resultOutput .poem, 
-#resultOutput .career, 
-#resultOutput .range {
+#fullDataViewOutput .poem {
     font-style: italic;
     color: #555;
     margin-bottom: 15px;
     padding-left: 15px;
     border-left: 2px solid #aaa;
 }
-#resultOutput .range {
+#resultOutput .career,
+#fullDataViewOutput .career {
+    font-style: italic;
+    color: #555;
+    margin-bottom: 15px;
+    padding-left: 15px;
+    border-left: 2px solid #aaa;
+}
+#resultOutput .range,
+#fullDataViewOutput .range { /* 時辰的時間範圍 */
     font-style: normal;
     color: #666;
     font-size: 0.9em;
@@ -253,6 +257,75 @@ button#resetButton:hover {
     border-left: none;
     padding-left: 0;
 }
+
+/* --- 新增：袁天罡稱骨算命結果區塊樣式 --- */
+.bone-weight-result-block {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 2px solid #007bff; /* 藍色分隔線 */
+}
+
+.bone-weight-result-block h3 { /* 稱骨結果的主標題 */
+    color: #0056b3; /* 深藍色 */
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.bone-weight-details p { /* 顯示年月日時各骨重 */
+    margin-bottom: 8px;
+    font-size: 0.95em;
+}
+
+.bone-weight-details strong { /* 例如 "年份 (甲子)：" */
+    display: inline-block;
+    width: 130px; /* 調整寬度以對齊，根據最長標題調整 */
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.bone-weight-total { /* 顯示總骨重 */
+    font-weight: bold;
+    color: #d9534f; /* 紅色 */
+    font-size: 1.1em;
+    margin-top: 10px;
+    text-align: center; /* 總骨重也置中一下 */
+    padding: 5px;
+    background-color: #fdf5e6; /* 給個淺背景 */
+    border-radius: 3px;
+}
+
+.bone-fortune-poem { /* 稱骨命評詩句 */
+    font-style: italic;
+    white-space: pre-line; /* 保留詩句中的換行 */
+    background-color: #f0f8ff; /* 淺藍色背景 */
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+    border-left: 3px solid #007bff; /* 藍色左邊框 */
+    line-height: 1.8; /* 詩句行高可略大 */
+}
+
+.bone-fortune-explanation { /* 稱骨命評解釋 */
+    margin-top: 10px;
+    line-height: 1.7;
+    font-size: 0.95em;
+    color: #444;
+}
+
+/* --- 單項骨重顯示樣式 (用於民俗命評旁和總覽中) --- */
+.item-bone-weight {
+    font-size: 0.9em;
+    color: #4682B4; /* 鋼青色，使其與民俗命評的顏色有所區分 */
+    font-style: normal; /* 不用斜體，以示區別 */
+    margin-top: 3px;
+    margin-bottom: 7px;
+    padding-left: 10px;
+    border-left: 2px solid #4682B4;
+}
+.item-bone-weight strong {
+    font-weight: bold;
+}
+
 
 hr.divider { /* 分隔線樣式 */
     border: 0;

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>彩券摸彩箱抽獎程式V2.0</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>彩券摸彩箱抽獎程式單機版</h1>
+    </header>
+
+    <main>
+      <h2 class="section-title">摸彩券設定</h2>
+      <p>請設定摸彩券的起訖序號，每本序號請注意不能重疊或重複。</p>
+      <table id="ticketBooks">
+        <colgroup>
+            <col class="book-name-col">
+            <col class="count-col">
+            <col class="count-col">
+            <col class="action-col">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>摸彩券本</th>
+            <th>起始序號</th>
+            <th>結束序號</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          </tbody>
+      </table>
+      <button onclick="addTicketBook()" class="btn btn-add">新增摸彩券本</button>
+      
+      <h2 class="section-title">排除號碼設定 (選填)</h2>
+      <p>若有作廢或需排除的號碼，請在此輸入，並以「逗號」分隔。</p>
+      <textarea id="excludedNumbersInput" rows="3" placeholder="例如：101,105,233"></textarea>
+
+      <div id="errorMessage" class="hidden"></div>
+
+      <h2 class="section-title">獎項設定</h2>
+      <table id="prizeTable">
+        <colgroup>
+            <col class="prize-name-col">
+            <col class="count-col">
+            <col class="count-col">
+            <col class="action-col">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>獎項名稱</th>
+            <th>正取名額</th>
+            <th>備取名額<br><small>(0為不啟用)</small></th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+            </tbody>
+      </table>
+      <button onclick="addPrizeCategory()" class="btn btn-add">新增獎項類別</button>
+      
+      <button onclick="startLottery()" id="startLotteryButton">開始抽獎</button>
+      <button onclick="exportResults()" id="exportResultsButton" disabled>匯出中獎名單</button>
+
+      <div id="results-wrapper" class="hidden">
+        <h2 class="section-title">中獎名單</h2>
+        <div id="results"></div>
+      </div>
+    </main>
+    
+    <footer>
+        <p>Copyright &copy; <span id="copyright-year"></span> fan666rog & Gemini 編寫. All Rights Reserved.</p>
+    </footer>
+  </div>
+
+  <script>
+    function addTicketBook() {
+      let table = document.getElementById("ticketBooks").getElementsByTagName('tbody')[0];
+      let nextBookNumber = 1;
+      const existingNumbers = new Set(Array.from(table.rows).map(row => parseInt(row.cells[0].innerText.split(" ")[1])));
+      while (existingNumbers.has(nextBookNumber)) {
+          nextBookNumber++;
+      }
+
+      let row = table.insertRow(-1);
+      row.insertCell(0).innerHTML = "摸彩券本 " + nextBookNumber;
+      row.insertCell(1).innerHTML = '<input type="number" min="1" placeholder="例如: 1">';
+      row.insertCell(2).innerHTML = '<input type="number" min="1" placeholder="例如: 50">';
+      row.insertCell(3).innerHTML = '<button onclick="deleteRow(this)" class="btn-delete">刪除</button>';
+    }
+
+    function addPrizeCategory() {
+      let table = document.getElementById("prizeTable").getElementsByTagName('tbody')[0];
+      let row = table.insertRow(-1);
+      row.insertCell(0).innerHTML = '<input type="text" placeholder="例如：頭獎">';
+      row.insertCell(1).innerHTML = '<input type="number" min="0" value="1">';
+      row.insertCell(2).innerHTML = '<input type="number" min="0" value="0">';
+      row.insertCell(3).innerHTML = '<button onclick="deleteRow(this)" class="btn-delete">刪除</button>';
+    }
+
+    function deleteRow(btn) {
+      let row = btn.parentNode.parentNode;
+      row.parentNode.removeChild(row);
+    }
+
+    function startLottery() {
+      const ticketBooksTable = document.getElementById("ticketBooks").getElementsByTagName('tbody')[0];
+      const prizeTable = document.getElementById("prizeTable").getElementsByTagName('tbody')[0];
+      const errorMessageDiv = document.getElementById("errorMessage");
+      
+      let prizes = [];
+      let winners = {};
+      let errorMessages = [];
+      let ticketBookInfo = [];
+      
+      errorMessageDiv.innerHTML = "";
+      errorMessageDiv.classList.add('hidden');
+
+      // === 優化驗證邏輯 START ===
+      let ticketRanges = [];
+
+      // 1A. 讀取所有彩券本區間，並進行基礎驗證
+      for (let i = 0; i < ticketBooksTable.rows.length; i++) {
+        let row = ticketBooksTable.rows[i];
+        let bookNumberText = row.cells[0].innerText;
+        let start = row.cells[1].children[0].value;
+        let end = row.cells[2].children[0].value;
+
+        if (start.trim() === "" || end.trim() === "") {
+          errorMessages.push(`錯誤：${bookNumberText} 的起訖序號不可為空白。`);
+          continue; // 跳過此行，繼續檢查下一行
+        }
+        
+        let startNum = parseInt(start);
+        let endNum = parseInt(end);
+
+        if (endNum < startNum) {
+          errorMessages.push(`錯誤：${bookNumberText} 的結束序號 (${endNum}) 不能小於起始序號 (${startNum})。`);
+        }
+        ticketRanges.push({ name: bookNumberText, start: startNum, end: endNum });
+      }
+
+      // 1B. 進行區間的兩兩比對，找出所有重疊
+      for (let i = 0; i < ticketRanges.length; i++) {
+        for (let j = i + 1; j < ticketRanges.length; j++) {
+            const rangeA = ticketRanges[i];
+            const rangeB = ticketRanges[j];
+            // 判斷重疊的條件：A的起點 <= B的終點 AND A的終點 >= B的起點
+            if (rangeA.start <= rangeB.end && rangeA.end >= rangeB.start) {
+                errorMessages.push(`錯誤：${rangeA.name} 與 ${rangeB.name} 的序號範圍有重疊。`);
+            }
+        }
+      }
+
+      // 2. 產生最終的抽獎池 (如果前面沒有錯誤)
+      let allTickets = new Set();
+      if (errorMessages.length === 0) {
+          ticketRanges.forEach(range => {
+              ticketBookInfo.push(`${range.name} (${range.start} ~ ${range.end})`);
+              for (let k = range.start; k <= range.end; k++) {
+                  allTickets.add(k);
+              }
+          });
+      }
+      // === 優化驗證邏輯 END ===
+
+
+      // 3. 讀取並驗證排除號碼
+      const excludedNumbersInput = document.getElementById('excludedNumbersInput').value.trim();
+      const excludedNumbersSet = new Set();
+      if (excludedNumbersInput !== "") {
+          const parsedExcludes = excludedNumbersInput.split(',')
+                                                    .map(s => s.trim()) 
+                                                    .filter(s => s !== "") 
+                                                    .map(Number);
+
+          for(const num of parsedExcludes) {
+              if (isNaN(num)) {
+                  errorMessages.push(`錯誤：排除號碼中包含非數字字元。`);
+                  continue;
+              }
+              if (allTickets.size > 0 && !allTickets.has(num)) { // 只有在抽獎池產生後才驗證
+                  errorMessages.push(`錯誤：欲排除的號碼 ${num} 不在任何設定的彩券本範圍內。`);
+              }
+              excludedNumbersSet.add(num);
+          }
+      }
+
+      // 4. 讀取獎項設定
+      let totalPrizeCount = 0;
+      for (let i = 0; i < prizeTable.rows.length; i++) {
+        let row = prizeTable.rows[i];
+        let prizeName = row.cells[0].children[0].value.trim();
+        let prizeCountStr = row.cells[1].children[0].value.trim();
+        let backupCountStr = row.cells[2].children[0].value.trim();
+        
+        if (prizeName === "" || prizeCountStr === "" || backupCountStr === "") {
+            errorMessages.push('錯誤：獎項的「名稱」和「名額」輸入框不可為空白。');
+            continue; 
+        }
+
+        let prizeCountNum = parseInt(prizeCountStr);
+        let backupCountNum = parseInt(backupCountStr);
+
+        if (prizeCountNum === 0 && backupCountNum > 0) {
+            errorMessages.push(`錯誤：獎項「${prizeName}」的正取名額為0，因此不能設定備取名額。`);
+        }
+
+        totalPrizeCount += prizeCountNum + backupCountNum;
+        prizes.push({name: prizeName, count: prizeCountNum, backupCount: backupCountNum});
+      }
+
+      // 5. 從抽獎池中移除已驗證的排除號碼
+      excludedNumbersSet.forEach(num => {
+          allTickets.delete(num);
+      });
+      
+      // 6. 最終驗證
+      if (allTickets.size < totalPrizeCount) {
+        errorMessages.push(`注意：有效券數 (${allTickets.size}) 比獎品總數量 (${totalPrizeCount}) 還少，無法抽出所有獎項。`);
+      }
+      if (prizes.length === 0) errorMessages.push('錯誤：請至少設定一個獎項。');
+      if (ticketBooksTable.rows.length === 0) errorMessages.push('錯誤：請至少設定一本摸彩券。');
+
+
+      // 7. 顯示錯誤或執行抽獎
+      if (errorMessages.length > 0) {
+        errorMessageDiv.innerHTML = [...new Set(errorMessages)].join("<br>"); // 使用 Set 去除可能重複的錯誤訊息
+        errorMessageDiv.classList.remove('hidden');
+        return; 
+      }
+
+      let drawableTickets = Array.from(allTickets);
+      prizes.sort((a, b) => (b.count + b.backupCount) - (a.count + a.backupCount));
+
+      let totalCount = drawableTickets.length;
+      
+      for (let prize of prizes) {
+        winners[prize.name] = [];
+        for (let i = 0; i < prize.count; i++) {
+          if (drawableTickets.length === 0) break;
+          let randomIndex = Math.floor(Math.random() * drawableTickets.length);
+          winners[prize.name].push(drawableTickets.splice(randomIndex, 1)[0]);
+        }
+      }
+
+      for (let prize of prizes) {
+        for (let i = 0; i < prize.backupCount; i++) {
+          if (drawableTickets.length === 0) break;
+          let randomIndex = Math.floor(Math.random() * drawableTickets.length);
+          let winner = drawableTickets.splice(randomIndex, 1)[0];
+          winners[prize.name].push(winner + " (備" + (i + 1) + ")");
+        }
+      }
+
+      let resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
+      
+      resultsDiv.innerHTML += `
+        <div class="summary">
+            <h4>抽獎設定總覽</h4>
+            <p><strong>彩券本範圍：</strong> ${ticketBookInfo.join('； ')}</p>
+            <p><strong>排除的號碼：</strong> ${excludedNumbersInput || '無'}</p>
+            <p><strong>本次有效抽獎券數為：</strong> ${totalCount}</p>
+        </div>
+      `;
+
+      for (let prizeName in winners) {
+        resultsDiv.innerHTML += `<h3>${prizeName}</h3>`;
+        if(winners[prizeName].length > 0) {
+            let winnerHtml = winners[prizeName].map(winner => {
+                if (typeof winner === 'string' && winner.includes('(備')) {
+                    return `<span class="backup-winner">${winner}</span>`;
+                } else {
+                    return `<span class="main-winner">${winner}</span>`;
+                }
+            }).join('<span class="comma">, </span>');
+            resultsDiv.innerHTML += `<p class="winner-list">${winnerHtml}</p>`;
+        } else {
+            const prizeSetting = prizes.find(p => p.name === prizeName);
+            if (prizeSetting && (prizeSetting.count + prizeSetting.backupCount > 0)) {
+                resultsDiv.innerHTML += `<p class="winner-list">此獎項沒有足夠的券可抽</p>`;
+            }
+        }
+      }
+      
+      document.getElementById("results-wrapper").classList.remove('hidden');
+      document.getElementById("exportResultsButton").disabled = false;
+      document.getElementById("startLotteryButton").disabled = true;
+    }
+
+    function exportResults() {
+      let resultsDiv = document.getElementById("results");
+      let resultsText = resultsDiv.innerText.replace(/\n\n/g, '\n'); 
+      let blob = new Blob([resultsText], {type: "text/plain;charset=utf-8"});
+      let link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "lottery_results.txt";
+      link.click();
+    }
+
+    document.getElementById('copyright-year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

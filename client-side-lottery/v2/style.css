@@ -1,0 +1,252 @@
+/* --- 整體與版面配置 --- */
+body {
+    font-family: '微軟正黑體', 'Microsoft JhengHei', 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    margin: 0;
+    padding: 2rem 1rem;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #ffffff;
+    padding: 1.5rem 2rem 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+header {
+    text-align: center;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 2rem;
+}
+
+header h1 {
+    color: #007bff;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.section-title {
+    color: #343a40;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+main > p {
+    color: #6c757d;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+/* --- 表格樣式 --- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    table-layout: fixed; 
+}
+
+/* 摸彩券本表格 */
+#ticketBooks .book-name-col { width: 30%; }
+#ticketBooks .count-col      { width: 30%; }
+#ticketBooks .action-col     { width: 10%; text-align: center; }
+
+/* 獎項設定表格 */
+#prizeTable .prize-name-col { width: 50%; }
+#prizeTable .count-col      { width: 20%; }
+#prizeTable .action-col     { width: 10%; text-align: center; }
+
+
+th, td {
+    padding: 0.85rem;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid #dee2e6;
+}
+
+thead th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    border-bottom-width: 2px;
+}
+
+thead th small {
+    display: block;
+    font-weight: normal;
+    color: #6c757d;
+    font-size: 0.8em;
+}
+
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* --- 表單元素 (輸入框) --- */
+input[type="number"],
+input[type="text"],
+textarea {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-size: 1rem;
+    font-family: inherit; 
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+textarea:focus {
+    outline: none;
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+#excludedNumbersInput {
+    margin-bottom: 1rem;
+}
+
+
+/* --- 按鈕系統 --- */
+.btn, button {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: center;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 0.25rem;
+    vertical-align: middle;
+}
+
+.btn-add {
+    background-color: #28a745;
+    color: white;
+}
+.btn-add:hover { background-color: #218838; }
+
+#startLotteryButton {
+    background-color: #007bff;
+    color: white;
+    width: 100%;
+    margin-top: 2rem;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0.8rem;
+    font-size: 1.2rem;
+}
+#startLotteryButton:hover { background-color: #0056b3; }
+
+#exportResultsButton {
+    background-color: #6c757d;
+    color: white;
+    width: 100%;
+    margin-top: 0.5rem;
+    margin-left: 0;
+    margin-right: 0;
+}
+#exportResultsButton:hover { background-color: #5a6268; }
+
+.btn-delete {
+    background-color: #dc3545;
+    color: white;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+}
+.btn-delete:hover { background-color: #c82333; }
+
+button:disabled {
+    background-color: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* --- 訊息與結果區塊 --- */
+.hidden {
+    display: none;
+}
+
+#errorMessage {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
+    color: #721c24;
+}
+
+#results-wrapper {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border: 1px solid #e9ecef;
+}
+
+#results h3 {
+    color: #0056b3;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 0.5rem;
+    margin-top: 2rem;
+}
+
+/* === 新增：結果總覽區塊樣式 === */
+#results .summary {
+    background-color: #e2e3e5;
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 2rem;
+}
+#results .summary h4 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    color: #343a40;
+}
+#results .summary p {
+    margin: 0.25rem 0;
+    font-size: 0.95rem;
+}
+
+.winner-list {
+    background-color: #fff;
+    padding: 0.75rem;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    word-break: break-all;
+    line-height: 1.8; /* 增加行高讓數字更清晰 */
+}
+
+/* === 新增：中獎號碼顏色樣式 === */
+.main-winner {
+    color: #dc3545; /* 紅色 */
+    font-weight: bold;
+}
+.backup-winner {
+    color: #007bff; /* 藍色 */
+}
+.comma {
+    color: #333; /* 預設文字顏色 */
+    font-weight: normal;
+}
+
+
+/* --- 頁尾版權 --- */
+footer {
+    text-align: center;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e9ecef;
+    color: #6c757d;
+    font-size: 0.9rem;
+}

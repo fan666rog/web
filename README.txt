@@ -6,7 +6,7 @@
 容我介紹一下程式名稱
 client-side-lottery / 彩券-摸彩箱抽獎程式
 bazi-data-query-viewer / 生辰命評-袁天罡秤骨命評 雙系統民俗查詢小程式
-wheel-prize-picker / 輪盤抽獎
+wheel-prize-picker / 輪盤抽獎(含權重版)
 Retro Mary: Pocket Money Killer / 復古小瑪莉：零用錢殺手
 game-snake / 貪食蛇小遊戲
 104_87key_test / 鍵盤測試小程式

@@ -1,0 +1,61 @@
+/* 基本設定 */
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #1a1a1a; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 10px; box-sizing: border-box; }
+#game-machine { background: linear-gradient(180deg, #004d00, #003300); border: 5px solid #333; box-shadow: 0 0 20px rgba(0,0,0,0.7), inset 0 0 15px rgba(255,255,255,0.1); border-radius: 20px; padding: 15px; width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; }
+.machine-header { color: #ffd700; font-size: 24px; font-weight: bold; text-align: center; text-shadow: 2px 2px 4px #000; }
+.display-panel { background-color: #2c2c2c; border: 2px solid #555; border-radius: 10px; padding: 10px; display: flex; justify-content: space-around; gap: 10px; }
+.display-box { text-align: center; width: 45%; }
+.display-box label { color: #fff; font-weight: bold; font-size: 16px; }
+.seven-segment { background-color: #000; color: #ff4141; font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: bold; padding: 5px; border-radius: 5px; letter-spacing: 2px; text-shadow: 0 0 5px #ff4141; }
+#main-board-container { background-color: #a52a2a; border: 4px solid #6b2020; padding: 10px; border-radius: 5px; }
+#main-board { display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(7, 1fr); gap: 5px; background-color: #000; padding: 5px; }
+.track-item { background-color: #f0f0f0; border: 2px solid #555; border-radius: 4px; display: flex; flex-direction: column; justify-content: center; align-items: center; aspect-ratio: 1 / 1; font-size: clamp(16px, 3vw, 20px); font-weight: bold; position: relative; transition: all 0.05s; }
+.track-item.active { background-color: #ffd700; box-shadow: 0 0 15px 5px #ffc400; transform: scale(1.1); z-index: 10; }
+#center-art { grid-column: 2 / 7; grid-row: 2 / 7; background: linear-gradient(135deg, #4169e1, #1e90ff); border-radius: 10px; border: 2px solid #fff; display: flex; justify-content: center; align-items: center; }
+.art-content { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.digits-container { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 4px 0; }
+.jp-text { color: #ff0000; font-size: 24px; font-weight: bold; -webkit-text-stroke: 1px yellow; text-shadow: 2px 2px 2px #000; }
+.seven-segment.small { font-size: 20px; padding: 2px 5px; margin: 0; display: inline-block; }
+.blue-digit { color: #00bfff; text-shadow: 0 0 5px #00bfff; }
+.characters { font-size: 28px; }
+#betting-area { display: flex; flex-wrap: nowrap; justify-content: center; gap: 5px; padding: 8px; }
+.bet-item { background: linear-gradient(180deg, #666, #444); border: 2px solid #888; border-radius: 8px; color: white; padding: 5px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; flex: 1; min-width: 40px; }
+.bet-icon { font-size: clamp(18px, 4vw, 22px); margin: 2px 0; }
+.bet-payout { font-size: clamp(10px, 2.5vw, 12px); font-weight: bold; color: #ffc400; background-color: rgba(0,0,0,0.3); padding: 0 4px; border-radius: 4px; margin-bottom: 2px; }
+.bet-amount { background-color: #000; color: #00ff00; font-family: 'Courier New', Courier, monospace; font-weight: bold; font-size: clamp(16px, 3.5vw, 18px); width: 100%; text-align: center; padding: 2px 0; border-radius: 3px; border: 1px solid #333; }
+.bet-button { background: linear-gradient(180deg, #888, #666); border: 1px solid #aaa; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px; line-height: 1; padding: 2px 6px; width: 80%; }
+.bet-button:active { background: linear-gradient(180deg, #666, #555); }
+#control-panel { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; align-items: center; }
+.ctrl-button { border: none; border-radius: 8px; padding: 12px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; box-shadow: 0 4px rgba(0,0,0,0.4); transition: all 0.1s ease; border-bottom: 4px solid rgba(0,0,0,0.4); width: auto; min-height: 50px; display: flex; justify-content: center; align-items: center; }
+.ctrl-button:active { transform: translateY(2px); box-shadow: 0 2px #666; }
+.ctrl-button:disabled { opacity: 0.6; cursor: not-allowed; }
+.ctrl-button.green { background-color: #228b22; }
+.ctrl-button.yellow { background-color: #daa520; }
+.ctrl-button.blue { background-color: #1e90ff; }
+.ctrl-button.red { background-color: #d2691e; }
+#start-button { background-color: #dc143c; border-radius: 50%; width: 60px; height: 60px; padding: 0; flex-shrink: 0; justify-self: center; }
+#message-bar { background-color: #000; color: #ffff00; text-align: center; padding: 8px; border-radius: 5px; font-weight: bold; min-height: 24px; }
+.help-button { background-color: #6c757d; color: white; border: none; border-radius: 5px; padding: 8px 12px; margin-top: 10px; width: 100%; cursor: pointer; font-size: 16px; }
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); justify-content: center; align-items: center; z-index: 1000; }
+.modal-content { background: #f0e68c; color: #333; padding: 20px 30px; border-radius: 15px; border: 5px solid #8b4513; max-width: 90%; width: 450px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+.modal-content h2 { text-align: center; margin-top: 0; color: #a52a2a; }
+.modal-content h3 { border-bottom: 2px solid #d2b48c; padding-bottom: 5px; margin-top: 20px; color: #8b4513; }
+.modal-content p, .modal-content li { line-height: 1.6; }
+.close-button { position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; color: #8b4513; background: none; border: none; cursor: pointer; }
+
+/* --- 修改重點：新增版權宣告樣式 --- */
+.copyright {
+    text-align: center;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+}
+.copyright a {
+    color: inherit; /* 繼承父元素的顏色 */
+    text-decoration: none; /* 移除底線 */
+    font-weight: bold;
+}
+.copyright a:hover {
+    text-decoration: underline; /* 滑鼠懸停時顯示底線 */
+}

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>胡搞小瑪莉</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-machine">
+        <div class="machine-header">胡搞小瑪莉</div>
+        <div class="display-panel top-display">
+            <div class="display-box"><label>WIN</label><div id="win-display" class="seven-segment">0000</div></div>
+            <div class="display-box"><label>CREDIT</label><div id="credit-display" class="seven-segment">1000</div></div>
+        </div>
+        <div id="main-board-container">
+            <div id="main-board">
+                <div id="center-art">
+                    <div class="art-content">
+                        <div class="jp-text">JP</div>
+                        <div class="digits-container">
+                            <div id="jp-digit" class="seven-segment small">0</div>
+                            <div id="double-up-digit" class="seven-segment small blue-digit">1</div>
+                        </div>
+                        <div class="characters">🐢🔥🕹️</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="betting-area" class="display-panel"></div>
+        <div id="control-panel">
+            <button id="double-small-button" class="ctrl-button blue">1-4 小</button>
+            <button id="collect-button" class="ctrl-button yellow">得分</button>
+            <button id="start-button" class="ctrl-button">開始</button>
+            <button id="leave-button" class="ctrl-button green">離開</button>
+            <button id="double-big-button" class="ctrl-button red">6-9 大</button>
+        </div>
+        <div id="message-bar">請點擊下方圖示進行押分</div>
+        <button id="help-button" class="help-button">遊戲說明</button>
+
+        <div class="copyright">
+            © 2025 <a href="https://github.com/fan666rog/web" target="_blank" title="前往 fan666rog 的 GitHub">fan666rog</a> & Gemini. All Rights Reserved.
+        </div>
+    </div>
+
+    <div id="help-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button id="close-help-button" class="close-button">&times;</button>
+            <h2>遊戲說明</h2>
+            <h3>一、 遊戲目標</h3>
+            <p>透過押分並轉動跑燈，在跑道上擊中您押分的圖示以贏得彩金，並挑戰刺激的「比大小」來讓彩金翻倍！</p>
+            <h3>二、 遊戲流程</h3>
+            <ol>
+                <li><strong>押分:</strong> 點擊下方8個圖示的 ▲/▼ 按鈕來增減押分單位 (0-9)。押注1單位的成本等於該圖示賠率。</li>
+                <li><strong>開始:</strong> 完成押分後，點擊紅色的圓形「開始」按鈕。</li>
+                <li><strong>計分:</strong> 中獎時，彩金 = 賠率 × (賠率 × 押分單位數)。</li>
+                <li><strong>比大小:</strong> 中獎後可挑戰，猜對翻倍，猜錯或開出5則歸零。</li>
+            </ol>
+            <h3>三、 特殊圖示與規則</h3>
+            <ul>
+                <li><strong>ONCE MORE (🔄):</strong> 免費再進行一次轉動！</li>
+                <li><strong>Jackpot (JP):</strong> 轉中 BAR 或 ❼❼ 時JP數字+1，集滿7可觸發神秘大獎 (待實裝)。</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="script.js" defer></script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-大家好，歡迎來到fan666rog的分享空間
+大家好，歡迎來到fan666rog的程式碼分享空間
 根目錄(root)下的一個資料夾代表一個程式
 每個程式都有一個說明文件(readme.txt)、一個或多個使用圖片(rf.png or rf.jpg)、以及程式
 希望大家喜歡♥
@@ -10,3 +10,6 @@ wheel-prize-picker / 輪盤抽獎(含權重版)
 Retro Mary: Pocket Money Killer / 復古小瑪莉：零用錢殺手
 game-snake / 貪食蛇小遊戲
 104_87key_test / 鍵盤測試小程式
+
+若要直接觀看以上展示項目請前往
+https://fan666rog.github.io/web/

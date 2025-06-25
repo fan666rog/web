@@ -50,12 +50,11 @@ table {
     table-layout: fixed; 
 }
 
-/* 摸彩券本表格 */
+/* 電腦版 Colgroup 設定 */
 #ticketBooks .book-name-col { width: 30%; }
 #ticketBooks .count-col      { width: 30%; }
 #ticketBooks .action-col     { width: 10%; text-align: center; }
 
-/* 獎項設定表格 */
 #prizeTable .prize-name-col { width: 50%; }
 #prizeTable .count-col      { width: 20%; }
 #prizeTable .action-col     { width: 10%; text-align: center; }
@@ -68,7 +67,7 @@ th, td {
     border-bottom: 1px solid #dee2e6;
 }
 
-thead th {
+thead {
     background-color: #f8f9fa;
     color: #495057;
     font-weight: 600;
@@ -201,7 +200,6 @@ button:disabled {
     margin-top: 2rem;
 }
 
-/* === 新增：結果總覽區塊樣式 === */
 #results .summary {
     background-color: #e2e3e5;
     padding: 1rem;
@@ -224,19 +222,18 @@ button:disabled {
     border-radius: 4px;
     box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
     word-break: break-all;
-    line-height: 1.8; /* 增加行高讓數字更清晰 */
+    line-height: 1.8;
 }
 
-/* === 新增：中獎號碼顏色樣式 === */
 .main-winner {
-    color: #dc3545; /* 紅色 */
+    color: #dc3545;
     font-weight: bold;
 }
 .backup-winner {
-    color: #007bff; /* 藍色 */
+    color: #007bff;
 }
 .comma {
-    color: #333; /* 預設文字顏色 */
+    color: #333;
     font-weight: normal;
 }
 
@@ -249,4 +246,69 @@ footer {
     border-top: 1px solid #e9ecef;
     color: #6c757d;
     font-size: 0.9rem;
+}
+
+/* ======================================================= */
+/* =========== 新增：響應式設計 (手機版樣式) ============ */
+/* ======================================================= */
+@media screen and (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    /* 將表格的 thead 隱藏 */
+    table thead {
+        display: none;
+    }
+    
+    /* 讓 tr 變成卡片 */
+    table tbody tr {
+        display: block;
+        margin-bottom: 1.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 1rem;
+        background-color: #fafafa;
+    }
+    
+    /* 讓 td 變成塊級元素，佔滿整行 */
+    table td {
+        display: block;
+        text-align: right; /* 讓內容靠右，標籤靠左 */
+        padding-left: 50%; /* 留出空間給 ::before 的標籤 */
+        position: relative;
+        border-bottom: none; /* 移除原本的底線 */
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+    
+    /* 移除第一本書籍的邊框 */
+    #ticketBooks tbody tr:first-child {
+        border-top: none;
+    }
+
+    /* 使用 ::before 偽元素產生標籤 */
+    table td::before {
+        content: attr(data-label); /* 讀取 data-label 的內容 */
+        position: absolute;
+        left: 1rem;
+        font-weight: bold;
+        text-align: left;
+        color: #495057;
+    }
+    
+    /* 針對刪除按鈕欄位做特別調整 */
+    table td:last-child {
+        text-align: center;
+        padding-left: 0;
+    }
+    table td:last-child::before {
+        content: ""; /* 清空刪除按鈕的標籤 */
+    }
+
+    .btn-delete {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 1rem;
+    }
 }

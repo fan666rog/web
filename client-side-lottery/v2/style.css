@@ -4,7 +4,7 @@ body {
     background-color: #f4f7f6;
     color: #333;
     margin: 0;
-    padding: 2rem 1rem;
+    padding: 1rem; /* 在手機上給予邊緣一些空間 */
     line-height: 1.6;
 }
 
@@ -12,7 +12,7 @@ body {
     max-width: 800px;
     margin: 0 auto;
     background-color: #ffffff;
-    padding: 1.5rem 2rem 2rem;
+    padding: 1.5rem 2rem;
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
@@ -42,15 +42,13 @@ main > p {
     margin-bottom: 1rem;
 }
 
-/* --- 表格樣式 --- */
+/* --- 表格樣式 (電腦版) --- */
 table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 1rem;
-    table-layout: fixed; 
 }
 
-/* 電腦版 Colgroup 設定 */
 #ticketBooks .book-name-col { width: 30%; }
 #ticketBooks .count-col      { width: 30%; }
 #ticketBooks .action-col     { width: 10%; text-align: center; }
@@ -80,7 +78,6 @@ thead th small {
     color: #6c757d;
     font-size: 0.8em;
 }
-
 
 tbody tr:last-child td {
     border-bottom: none;
@@ -249,11 +246,12 @@ footer {
 }
 
 /* ======================================================= */
-/* =========== 新增：響應式設計 (手機版樣式) ============ */
+/* =========== 修改後：響應式設計 (手機版樣式) ============ */
 /* ======================================================= */
 @media screen and (max-width: 768px) {
     .container {
         padding: 1rem;
+        box-shadow: none;
     }
 
     /* 將表格的 thead 隱藏 */
@@ -266,49 +264,60 @@ footer {
         display: block;
         margin-bottom: 1.5rem;
         border: 1px solid #dee2e6;
-        border-radius: 5px;
-        padding: 1rem;
-        background-color: #fafafa;
+        border-radius: 8px; /* 圓角更明顯 */
+        overflow: hidden; /* 確保子元素的圓角效果 */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
     
-    /* 讓 td 變成塊級元素，佔滿整行 */
     table td {
-        display: block;
-        text-align: right; /* 讓內容靠右，標籤靠左 */
-        padding-left: 50%; /* 留出空間給 ::before 的標籤 */
-        position: relative;
-        border-bottom: none; /* 移除原本的底線 */
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
+        display: flex; /* 使用 Flexbox 來對齊標籤和輸入框 */
+        justify-content: space-between; /* 讓元素分佈在兩側 */
+        align-items: center; /* 垂直置中 */
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e9ecef; /* 卡片內的分隔線 */
     }
-    
-    /* 移除第一本書籍的邊框 */
-    #ticketBooks tbody tr:first-child {
-        border-top: none;
+
+    table tr:last-child td:last-child {
+        border-bottom: none; /* 卡片最後一項不需要分隔線 */
     }
 
     /* 使用 ::before 偽元素產生標籤 */
     table td::before {
         content: attr(data-label); /* 讀取 data-label 的內容 */
-        position: absolute;
-        left: 1rem;
         font-weight: bold;
-        text-align: left;
         color: #495057;
+        margin-right: 1rem; /* 標籤和內容之間的間距 */
+    }
+    
+    /* 對第一個儲存格 (標題) 做特殊樣式 */
+    table td:first-child {
+        justify-content: center; /* 置中 */
+        background-color: #f8f9fa;
+        color: #007bff;
+        font-weight: bold;
+        font-size: 1.1em;
+        padding: 0.6rem 1rem;
+    }
+    table td:first-child::before {
+        display: none; /* 標題不需要 data-label */
+    }
+
+    /* 調整輸入框，使其能和標籤對齊 */
+    td > input {
+        flex: 1 1 50%; /* 讓輸入框填滿剩餘空間 */
+        text-align: right; /* 輸入的數字靠右 */
     }
     
     /* 針對刪除按鈕欄位做特別調整 */
     table td:last-child {
-        text-align: center;
-        padding-left: 0;
+        padding: 0.5rem;
     }
     table td:last-child::before {
-        content: ""; /* 清空刪除按鈕的標籤 */
+        display: none; /* 刪除按鈕也不需要 data-label */
     }
 
     .btn-delete {
         width: 100%;
-        padding: 0.5rem;
-        font-size: 1rem;
+        padding: 0.75rem;
     }
 }

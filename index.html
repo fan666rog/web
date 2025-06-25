@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>fan666rog 的展示區</title>
+    <style>
+        /* CSS 樣式: 為了方便，直接寫在 HTML 裡 */
+        body {
+            font-family: '微軟正黑體', 'Microsoft JhengHei', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 1000px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            color: #1c1e21;
+        }
+        header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+        }
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .project-card {
+            background-color: #ffffff;
+            border: 1px solid #dddfe2;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        .project-card h2 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 0.75rem;
+            color: #0056b3;
+        }
+        .project-card p {
+            font-size: 1rem;
+            color: #4b4f56;
+            flex-grow: 1; /* 讓描述區塊填滿空間，使按鈕對齊底部 */
+            margin-bottom: 1.5rem;
+        }
+        .project-card a {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            text-decoration: none;
+            text-align: center;
+            font-weight: bold;
+            transition: background-color 0.2s ease;
+        }
+        .project-card a:hover {
+            background-color: #0056b3;
+        }
+         footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #dddfe2;
+            color: #606770;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>我的網頁展示區</h1>
+        </header>
+
+        <main class="portfolio-grid">
+            <div class="project-card">
+                <h2>彩券-摸彩箱抽獎程式</h2>
+                <p>一個本地端執行的網頁抽獎程式，可設定多個彩券本、獎項與排除號碼，確保抽獎公開透明。</p>
+                <a href="./client-side-lottery/v2/index.html" target="_blank">前往專案 (V2)</a>
+            </div>
+
+            <div class="project-card">
+                <h2>生辰命評雙系統查詢</h2>
+                <p>整合兩種民俗命理系統，可依據農曆年月日時辰查詢，並包含袁天罡秤骨命評。</p>
+                <a href="./bazi-data-query-viewer/index.html" target="_blank">前往專案</a>
+            </div>
+
+            <div class="project-card">
+                <h2>輪盤抽獎 (權重版)</h2>
+                <p>可自訂獎項、顏色與權重，權重越高，中獎機率越大。支援抽中後移除與中獎紀錄功能。</p>
+                <a href="./wheel-prize-picker/v251_Special Edition/index.html" target="_blank">前往專案 (V2.5.1 Special Edition)</a>
+            </div>
+
+            <div class="project-card">
+                <h2>復古小瑪莉：零用錢殺手</h2>
+                <p>經典的跑燈遊戲，透過押分贏得彩金，並挑戰刺激的「比大小」讓彩金翻倍！</p>
+                <a href="./RetroMary/index.html" target="_blank">前往專案</a>
+            </div>
+
+            <div class="project-card">
+                <h2>貪食蛇小遊戲</h2>
+                <p>懷舊的貪食蛇遊戲，加入障礙物與可消除障礙物的特殊道具，增加挑戰性。</p>
+                <a href="./game-snake/snakeV106.html" target="_blank">前往專案(V1.0.6)</a>
+            </div>
+
+            <div class="project-card">
+                <h2>104/87鍵 鍵盤測試</h2>
+                <p>一個用於測試鍵盤按鍵是否正常的工具，可切換 104 鍵與 87 鍵佈局。</p>
+                <a href="./104_87key_test/index.html" target="_blank">前往專案</a>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2025 fan666rog & Gemini</p>
+        </footer>
+    </div>
+</body>
+</html>

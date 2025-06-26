@@ -106,7 +106,6 @@
         row.insertCell(0).innerHTML = "摸彩券本 " + nextBookNumber;
         row.cells[0].setAttribute('data-label', '彩券本');
         
-        // *** 關鍵修正：加入 oninput 事件 ***
         row.insertCell(1).innerHTML = '<input type="number" min="1" placeholder="例如: 1" oninput="enforceInteger(event)">';
         row.cells[1].setAttribute('data-label', '起始序號');
         
@@ -124,7 +123,6 @@
       row.insertCell(0).innerHTML = '<input type="text" placeholder="例如：頭獎">';
       row.cells[0].setAttribute('data-label', '獎項名稱');
       
-      // *** 關鍵修正：加入 oninput 事件 ***
       row.insertCell(1).innerHTML = '<input type="number" min="0" value="1" oninput="enforceInteger(event)">';
       row.cells[1].setAttribute('data-label', '正取名額');
       
@@ -154,17 +152,19 @@
       let errorMessages = [];
       let ticketBookInfo = [];
       
+      // --- 錯誤訊息初始化 ---
       errorMessageDiv.innerHTML = "";
       errorMessageDiv.classList.add('hidden');
 
+      // --- 1. 摸彩券本驗證 ---
       let ticketRanges = [];
-
       for (let i = 0; i < ticketBooksTable.rows.length; i++) {
         let row = ticketBooksTable.rows[i];
         let bookNumberText = row.cells[0].innerText.trim();
         let start = row.cells[1].children[0].value;
         let end = row.cells[2].children[0].value;
 
+        // 檢查空白
         if (start.trim() === "" || end.trim() === "") {
           errorMessages.push(`錯誤：${bookNumberText} 的起訖序號不可為空白。`);
           continue;
@@ -173,17 +173,20 @@
         let startNum = parseInt(start);
         let endNum = parseInt(end);
 
+        // 檢查是否為數字
         if (isNaN(startNum) || isNaN(endNum)) {
             errorMessages.push(`錯誤：${bookNumberText} 的序號必須是數字。`);
             continue;
         }
 
+        // 檢查結束序號是否小於起始序號
         if (endNum < startNum) {
           errorMessages.push(`錯誤：${bookNumberText} 的結束序號 (${endNum}) 不能小於起始序號 (${startNum})。`);
         }
         ticketRanges.push({ name: bookNumberText, start: startNum, end: endNum });
       }
 
+      // 檢查序號範圍是否有重疊
       for (let i = 0; i < ticketRanges.length; i++) {
         for (let j = i + 1; j < ticketRanges.length; j++) {
             const rangeA = ticketRanges[i];
@@ -194,6 +197,7 @@
         }
       }
 
+      // --- 2. 建立總彩券池並驗證排除號碼 ---
       let allTickets = new Set();
       if (errorMessages.length === 0) {
           ticketRanges.forEach(range => {
@@ -224,13 +228,16 @@
           }
       }
 
+      // --- 3. 獎項設定驗證 ---
       let totalPrizeCount = 0;
+      let validPrizeCount = 0; // 用於計算有效獎項的總名額
       for (let i = 0; i < prizeTable.rows.length; i++) {
         let row = prizeTable.rows[i];
         let prizeName = row.cells[0].children[0].value.trim();
         let prizeCountStr = row.cells[1].children[0].value.trim();
         let backupCountStr = row.cells[2].children[0].value.trim();
         
+        // 檢查空白
         if (prizeName === "" || prizeCountStr === "" || backupCountStr === "") {
             errorMessages.push('錯誤：獎項的「名稱」和「名額」輸入框不可為空白。');
             continue; 
@@ -239,35 +246,55 @@
         let prizeCountNum = parseInt(prizeCountStr);
         let backupCountNum = parseInt(backupCountStr);
         
+        // 檢查是否為數字
         if (isNaN(prizeCountNum) || isNaN(backupCountNum)) {
             errorMessages.push(`錯誤：獎項「${prizeName}」的名額必須是數字。`);
             continue;
         }
 
-        if (prizeCountNum === 0 && backupCountNum > 0) {
-            errorMessages.push(`錯誤：獎項「${prizeName}」的正取名額為0，因此不能設定備取名額。`);
+        // *** 修改後的邏輯：正取名額不得為0 ***
+        if (prizeCountNum === 0) {
+            errorMessages.push(`錯誤：獎項「${prizeName}」的正取名額不得為 0。`);
+            continue; // 這個獎項無效，直接跳到下一個
         }
 
-        totalPrizeCount += prizeCountNum + backupCountNum;
+        // 如果獎項有效，才加入到抽獎清單與總數
+        validPrizeCount += prizeCountNum + backupCountNum;
         prizes.push({name: prizeName, count: prizeCountNum, backupCount: backupCountNum});
       }
 
+      // --- 4. 總體驗證 ---
+      
+      // 從總彩券池中移除排除的號碼
       excludedNumbersSet.forEach(num => {
           allTickets.delete(num);
       });
       
-      if (allTickets.size < totalPrizeCount) {
-        errorMessages.push(`注意：有效券數 (${allTickets.size}) 比獎品總數量 (${totalPrizeCount}) 還少，無法抽出所有獎項。`);
+      // 檢查有效券數是否足夠
+      if (allTickets.size < validPrizeCount) {
+        errorMessages.push(`注意：有效券數 (${allTickets.size}) 比獎品總數量 (${validPrizeCount}) 還少，無法抽出所有獎項。`);
       }
-      if (prizes.length === 0) errorMessages.push('錯誤：請至少設定一個獎項。');
-      if (ticketBooksTable.rows.length === 0) errorMessages.push('錯誤：請至少設定一本摸彩券。');
+      // 檢查是否至少有一個獎項
+      if (prizeTable.rows.length === 0) {
+          errorMessages.push('錯誤：請至少設定一個獎項。');
+      } else if (prizes.length === 0) { // 如果有設定獎項但都無效 (例如全部正取都為0)
+          errorMessages.push('錯誤：請至少設定一個有效名額的獎項。');
+      }
+      // 檢查是否至少有一本彩券
+      if (ticketBooksTable.rows.length === 0) {
+          errorMessages.push('錯誤：請至少設定一本摸彩券。');
+      }
 
 
+      // --- 5. 顯示錯誤與中斷 ---
       if (errorMessages.length > 0) {
+        // 使用 Set 去除重複的錯誤訊息再顯示
         errorMessageDiv.innerHTML = [...new Set(errorMessages)].join("<br>");
         errorMessageDiv.classList.remove('hidden');
         return; 
       }
+
+      // --- 若無錯誤，開始執行抽獎 ---
 
       let drawableTickets = Array.from(allTickets);
       prizes.sort((a, b) => (b.count + b.backupCount) - (a.count + a.backupCount));
@@ -318,6 +345,7 @@
             }).join('<span class="comma">, </span>');
             resultsDiv.innerHTML += `<p class="winner-list">${winnerHtml}</p>`;
         } else {
+            // 如果獎項設定了名額但沒抽出人，表示券不夠了
             const prizeSetting = prizes.find(p => p.name === prizeName);
             if (prizeSetting && (prizeSetting.count + prizeSetting.backupCount > 0)) {
                 resultsDiv.innerHTML += `<p class="winner-list">此獎項沒有足夠的券可抽</p>`;

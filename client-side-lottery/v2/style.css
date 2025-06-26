@@ -29,6 +29,21 @@ header h1 {
     font-weight: 600;
 }
 
+/* *** 新增：可編輯標題的提示樣式 *** */
+header h1[contenteditable="true"] {
+    cursor: text;
+    padding: 0.25rem 0.5rem;
+    border-radius: 5px;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+header h1[contenteditable="true"]:hover,
+header h1[contenteditable="true"]:focus {
+    background-color: #f8f9fa;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+
 .section-title {
     color: #343a40;
     margin-top: 2.5rem;
@@ -157,6 +172,16 @@ button:disabled {
     border: 1px solid #e9ecef;
 }
 
+/* *** 修正：中獎名單的主標題現在由 JS 產生，所以這裡的樣式可以稍微調整 *** */
+#results-wrapper > h2 {
+    text-align: center; /* 讓「中獎名單」這幾個字置中 */
+}
+#results h2 { /* 針對 JS 產生的自訂標題來設定樣式 */
+    color: #343a40;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
 #results h3 {
     color: #0056b3;
     border-bottom: 2px solid #007bff;
@@ -257,13 +282,13 @@ footer {
     
     table td[data-label-small]::after {
         content: attr(data-label-small);
-        display: block; 
+        display: block;
         font-size: 0.8em;
         color: #6c757d;
         font-weight: normal;
         margin-top: 0.2rem;
         text-align: right;
-        white-space: nowrap; /* *** 關鍵修正：強制提示語也不換行 *** */
+        white-space: nowrap;
     }
     
     table td[data-label-small] {

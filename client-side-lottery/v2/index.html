@@ -10,7 +10,7 @@
 <body>
   <div class="container">
     <header>
-      <h1>彩券摸彩箱抽獎程式單機版</h1>
+      <h1 id="main-title" contenteditable="true">彩券摸彩箱抽獎程式單機版</h1>
     </header>
 
     <main>
@@ -32,7 +32,7 @@
           </tr>
         </thead>
         <tbody>
-          </tbody>
+        </tbody>
       </table>
       <button onclick="addTicketBook()" class="btn btn-add">新增摸彩券本</button>
       
@@ -59,7 +59,7 @@
           </tr>
         </thead>
         <tbody>
-            </tbody>
+        </tbody>
       </table>
       <button onclick="addPrizeCategory()" class="btn btn-add">新增獎項類別</button>
       
@@ -119,11 +119,10 @@
       row.insertCell(1).innerHTML = '<input type="number" min="0" value="1">';
       row.cells[1].setAttribute('data-label', '正取名額');
       
-      // *** 關鍵修正：使用兩個 data-label 來分別存放主標籤和提示語 ***
       const backupCell = row.insertCell(2);
       backupCell.innerHTML = '<input type="number" min="0" value="0">';
       backupCell.setAttribute('data-label', '備取名額');
-      backupCell.setAttribute('data-label-small', '(0為不啟用)'); // 新增的提示語標籤
+      backupCell.setAttribute('data-label-small', '(0為不啟用)');
       
       row.insertCell(3).innerHTML = '<button onclick="deleteRow(this)" class="btn-delete">刪除</button>';
       row.cells[3].setAttribute('data-label', '操作');
@@ -133,12 +132,14 @@
       let row = btn.parentNode.parentNode;
       row.parentNode.removeChild(row);
     }
-
-    // startLottery, exportResults, 和其他邏輯保持不變...
+    
     function startLottery() {
       const ticketBooksTable = document.getElementById("ticketBooks").getElementsByTagName('tbody')[0];
       const prizeTable = document.getElementById("prizeTable").getElementsByTagName('tbody')[0];
       const errorMessageDiv = document.getElementById("errorMessage");
+      
+      // *** 關鍵修正：在抽獎開始時，讀取目前的標題 ***
+      const mainTitleText = document.getElementById('main-title').textContent.trim();
       
       let prizes = [];
       let winners = {};
@@ -286,6 +287,9 @@
       let resultsDiv = document.getElementById("results");
       resultsDiv.innerHTML = "";
       
+      // *** 關鍵修正：在顯示結果時，加上自訂標題 ***
+      resultsDiv.innerHTML += `<h2>${mainTitleText} - 中獎名單</h2>`;
+      
       resultsDiv.innerHTML += `
         <div class="summary">
             <h4>抽獎設定總覽</h4>
@@ -320,12 +324,18 @@
     }
 
     function exportResults() {
+      // *** 關鍵修正：在匯出時，也讀取目前的標題 ***
+      const mainTitleText = document.getElementById('main-title').textContent.trim();
       let resultsDiv = document.getElementById("results");
-      let resultsText = resultsDiv.innerText.replace(/\n\n/g, '\n'); 
-      let blob = new Blob([resultsText], {type: "text/plain;charset=utf-8"});
+      let resultsText = resultsDiv.innerText;
+
+      // 組合最終要匯出的文字內容
+      let exportText = `${mainTitleText} - 中獎名單\n\n${resultsText}`;
+      
+      let blob = new Blob([exportText], {type: "text/plain;charset=utf-8"});
       let link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "lottery_results.txt";
+      link.download = `${mainTitleText}_中獎名單.txt`; // 讓檔名也包含自訂標題
       link.click();
     }
 

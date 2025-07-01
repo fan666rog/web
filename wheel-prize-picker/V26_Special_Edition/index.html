@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>輪盤抽獎 V2.6 Special Edition</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1 id="main-title" contenteditable="true">幸運輪盤抽獎</h1>
+
+    <div class="controls-container">
+    </div>
+
+    <div id="wheel-main-container">
+        <div id="wheel-container">
+            <canvas id="wheel"></canvas>
+            <div id="pointer-container">
+                 <div id="pointer"></div>
+            </div>
+        </div>
+    </div>
+
+    <button id="spin-button">開始抽獎</button>
+    <div id="result"></div>
+
+    <div id="history-section">
+        <h2>中獎紀錄</h2>
+        <ul id="history-list"></ul>
+    </div>
+
+    <div id="prize-input-section">
+        <h2>獎項設定 <span class="prize-limit-note">(最多15個)</span></h2>
+        <div id="prize-inputs-wrapper">
+        </div>
+        <div class="actions-controls">
+            <button id="add-prize-input-btn">新增獎項</button>
+            <button id="update-prizes-btn">更新輪盤獎項</button>
+            <button id="clear-history-btn" style="display:none;">清除中獎紀錄</button>
+        </div>
+    </div>
+
+    <div id="instructions-section">
+        <button id="toggle-instructions-btn">顯示使用說明</button>
+        <div id="instructions-content" class="hidden">
+            <h3>使用說明</h3>
+            <ul>
+                <li><strong>編輯標題</strong>：直接點擊最上方的「幸運輪盤抽獎」標題即可進行修改。</li>
+                <li><strong>新增/刪除獎項</strong>：點擊「新增獎項」來增加欄位，點擊各欄位旁的「刪除」可移除。最多可設定15個獎項。</li>
+                <li><strong>設定獎項</strong>：請依序填入「獎項名稱」、「權重」、「數量」及選擇「顏色」。</li>
+                <li><strong>權重說明</strong>：權重為 1-99 的數字，數字越大，中獎機率越高。</li>
+                <li><strong>數量說明</strong>：設定該獎項可被抽出的總次數。設定為 0 代表該獎項永遠不會被移除。</li>
+                <li><strong>更新輪盤</strong>：完成所有設定後，請務必點擊「更新輪盤獎項」，您的設定才會生效。</li>
+                <li><strong>中獎紀錄</strong>：下方會顯示最近20筆的中獎歷史，可隨時「清除中獎紀錄」。清除時會一併重置所有獎品的剩餘數量。</li>
+            </ul>
+        </div>
+        <p id="copyright-notice" class="copyright"><a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer">fan666rog</a> & Gemini 編寫 V2.6 Special Edition</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

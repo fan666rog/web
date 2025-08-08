@@ -160,7 +160,7 @@
         justify-content: center;
     }
 
-    .d-pad-btn {
+    .d-pad-btn, #pauseBtn {
         background: rgba(255, 255, 255, 0.3);
         border: 2px solid rgba(255, 255, 255, 0.5);
         color: white;
@@ -169,6 +169,12 @@
         border-radius: 15px;
         cursor: pointer;
         transition: background-color 0.2s;
+        padding: 0;
+        width: 80px;
+        height: 80px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     .d-pad-btn:active, #pauseBtn:active {
@@ -179,25 +185,16 @@
     .d-pad-left { grid-area: left; }
     .d-pad-right { grid-area: right; }
     .d-pad-down { grid-area: down; }
-    
-    #pauseBtn {
-        grid-area: center;
-        background: rgba(255, 255, 255, 0.2);
-        border: 2px solid rgba(255, 255, 255, 0.4);
-        font-size: 32px;
-        padding: 0;
-        width: 80px;
-        height: 80px;
-    }
+    #pauseBtn { grid-area: center; }
   </style>
 </head>
 
 <body>
 
   <div class="header-container">
-    <button id="startGameBtn">開始遊戲</button>
+    <button id="startGameBtn">►</button>
     <h1>貪食蛇</h1>
-    <button id="instructionsBtn">遊戲說明</button>
+    <button id="instructionsBtn">?</button>
   </div>
 
   <canvas id="myCanvas"></canvas>

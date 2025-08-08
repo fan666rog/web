@@ -45,6 +45,18 @@
       font-weight: 600;
     }
 
+    .header-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        padding: 10px 0;
+    }
+
+    .header-container h1 {
+        margin: 0;
+    }
+
     button {
       background: #ff7e5f;  /* fallback for old browsers */
       background: -webkit-linear-gradient(to right, #feb47b, #ff7e5f);  /* Chrome 10-25, Safari 5.1-6 */
@@ -130,7 +142,6 @@
     }
 
     #touchControls {
-        display: none; /* Hidden by default, shown via media query */
         margin-top: 20px;
         -webkit-user-select: none; /* Safari */
         -ms-user-select: none; /* IE 10+ */
@@ -139,6 +150,10 @@
 
     .d-pad {
         display: grid;
+        grid-template-areas:
+            ". up ."
+            "left center right"
+            ". down .";
         grid-template-columns: repeat(3, 80px);
         grid-template-rows: repeat(3, 80px);
         gap: 10px;
@@ -156,28 +171,34 @@
         transition: background-color 0.2s;
     }
 
-    .d-pad-btn:active {
+    .d-pad-btn:active, #pauseBtn:active {
         background: rgba(255, 255, 255, 0.5);
     }
 
-    .d-pad-up { grid-area: 1 / 2 / 2 / 3; }
-    .d-pad-left { grid-area: 2 / 1 / 3 / 2; }
-    .d-pad-right { grid-area: 2 / 3 / 3 / 4; }
-    .d-pad-down { grid-area: 2 / 2 / 3 / 3; }
-
-    /* Show on smaller screens */
-    @media (max-width: 768px) {
-        #touchControls {
-            display: block;
-        }
-        .d-pad-down { grid-area: 3 / 2 / 4 / 3; } /* Fix for 3x3 grid */
+    .d-pad-up { grid-area: up; }
+    .d-pad-left { grid-area: left; }
+    .d-pad-right { grid-area: right; }
+    .d-pad-down { grid-area: down; }
+    
+    #pauseBtn {
+        grid-area: center;
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        font-size: 32px;
+        padding: 0;
+        width: 80px;
+        height: 80px;
     }
   </style>
 </head>
 
 <body>
 
-  <h1>貪食蛇</h1>
+  <div class="header-container">
+    <button id="startGameBtn">開始遊戲</button>
+    <h1>貪食蛇</h1>
+    <button id="instructionsBtn">遊戲說明</button>
+  </div>
 
   <canvas id="myCanvas"></canvas>
   <div id="game-info-container">
@@ -205,15 +226,10 @@
     <div class="d-pad">
         <button id="upBtn" class="d-pad-btn d-pad-up">↑</button>
         <button id="leftBtn" class="d-pad-btn d-pad-left">←</button>
+        <button id="pauseBtn" disabled>||</button>
         <button id="rightBtn" class="d-pad-btn d-pad-right">→</button>
         <button id="downBtn" class="d-pad-btn d-pad-down">↓</button>
     </div>
-  </div>
-  
-  <div>
-    <button id="startGameBtn">開始遊戲</button>
-    <button id="pauseBtn" disabled>暫停/繼續</button>
-    <button id="instructionsBtn">遊戲說明</button>
   </div>
 
   <script>
@@ -525,7 +541,7 @@
         gameRunning = true;
         startGameBtn.disabled = true;
         pauseBtn.disabled = false;
-        pauseBtn.textContent = '暫停遊戲';
+        pauseBtn.innerHTML = '||'; // Pause symbol
 
         // Start blue dot generator
         setInterval(generateBlueDot, (25 + Math.random() * 25) * 1000);
@@ -542,11 +558,11 @@
       if (gameRunning) {
         clearInterval(gameLoopInterval);
         gameRunning = false;
-        pauseBtn.textContent = '繼續遊戲';
+        pauseBtn.innerHTML = '►'; // Play symbol
       } else {
         gameLoopInterval = setInterval(gameLoop, 100);
         gameRunning = true;
-        pauseBtn.textContent = '暫停遊戲';
+        pauseBtn.innerHTML = '||'; // Pause symbol
       }
     });
 

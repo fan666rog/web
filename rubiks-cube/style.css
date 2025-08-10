@@ -1,8 +1,62 @@
 body {
     margin: 0;
-    overflow: hidden; /* Hide scrollbars */
+    overflow: hidden; /* 隱藏滾動條 */
 }
 
 canvas {
     display: block;
+}
+
+/* 控制按鈕容器 */
+#controls-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+    display: flex;
+    gap: 10px;
+}
+
+/* 按鈕樣式 */
+#controls-container button {
+    padding: 10px 15px;
+    font-size: 16px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#controls-container button:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+#controls-container button:disabled {
+    background-color: rgba(0, 0, 0, 0.3);
+    color: #888;
+    cursor: not-allowed;
+}
+
+
+/* 頁尾版權 */
+footer {
+    position: absolute;
+    bottom: 10px;
+    width: 100%;
+    text-align: center;
+    color: #aaa;
+    font-family: sans-serif;
+    font-size: 12px;
+    z-index: 100;
+}
+
+footer a {
+    color: #fff;
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
 }

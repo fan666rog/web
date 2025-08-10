@@ -19,6 +19,10 @@ controls.dampingFactor = 0.05;
 controls.enablePan = false;
 controls.enableZoom = false;
 
+// --- UI 按鈕 ---
+const scrambleBtn = document.getElementById('scramble-btn');
+const resetBtn = document.getElementById('reset-btn');
+
 // --- 光源 ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
 scene.add(ambientLight);
@@ -30,7 +34,8 @@ scene.add(directionalLight);
 const rubiksCube = new THREE.Group();
 const CUBIE_SIZE = 1;
 const CUBIE_GAP = 0.1;
-const CUBE_DIMENSION = 3;
+const positionOffset = CUBIE_SIZE + CUBIE_GAP;
+
 
 const materials = {
     right: new THREE.MeshStandardMaterial({ color: 0xff0000 }),  // 紅色 (+X)
@@ -58,8 +63,12 @@ for (let x = -1; x <= 1; x++) {
                 z === -1 ? materials.back : materials.inside
             ];
             const cubie = new THREE.Mesh(cubieGeometry, cubieMaterials);
-            const positionOffset = CUBIE_SIZE + CUBIE_GAP;
             cubie.position.set(x * positionOffset, y * positionOffset, z * positionOffset);
+            
+            // 儲存初始狀態以供重置使用
+            cubie.userData.initialPosition = cubie.position.clone();
+            cubie.userData.initialQuaternion = cubie.quaternion.clone();
+
             rubiksCube.add(cubie);
             cubies.push(cubie);
         }
@@ -74,7 +83,14 @@ let selectedCubie = null;
 let selectedFaceNormal = null;
 let isDragging = false;
 let dragStartPoint = new THREE.Vector2();
-let isRotating = false;
+let isRotating = false; // 全域旋轉狀態鎖
+
+function setControlsEnabled(enabled) {
+    isRotating = !enabled;
+    controls.enabled = enabled;
+    scrambleBtn.disabled = !enabled;
+    resetBtn.disabled = !enabled;
+}
 
 function onPointerDown(event) {
     if (isRotating) return;
@@ -102,38 +118,27 @@ function onPointerMove(event) {
         (pointer.clientX / window.innerWidth) * 2 - 1,
         -(pointer.clientY / window.innerHeight) * 2 + 1
     );
-
     const dragVector = currentPoint.clone().sub(dragStartPoint);
 
     if (dragVector.length() > 0.05) {
         const worldNormal = selectedFaceNormal.clone().applyQuaternion(selectedCubie.quaternion);
-
         const cameraRight = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
         const cameraUp = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
-        
-        const dragDir3D_X = cameraRight.multiplyScalar(dragVector.x);
-        const dragDir3D_Y = cameraUp.multiplyScalar(dragVector.y);
-        const dragDir3D = dragDir3D_X.add(dragDir3D_Y);
-
+        const dragDir3D = cameraRight.multiplyScalar(dragVector.x).add(cameraUp.multiplyScalar(dragVector.y));
         const rotationAxis = new THREE.Vector3().crossVectors(worldNormal, dragDir3D).normalize();
-
-        const axes = [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)];
+        
         let mainAxis = 'x';
         let maxDot = 0;
-        axes.forEach((axis, i) => {
-            const dot = Math.abs(axis.dot(rotationAxis));
+        ['x', 'y', 'z'].forEach(axis => {
+            const axisVec = new THREE.Vector3(axis === 'x' ? 1:0, axis === 'y' ? 1:0, axis === 'z' ? 1:0);
+            const dot = Math.abs(axisVec.dot(rotationAxis));
             if (dot > maxDot) {
                 maxDot = dot;
-                mainAxis = i === 0 ? 'x' : i === 1 ? 'y' : 'z';
+                mainAxis = axis;
             }
         });
         
-        const mainRotationVec = new THREE.Vector3(
-            mainAxis === 'x' ? 1 : 0, 
-            mainAxis === 'y' ? 1 : 0, 
-            mainAxis === 'z' ? 1 : 0
-        );
-
+        const mainRotationVec = new THREE.Vector3(mainAxis === 'x' ? 1:0, mainAxis === 'y' ? 1:0, mainAxis === 'z' ? 1:0);
         const direction = Math.sign(mainRotationVec.dot(rotationAxis));
         
         rotateLayer(selectedCubie.position, mainAxis, direction);
@@ -141,72 +146,112 @@ function onPointerMove(event) {
     }
 }
 
-
 function onPointerUp() {
-    controls.enabled = true;
+    if (!isRotating) {
+        controls.enabled = true;
+    }
     isDragging = false;
     selectedCubie = null;
     selectedFaceNormal = null;
 }
 
 function rotateLayer(pivotPoint, axis, direction) {
-    if (isRotating) return;
-    isRotating = true;
-
-    const layer = cubies.filter(cubie => Math.abs(cubie.position[axis] - pivotPoint[axis]) < 0.5);
-    const pivot = new THREE.Object3D();
-    scene.add(pivot);
-    layer.forEach(cubie => pivot.attach(cubie));
-
-    const targetAngle = (Math.PI / 2) * direction;
-    const rotationAxisVec = new THREE.Vector3(
-        axis === 'x' ? 1 : 0,
-        axis === 'y' ? 1 : 0,
-        axis === 'z' ? 1 : 0
-    );
-
-    const start = { angle: 0 };
-    const end = { angle: targetAngle };
-    const animationDuration = 300; // ms
-
-    const animateRotation = (time) => {
-        const elapsed = time - startTime;
-        const t = Math.min(1, elapsed / animationDuration);
+    return new Promise(resolve => {
+        setControlsEnabled(false);
         
-        // 使用簡單的 ease-out 效果
-        const easedT = t * (2 - t);
-        const angle = start.angle + (end.angle - start.angle) * easedT;
+        const layer = cubies.filter(cubie => Math.abs(cubie.position[axis] - pivotPoint[axis]) < 0.5);
+        const pivot = new THREE.Object3D();
+        scene.add(pivot);
+        layer.forEach(cubie => pivot.attach(cubie));
 
-        pivot.setRotationFromAxisAngle(rotationAxisVec, angle);
+        const targetAngle = (Math.PI / 2) * direction;
+        const rotationAxisVec = new THREE.Vector3(axis === 'x' ? 1:0, axis === 'y' ? 1:0, axis === 'z' ? 1:0);
+        const animationDuration = 300; // ms
+        const startTime = performance.now();
 
-        if (t < 1) {
-            requestAnimationFrame(animateRotation);
-        } else {
-            pivot.setRotationFromAxisAngle(rotationAxisVec, end.angle);
-            
-            // 更新方塊的世界座標並放回場景
-            scene.remove(pivot);
-            layer.forEach(cubie => {
-                const worldPosition = new THREE.Vector3();
-                const worldQuaternion = new THREE.Quaternion();
-                cubie.getWorldPosition(worldPosition);
-                cubie.getWorldQuaternion(worldQuaternion);
-                
-                rubiksCube.attach(cubie);
-                cubie.position.copy(worldPosition);
-                cubie.quaternion.copy(worldQuaternion);
+        const animateRotation = (time) => {
+            const elapsed = time - startTime;
+            const t = Math.min(1, elapsed / animationDuration);
+            const easedT = 1 - Math.pow(1 - t, 3); // EaseOutCubic
+            const angle = targetAngle * easedT;
+            pivot.setRotationFromAxisAngle(rotationAxisVec, angle);
 
-                const positionOffset = CUBIE_SIZE + CUBIE_GAP;
-                cubie.position.x = Math.round(cubie.position.x / positionOffset) * positionOffset;
-                cubie.position.y = Math.round(cubie.position.y / positionOffset) * positionOffset;
-                cubie.position.z = Math.round(cubie.position.z / positionOffset) * positionOffset;
-            });
-            isRotating = false;
-        }
-    };
+            if (t < 1) {
+                requestAnimationFrame(animateRotation);
+            } else {
+                pivot.setRotationFromAxisAngle(rotationAxisVec, targetAngle);
+                scene.remove(pivot);
+                layer.forEach(cubie => {
+                    const worldPosition = new THREE.Vector3();
+                    const worldQuaternion = new THREE.Quaternion();
+                    cubie.getWorldPosition(worldPosition);
+                    cubie.getWorldQuaternion(worldQuaternion);
+                    
+                    rubiksCube.attach(cubie);
+                    cubie.position.copy(worldPosition).divideScalar(positionOffset).round().multiplyScalar(positionOffset);
+                    cubie.quaternion.copy(worldQuaternion);
+                });
+                setControlsEnabled(true);
+                resolve();
+            }
+        };
+        requestAnimationFrame(animateRotation);
+    });
+}
+
+// --- 新增：打亂與重置功能 ---
+async function scrambleCube() {
+    setControlsEnabled(false);
+    const moves = 20; // 打亂步數
+    const axes = ['x', 'y', 'z'];
+    const layers = [-1, 0, 1];
+
+    for (let i = 0; i < moves; i++) {
+        const axis = axes[Math.floor(Math.random() * axes.length)];
+        const layerIndex = layers[Math.floor(Math.random() * layers.length)];
+        const direction = Math.random() < 0.5 ? 1 : -1;
+        
+        const pivotPoint = new THREE.Vector3();
+        pivotPoint[axis] = layerIndex * positionOffset;
+
+        await rotateLayer(pivotPoint, axis, direction);
+    }
+    setControlsEnabled(true);
+}
+
+function resetCube() {
+    setControlsEnabled(false);
+    let completedAnimations = 0;
     
-    const startTime = performance.now();
-    requestAnimationFrame(animateRotation);
+    cubies.forEach(cubie => {
+        const targetPos = cubie.userData.initialPosition;
+        const targetQuat = cubie.userData.initialQuaternion;
+        const animationDuration = 500; //ms
+        const startTime = performance.now();
+        const startPos = cubie.position.clone();
+        const startQuat = cubie.quaternion.clone();
+
+        const animateReset = (time) => {
+            const elapsed = time - startTime;
+            const t = Math.min(1, elapsed / animationDuration);
+            const easedT = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; // EaseInOutQuad
+
+            cubie.position.lerpVectors(startPos, targetPos, easedT);
+            THREE.Quaternion.slerp(startQuat, targetQuat, cubie.quaternion, easedT);
+
+            if (t < 1) {
+                requestAnimationFrame(animateReset);
+            } else {
+                cubie.position.copy(targetPos);
+                cubie.quaternion.copy(targetQuat);
+                completedAnimations++;
+                if (completedAnimations === cubies.length) {
+                    setControlsEnabled(true);
+                }
+            }
+        }
+        requestAnimationFrame(animateReset);
+    });
 }
 
 
@@ -214,9 +259,8 @@ function rotateLayer(pivotPoint, axis, direction) {
 renderer.domElement.addEventListener('pointerdown', onPointerDown);
 renderer.domElement.addEventListener('pointermove', onPointerMove);
 renderer.domElement.addEventListener('pointerup', onPointerUp);
-renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
-renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
-renderer.domElement.addEventListener('touchend', onPointerUp);
+scrambleBtn.addEventListener('click', scrambleCube);
+resetBtn.addEventListener('click', resetCube);
 
 // --- 動畫循環 ---
 function animate() {

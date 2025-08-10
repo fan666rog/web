@@ -11,50 +11,58 @@ canvas {
 #controls-container {
     position: absolute;
     top: 20px;
-    left: 20px;
+    left: 50%;
+    transform: translateX(-50%); /* 水平置中 */
     z-index: 100;
     display: flex;
-    gap: 10px;
+    gap: 15px;
 }
 
 /* 按鈕樣式 */
 #controls-container button {
-    padding: 10px 15px;
+    padding: 10px 20px;
     font-size: 16px;
-    background-color: rgba(0, 0, 0, 0.5);
+    font-family: '微軟正黑體', sans-serif;
+    background-color: rgba(30, 30, 30, 0.7);
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.1s;
 }
 
 #controls-container button:hover {
     background-color: rgba(0, 0, 0, 0.7);
 }
 
+#controls-container button:active {
+    transform: scale(0.95);
+}
+
 #controls-container button:disabled {
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(50, 50, 50, 0.5);
     color: #888;
     cursor: not-allowed;
 }
 
-
 /* 頁尾版權 */
 footer {
     position: absolute;
-    bottom: 10px;
+    bottom: 15px;
     width: 100%;
     text-align: center;
     color: #aaa;
     font-family: sans-serif;
-    font-size: 12px;
+    font-size: 14px;
     z-index: 100;
+    text-shadow: 1px 1px 2px #000;
+    pointer-events: none; /* 讓滑鼠可以穿透此元素 */
 }
 
 footer a {
     color: #fff;
     text-decoration: none;
+    pointer-events: auto; /* 連結本身要可以點擊 */
 }
 
 footer a:hover {

@@ -16,9 +16,8 @@ document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; // an animation loop is required when either damping or auto-rotate are enabled
 controls.dampingFactor = 0.05;
-controls.screenSpacePanning = false;
-controls.minDistance = 5;
-controls.maxDistance = 20;
+controls.enableZoom = false; // Disable zooming
+controls.enablePan = false; // Disable panning
 
 // --- Lighting ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);

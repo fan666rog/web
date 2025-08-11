@@ -19,13 +19,15 @@ controls.noRotate = false;
 controls.noPan = true;
 controls.noZoom = true;
 controls.staticMoving = true;
-controls.dynamicDampingFactor = 0.2; // 調整阻尼，讓放開滑鼠後的滑動更線性一點
-controls.rotateSpeed = 5.0;
+controls.dynamicDampingFactor = 0.2;
+controls.rotateSpeed = 3.0;
 
 // --- UI 按鈕 ---
 const scrambleBtn = document.getElementById('scramble-btn');
 const resetBtn = document.getElementById('reset-btn');
 const undoBtn = document.getElementById('undo-btn');
+// 修改重點：獲取新的按鈕元素
+const resetViewBtn = document.getElementById('reset-view-btn');
 
 // --- 光源 ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
@@ -86,6 +88,8 @@ function setControlsEnabled(enabled) {
     scrambleBtn.disabled = !enabled;
     resetBtn.disabled = !enabled;
     undoBtn.disabled = !enabled || moveHistory.length === 0;
+    // 修改重點：也要同步控制新按鈕的狀態
+    if(resetViewBtn) resetViewBtn.disabled = !enabled;
 }
 
 function onPointerDown(event) {
@@ -199,9 +203,7 @@ async function undoMove() {
     await rotateLayer(reversedMove, false);
 }
 
-// --- 修改重點：新增一個函式來重設攝影機視角 ---
 function resetCameraOrientation() {
-    // 將攝影機的 "up" 向量強制設回世界的 Y 軸正方向
     camera.up.set(0, 1, 0);
 }
 
@@ -212,15 +214,8 @@ renderer.domElement.addEventListener('pointerup', onPointerUp);
 scrambleBtn.addEventListener('click', scrambleCube);
 resetBtn.addEventListener('click', () => { window.location.reload(); });
 undoBtn.addEventListener('click', undoMove);
-
-// --- 修改重點：新增鍵盤監聽，用於呼叫視角重設功能 ---
-// 提示：可以考慮在 HTML 中加入一個小小的說明文字「按 R 鍵可校正視角」
-window.addEventListener('keydown', (event) => {
-    // 當按下 'R' 鍵時
-    if (event.code === 'KeyR') {
-        resetCameraOrientation();
-    }
-});
+// 修改重點：為新按鈕綁定點擊事件
+if(resetViewBtn) resetViewBtn.addEventListener('click', resetCameraOrientation);
 
 // --- 動畫循環 ---
 function animate() {

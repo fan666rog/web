@@ -103,20 +103,17 @@ function onPointerMove(event) {
     );
     const dragVector = currentPoint.clone().sub(dragStartPoint);
 
-    if (dragVector.length() > 0.05) { // 拖曳偵測的靈敏度
+    if (dragVector.length() > 0.05) {
         const worldNormal = selectedFaceNormal.clone().applyQuaternion(selectedCubie.quaternion);
         
-        // 取得相機視角的右方與上方向量
         const cameraRight = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
         const cameraUp = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
         
-        // 將2D拖曳向量轉換為3D空間中的拖曳方向
-        const dragDir3D = cameraRight.multiplyScalar(dragVector.x).add(cameraUp.multiplyScalar(dragVector.y));
+        // *** 關鍵修正 ***：使用 .clone() 避免修改原始視角向量
+        const dragDir3D = cameraRight.clone().multiplyScalar(dragVector.x).add(cameraUp.clone().multiplyScalar(dragVector.y));
         
-        // 透過叉積計算出垂直於「表面法線」和「拖曳方向」的旋轉軸
         const rotationAxis = new THREE.Vector3().crossVectors(worldNormal, dragDir3D).normalize();
         
-        // 將計算出的旋轉軸，校正到最接近的X, Y, Z主軸上
         let mainAxis = 'x';
         let maxDot = 0;
         ['x', 'y', 'z'].forEach(axis => {
@@ -128,13 +125,11 @@ function onPointerMove(event) {
             }
         });
         
-        // 判斷旋轉方向 (順時針/逆時針)
         const mainRotationVec = new THREE.Vector3(mainAxis === 'x' ? 1:0, mainAxis === 'y' ? 1:0, mainAxis === 'z' ? 1:0);
         const direction = Math.sign(mainRotationVec.dot(rotationAxis));
         
-        // 執行旋轉
         rotateLayer(selectedCubie.position, mainAxis, direction);
-        isDragging = false; // 觸發一次後就停止，防止重複旋轉
+        isDragging = false;
     }
 }
 
@@ -161,13 +156,13 @@ function rotateLayer(pivotPoint, axis, direction) {
         axis === 'y' ? 1 : 0,
         axis === 'z' ? 1 : 0
     );
-    const animationDuration = 300; // ms
+    const animationDuration = 300;
     const startTime = performance.now();
 
     const animateRotation = (time) => {
         const elapsed = time - startTime;
         const t = Math.min(1, elapsed / animationDuration);
-        const easedT = 1 - Math.pow(1 - t, 3); // EaseOutCubic 緩動效果
+        const easedT = 1 - Math.pow(1 - t, 3);
         
         pivot.setRotationFromAxisAngle(rotationAxisVec, targetAngle * easedT);
 

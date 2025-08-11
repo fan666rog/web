@@ -1,5 +1,7 @@
+// 引入 Three.js 和控制器
+// --- 修改重點：將 OrbitControls 更換為 TrackballControls ---
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
 
 // --- 基本 Three.js 設定 ---
 const scene = new THREE.Scene();
@@ -13,11 +15,13 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // --- 控制項 ---
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-controls.enablePan = false;
-controls.enableZoom = false;
+// --- 修改重點：初始化控制器為 TrackballControls 並設定其屬性 ---
+const controls = new TrackballControls(camera, renderer.domElement);
+controls.noRotate = false;      // 確保旋轉是開啟的
+controls.noPan = true;          // 禁用平移，符合您原本的設定
+controls.noZoom = true;         // 禁用縮放，符合您原本的設定
+controls.staticMoving = true;   // 增加一些阻尼感
+controls.dynamicDampingFactor = 0.1; // 設定阻尼係數
 
 // --- UI 按鈕 ---
 const scrambleBtn = document.getElementById('scramble-btn');
@@ -79,7 +83,8 @@ let isAnimating = false;
 
 function setControlsEnabled(enabled) {
     isAnimating = !enabled;
-    controls.enabled = enabled;
+    // --- 修改重點：TrackballControls 沒有 .enabled 屬性，改用 noRotate ---
+    controls.noRotate = !enabled; 
     scrambleBtn.disabled = !enabled;
     resetBtn.disabled = !enabled;
     undoBtn.disabled = !enabled || moveHistory.length === 0;
@@ -93,7 +98,8 @@ function onPointerDown(event) {
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(cubies);
     if (intersects.length > 0) {
-        controls.enabled = false;
+        // --- 修改重點：TrackballControls 沒有 .enabled 屬性，改用 noRotate ---
+        controls.noRotate = true;
         selectedCubie = intersects[0].object;
         selectedFaceNormal = intersects[0].face.normal.clone();
         isDragging = true;
@@ -125,7 +131,10 @@ function onPointerMove(event) {
 }
 
 function onPointerUp() {
-    if (!isAnimating) controls.enabled = true;
+    if (!isAnimating) {
+        // --- 修改重點：TrackballControls 沒有 .enabled 屬性，改用 noRotate ---
+        controls.noRotate = false;
+    }
     isDragging = false;
 }
 
@@ -205,7 +214,8 @@ undoBtn.addEventListener('click', undoMove);
 // --- 動畫循環 ---
 function animate() {
     requestAnimationFrame(animate);
-    controls.update();
+    // --- 修改重點：TrackballControls 也需要持續更新 ---
+    controls.update(); 
     renderer.render(scene, camera);
 }
 
@@ -214,6 +224,8 @@ window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    // --- 修改重點：TrackballControls 需要在視窗變動時更新 ---
+    controls.handleResize();
 });
 
 // --- 初始化執行 ---

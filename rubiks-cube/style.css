@@ -1,33 +1,8 @@
 body {
     margin: 0;
-    overflow: hidden; /* 隱藏滾動條 */
+    overflow: hidden; /* Hide scrollbars */
 }
 
 canvas {
     display: block;
 }
-
-/* 頁尾版權 */
-footer {
-    position: absolute;
-    bottom: 15px;
-    width: 100%;
-    text-align: center;
-    color: #aaa;
-    font-family: sans-serif;
-    font-size: 14px;
-    z-index: 100;
-    text-shadow: 1px 1px 2px #000;
-    pointer-events: none; /* 讓滑鼠可以穿透此元素 */
-}
-
-footer a {
-    color: #fff;
-    text-decoration: none;
-    pointer-events: auto; /* 連結本身要可以點擊 */
-}
-
-footer a:hover {
-    text-decoration: underline;
-}
-

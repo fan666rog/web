@@ -54,7 +54,6 @@ for (let x = -1; x <= 1; x++) {
             if (x === 0 && y === 0 && z === 0) continue;
             const cubieGeometry = new THREE.BoxGeometry(CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE);
             
-            // *** 這就是被誤刪的關鍵程式碼 ***
             const cubieMaterials = [
                 x === 1 ? materials.right : materials.inside,
                 x === -1 ? materials.left : materials.inside,
@@ -63,7 +62,6 @@ for (let x = -1; x <= 1; x++) {
                 z === 1 ? materials.front : materials.inside,
                 z === -1 ? materials.back : materials.inside
             ];
-            // *********************************
 
             const cubie = new THREE.Mesh(cubieGeometry, cubieMaterials);
             cubie.position.set(x * positionOffset, y * positionOffset, z * positionOffset);
@@ -181,7 +179,7 @@ async function scrambleCube() {
         const layerIndex = layers[Math.floor(Math.random() * 3)];
         const direction = Math.random() < 0.5 ? 1 : -1;
         const pivotPoint = new THREE.Vector3();
-        pivotPoint[axis] = layerIndex * positionOffset;
+pivotPoint[axis] = layerIndex * positionOffset;
         await rotateLayer({ pivot: pivotPoint, axis: axis, direction: direction }, true);
     }
     setControlsEnabled(true);
@@ -220,5 +218,7 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// --- 初始狀態 ---
+// --- 初始化執行 ---
 setControlsEnabled(true);
+animate();
+

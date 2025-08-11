@@ -63,7 +63,6 @@ for (let x = -1; x <= 1; x++) {
             const cubie = new THREE.Mesh(cubieGeometry, cubieMaterials);
             cubie.position.set(x * positionOffset, y * positionOffset, z * positionOffset);
             
-            // 儲存初始狀態以供重置使用
             cubie.userData.initialPosition = cubie.position.clone();
             cubie.userData.initialQuaternion = cubie.quaternion.clone();
 
@@ -78,9 +77,9 @@ scene.add(rubiksCube);
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let selectedCubie = null, selectedFaceNormal = null, isDragging = false, dragStartPoint = new THREE.Vector2();
-let isAnimating = false; // 全域動畫鎖
+let isAnimating = false;
+let isResetting = false; // *** 新增：重置動畫專用旗標 ***
 
-// 集中管理所有控制項的啟用/禁用
 function setAllControlsEnabled(enabled) {
     isAnimating = !enabled;
     controls.enabled = enabled;
@@ -89,14 +88,14 @@ function setAllControlsEnabled(enabled) {
 }
 
 function onPointerDown(event) {
-    if (isAnimating) return;
+    if (isAnimating || isResetting) return;
     const pointer = (event.touches) ? event.touches[0] : event;
     mouse.x = (pointer.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(pointer.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(cubies);
     if (intersects.length > 0) {
-        controls.enabled = false; // 僅暫停視角控制
+        controls.enabled = false;
         selectedCubie = intersects[0].object;
         selectedFaceNormal = intersects[0].face.normal.clone();
         isDragging = true;
@@ -105,14 +104,14 @@ function onPointerDown(event) {
 }
 
 function onPointerMove(event) {
-    if (!isDragging || isAnimating) return;
+    if (!isDragging || isAnimating || isResetting) return;
 
     const pointer = (event.touches) ? event.touches[0] : event;
     const currentPoint = new THREE.Vector2((pointer.clientX / window.innerWidth) * 2 - 1, -(pointer.clientY / window.innerHeight) * 2 + 1);
     const dragVector = currentPoint.clone().sub(dragStartPoint);
 
     if (dragVector.length() > 0.05) {
-        isDragging = false; // 觸發後立刻設為false，防止單次拖曳觸發多次旋轉
+        isDragging = false;
         
         const worldNormal = selectedFaceNormal.clone().applyQuaternion(selectedCubie.quaternion);
         const cameraRight = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
@@ -139,7 +138,7 @@ function onPointerMove(event) {
 }
 
 function onPointerUp() {
-    if (!isAnimating) { // 只有在沒有動畫播放時，才恢復視角控制
+    if (!isAnimating && !isResetting) {
         controls.enabled = true;
     }
     isDragging = false;
@@ -147,7 +146,7 @@ function onPointerUp() {
 
 function rotateLayer(pivotPoint, axis, direction) {
     return new Promise(resolve => {
-        setAllControlsEnabled(false); // 鎖定所有控制項
+        setAllControlsEnabled(false);
 
         const layer = cubies.filter(cubie => Math.abs(cubie.position[axis] - pivotPoint[axis]) < 0.5);
         const pivot = new THREE.Object3D();
@@ -179,17 +178,17 @@ function rotateLayer(pivotPoint, axis, direction) {
                     cubie.quaternion.copy(worldQuaternion);
                 });
                 
-                setAllControlsEnabled(true); // 解鎖所有控制項
-                resolve(); // Promise完成
+                setAllControlsEnabled(true);
+                resolve();
             }
         };
         requestAnimationFrame(animateRotation);
     });
 }
 
-// --- 新增：打亂與重置功能 ---
+// --- 打亂與重置功能 ---
 async function scrambleCube() {
-    setAllControlsEnabled(false); // 開始前鎖定
+    setAllControlsEnabled(false);
     const moves = 25;
     const axes = ['x', 'y', 'z'];
     const layers = [-1, 0, 1];
@@ -201,20 +200,21 @@ async function scrambleCube() {
         const pivotPoint = new THREE.Vector3();
         pivotPoint[axis] = layerIndex * positionOffset;
         
-        // 等待上一個旋轉動畫結束
         await rotateLayer(pivotPoint, axis, direction);
     }
     
-    setAllControlsEnabled(true); // 全部完成後解鎖
+    setAllControlsEnabled(true);
 }
 
 function resetCube() {
-    setAllControlsEnabled(false); // 開始前鎖定
+    setAllControlsEnabled(false);
+    isResetting = true; // *** 升起旗標 ***
     let completedAnimations = 0;
     const totalCubies = cubies.length;
 
     if (totalCubies === 0) {
         setAllControlsEnabled(true);
+        isResetting = false;
         return;
     }
     
@@ -228,7 +228,7 @@ function resetCube() {
 
         const animateReset = (time) => {
             const t = Math.min(1, (time - startTime) / duration);
-            const easedT = 1 - Math.pow(1 - t, 4); // EaseOutQuart
+            const easedT = 1 - Math.pow(1 - t, 4);
             
             cubie.position.lerpVectors(startPos, targetPos, easedT);
             THREE.Quaternion.slerp(startQuat, targetQuat, cubie.quaternion, easedT);
@@ -240,7 +240,8 @@ function resetCube() {
                 cubie.quaternion.copy(targetQuat);
                 completedAnimations++;
                 if (completedAnimations === totalCubies) {
-                    setAllControlsEnabled(true); // 所有方塊都歸位後解鎖
+                    setAllControlsEnabled(true);
+                    isResetting = false; // *** 放下旗標 ***
                 }
             }
         };
@@ -259,7 +260,10 @@ resetBtn.addEventListener('click', resetCube);
 // --- 動畫循環 ---
 function animate() {
     requestAnimationFrame(animate);
-    controls.update();
+    // *** 關鍵修正：只有在非重置狀態下才更新視角控制器 ***
+    if (!isResetting) {
+        controls.update();
+    }
     renderer.render(scene, camera);
 }
 

@@ -78,7 +78,6 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let selectedCubie = null, selectedFaceNormal = null, isDragging = false, dragStartPoint = new THREE.Vector2();
 let isAnimating = false;
-let isResetting = false; // *** 新增：重置動畫專用旗標 ***
 
 function setAllControlsEnabled(enabled) {
     isAnimating = !enabled;
@@ -88,7 +87,7 @@ function setAllControlsEnabled(enabled) {
 }
 
 function onPointerDown(event) {
-    if (isAnimating || isResetting) return;
+    if (isAnimating) return;
     const pointer = (event.touches) ? event.touches[0] : event;
     mouse.x = (pointer.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(pointer.clientY / window.innerHeight) * 2 + 1;
@@ -104,7 +103,7 @@ function onPointerDown(event) {
 }
 
 function onPointerMove(event) {
-    if (!isDragging || isAnimating || isResetting) return;
+    if (!isDragging || isAnimating) return;
 
     const pointer = (event.touches) ? event.touches[0] : event;
     const currentPoint = new THREE.Vector2((pointer.clientX / window.innerWidth) * 2 - 1, -(pointer.clientY / window.innerHeight) * 2 + 1);
@@ -138,7 +137,7 @@ function onPointerMove(event) {
 }
 
 function onPointerUp() {
-    if (!isAnimating && !isResetting) {
+    if (!isAnimating) {
         controls.enabled = true;
     }
     isDragging = false;
@@ -206,47 +205,45 @@ async function scrambleCube() {
     setAllControlsEnabled(true);
 }
 
+// *** 關鍵修正：重寫 resetCube 函式 ***
 function resetCube() {
     setAllControlsEnabled(false);
-    isResetting = true; // *** 升起旗標 ***
-    let completedAnimations = 0;
-    const totalCubies = cubies.length;
-
-    if (totalCubies === 0) {
-        setAllControlsEnabled(true);
-        isResetting = false;
-        return;
-    }
     
-    cubies.forEach(cubie => {
-        const targetPos = cubie.userData.initialPosition;
-        const targetQuat = cubie.userData.initialQuaternion;
-        const duration = 500 + Math.random() * 300;
-        const startTime = performance.now();
-        const startPos = cubie.position.clone();
-        const startQuat = cubie.quaternion.clone();
+    const duration = 800; // 動畫總時長
+    const startTime = performance.now();
 
-        const animateReset = (time) => {
-            const t = Math.min(1, (time - startTime) / duration);
-            const easedT = 1 - Math.pow(1 - t, 4);
-            
-            cubie.position.lerpVectors(startPos, targetPos, easedT);
-            THREE.Quaternion.slerp(startQuat, targetQuat, cubie.quaternion, easedT);
+    // 預先儲存所有方塊的起始與結束狀態
+    const animationStates = cubies.map(cubie => ({
+        cubie: cubie,
+        startPos: cubie.position.clone(),
+        startQuat: cubie.quaternion.clone(),
+        targetPos: cubie.userData.initialPosition,
+        targetQuat: cubie.userData.initialQuaternion
+    }));
+    
+    // 使用單一的 requestAnimationFrame 迴圈來更新所有方塊
+    const animateAll = (time) => {
+        const t = Math.min(1, (performance.now() - startTime) / duration);
+        const easedT = 1 - Math.pow(1 - t, 4); // EaseOutQuart 緩動效果
 
-            if (t < 1) {
-                requestAnimationFrame(animateReset);
-            } else {
-                cubie.position.copy(targetPos);
-                cubie.quaternion.copy(targetQuat);
-                completedAnimations++;
-                if (completedAnimations === totalCubies) {
-                    setAllControlsEnabled(true);
-                    isResetting = false; // *** 放下旗標 ***
-                }
-            }
-        };
-        requestAnimationFrame(animateReset);
-    });
+        animationStates.forEach(state => {
+            state.cubie.position.lerpVectors(state.startPos, state.targetPos, easedT);
+            THREE.Quaternion.slerp(state.startQuat, state.targetQuat, state.cubie.quaternion, easedT);
+        });
+
+        if (t < 1) {
+            requestAnimationFrame(animateAll);
+        } else {
+            // 動畫結束後，確保所有方塊都在精確的最終位置
+            animationStates.forEach(state => {
+                state.cubie.position.copy(state.targetPos);
+                state.cubie.quaternion.copy(state.targetQuat);
+            });
+            setAllControlsEnabled(true); // 解鎖所有控制項
+        }
+    };
+    
+    requestAnimationFrame(animateAll);
 }
 
 
@@ -260,10 +257,8 @@ resetBtn.addEventListener('click', resetCube);
 // --- 動畫循環 ---
 function animate() {
     requestAnimationFrame(animate);
-    // *** 關鍵修正：只有在非重置狀態下才更新視角控制器 ***
-    if (!isResetting) {
-        controls.update();
-    }
+    // 即使在動畫中也持續更新 controls，它內部會根據 enabled 狀態決定是否作用
+    controls.update(); 
     renderer.render(scene, camera);
 }
 

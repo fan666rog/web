@@ -12,7 +12,12 @@ canvas {
     transform: translateX(-50%);
     z-index: 100;
     display: flex;
-    gap: 15px;
+    /* 修改重點：新增此行，允許按鈕在空間不足時換行 */
+    flex-wrap: wrap;
+    /* 修改重點：增加垂直間距，以備換行時使用 */
+    gap: 10px 15px;
+    /* 修改重點：讓換行後的按鈕也能置中 */
+    justify-content: center;
 }
 #controls-container button {
     padding: 10px 20px;

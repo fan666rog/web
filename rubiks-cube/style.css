@@ -36,3 +36,27 @@ canvas {
     color: #888;
     cursor: not-allowed;
 }
+
+/* --- 新增頁尾樣式 --- */
+footer {
+    position: absolute;
+    bottom: 15px;
+    width: 100%;
+    text-align: center;
+    color: #aaa;
+    font-family: sans-serif;
+    font-size: 14px;
+    z-index: 100;
+    text-shadow: 1px 1px 2px #000;
+    pointer-events: none; /* 讓滑鼠可以穿透頁尾，操作魔術方塊 */
+}
+
+footer a {
+    color: #fff;
+    text-decoration: none;
+    pointer-events: auto; /* 恢復連結的點擊功能 */
+}
+
+footer a:hover {
+    text-decoration: underline;
+}

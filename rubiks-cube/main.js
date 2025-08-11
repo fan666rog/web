@@ -22,7 +22,7 @@ controls.noPan = true;          // 禁用平移，符合您原本的設定
 controls.noZoom = true;         // 禁用縮放，符合您原本的設定
 controls.staticMoving = true;   // 增加一些阻尼感
 controls.dynamicDampingFactor = 0.1; // 設定阻尼係數
-controls.rotateSpeed = 3.0; // 增加視角旋轉速度
+controls.rotateSpeed = 5.0; // 增加視角旋轉速度
 
 // --- UI 按鈕 ---
 const scrambleBtn = document.getElementById('scramble-btn');
@@ -238,4 +238,5 @@ const yearSpan = document.getElementById('copyright-year');
 if (yearSpan) {
     yearSpan.textContent = new Date().getFullYear();
 }
+
 

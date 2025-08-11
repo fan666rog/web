@@ -181,7 +181,6 @@ renderer.domElement.addEventListener('pointerdown', onPointerDown);
 renderer.domElement.addEventListener('pointermove', onPointerMove);
 renderer.domElement.addEventListener('pointerup', onPointerUp);
 scrambleBtn.addEventListener('click', scrambleCube);
-// *** 關鍵修正：重置按鈕直接重新載入頁面 ***
 resetBtn.addEventListener('click', () => {
     window.location.reload();
 });
@@ -200,4 +199,11 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+// --- 初始化執行 ---
 animate();
+
+// --- 新增：設定版權年份 ---
+const yearSpan = document.getElementById('copyright-year');
+if (yearSpan) {
+    yearSpan.textContent = new Date().getFullYear();
+}

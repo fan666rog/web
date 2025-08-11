@@ -22,7 +22,6 @@ controls.enableZoom = false;
 // --- UI 按鈕 ---
 const scrambleBtn = document.getElementById('scramble-btn');
 const resetBtn = document.getElementById('reset-btn');
-const undoBtn = document.getElementById('undo-btn');
 
 // --- 光源 ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
@@ -70,19 +69,17 @@ for (let x = -1; x <= 1; x++) {
 }
 scene.add(rubiksCube);
 
-// --- 旋轉與歷史紀錄邏輯 ---
-let moveHistory = [];
+// --- 旋轉邏輯 ---
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let selectedCubie = null, selectedFaceNormal = null, isDragging = false, dragStartPoint = new THREE.Vector2();
 let isAnimating = false;
 
-function setAllControlsEnabled(enabled) {
+function setControlsEnabled(enabled) {
     isAnimating = !enabled;
     controls.enabled = enabled;
     scrambleBtn.disabled = !enabled;
-    resetBtn.disabled = !enabled || moveHistory.length === 0;
-    undoBtn.disabled = !enabled || moveHistory.length === 0;
+    resetBtn.disabled = !enabled;
 }
 
 function onPointerDown(event) {
@@ -120,7 +117,7 @@ function onPointerMove(event) {
             if (dot > maxDot) { maxDot = dot; mainAxis = axis; }
         });
         const direction = Math.sign(new THREE.Vector3(mainAxis === 'x' ? 1 : 0, mainAxis === 'y' ? 1 : 0, mainAxis === 'z' ? 1 : 0).dot(rotationAxis));
-        rotateLayer({ pivot: selectedCubie.position, axis: mainAxis, direction: direction }, true);
+        rotateLayer(selectedCubie.position, mainAxis, direction);
     }
 }
 
@@ -129,20 +126,16 @@ function onPointerUp() {
     isDragging = false;
 }
 
-function rotateLayer(move, recordMove = false) {
+function rotateLayer(pivotPoint, axis, direction) {
     return new Promise(resolve => {
-        if (recordMove) {
-            moveHistory.push(move);
-        }
-        setAllControlsEnabled(false);
-        const { pivot: pivotPoint, axis, direction } = move;
-        const layerCubies = cubies.filter(c => Math.abs(c.position[axis] - pivotPoint[axis]) < 0.5);
+        setControlsEnabled(false);
+        const layer = cubies.filter(c => Math.abs(c.position[axis] - pivotPoint[axis]) < 0.5);
         const pivot = new THREE.Object3D();
         scene.add(pivot);
-        layerCubies.forEach(c => pivot.attach(c));
+        layer.forEach(c => pivot.attach(c));
         const targetAngle = (Math.PI / 2) * direction;
         const rotationAxisVec = new THREE.Vector3(axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
-        const animationDuration = 250, startTime = performance.now();
+        const animationDuration = 300, startTime = performance.now();
         const animateRotation = (time) => {
             const t = Math.min(1, (time - startTime) / animationDuration);
             const easedT = 1 - Math.pow(1 - t, 3);
@@ -152,7 +145,7 @@ function rotateLayer(move, recordMove = false) {
             } else {
                 pivot.setRotationFromAxisAngle(rotationAxisVec, targetAngle);
                 scene.remove(pivot);
-                layerCubies.forEach(c => {
+                layer.forEach(c => {
                     const worldPos = new THREE.Vector3(), worldQuat = new THREE.Quaternion();
                     c.getWorldPosition(worldPos);
                     c.getWorldQuaternion(worldQuat);
@@ -160,7 +153,7 @@ function rotateLayer(move, recordMove = false) {
                     c.position.copy(worldPos).divideScalar(positionOffset).round().multiplyScalar(positionOffset);
                     c.quaternion.copy(worldQuat);
                 });
-                setAllControlsEnabled(true);
+                setControlsEnabled(true);
                 resolve();
             }
         };
@@ -170,7 +163,7 @@ function rotateLayer(move, recordMove = false) {
 
 // --- 按鈕功能 ---
 async function scrambleCube() {
-    setAllControlsEnabled(false);
+    setControlsEnabled(false);
     const moves = 25, axes = ['x', 'y', 'z'], layers = [-1, 0, 1];
     for (let i = 0; i < moves; i++) {
         const axis = axes[Math.floor(Math.random() * 3)];
@@ -178,31 +171,9 @@ async function scrambleCube() {
         const direction = Math.random() < 0.5 ? 1 : -1;
         const pivotPoint = new THREE.Vector3();
         pivotPoint[axis] = layerIndex * positionOffset;
-        await rotateLayer({ pivot: pivotPoint, axis: axis, direction: direction }, true);
+        await rotateLayer(pivotPoint, axis, direction);
     }
-    setAllControlsEnabled(true);
-}
-
-async function undoMove(enableControlsAfter = true) {
-    if (moveHistory.length === 0) return;
-    const lastMove = moveHistory.pop();
-    const reversedMove = {
-        pivot: lastMove.pivot,
-        axis: lastMove.axis,
-        direction: -lastMove.direction // 反向旋轉
-    };
-    await rotateLayer(reversedMove, false); // false 代表不記錄這次復原的操作
-    if (enableControlsAfter) {
-       setAllControlsEnabled(true);
-    }
-}
-
-async function resetCube() {
-    setAllControlsEnabled(false);
-    while (moveHistory.length > 0) {
-        await undoMove(false); // 在迴圈中，暫時不恢復控制項
-    }
-    setAllControlsEnabled(true); // 全部完成後再恢復
+    setControlsEnabled(true);
 }
 
 // --- 事件監聽 ---
@@ -210,8 +181,10 @@ renderer.domElement.addEventListener('pointerdown', onPointerDown);
 renderer.domElement.addEventListener('pointermove', onPointerMove);
 renderer.domElement.addEventListener('pointerup', onPointerUp);
 scrambleBtn.addEventListener('click', scrambleCube);
-resetBtn.addEventListener('click', resetCube);
-undoBtn.addEventListener('click', () => undoMove(true));
+// *** 關鍵修正：重置按鈕直接重新載入頁面 ***
+resetBtn.addEventListener('click', () => {
+    window.location.reload();
+});
 
 // --- 動畫循環 ---
 function animate() {
@@ -227,5 +200,4 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// --- 初始狀態 ---
-setAllControlsEnabled(true);
+animate();

@@ -77,7 +77,9 @@ const mouse = new THREE.Vector2();
 let selectedCubie = null, selectedFaceNormal = null, isDragging = false, dragStartPoint = new THREE.Vector2();
 let isAnimating = false; // 全域動畫鎖
 
-function setButtonsEnabled(enabled) {
+function setAllControlsEnabled(enabled) {
+    isAnimating = !enabled;
+    controls.enabled = enabled;
     scrambleBtn.disabled = !enabled;
     resetBtn.disabled = !enabled;
 }
@@ -90,7 +92,7 @@ function onPointerDown(event) {
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(cubies);
     if (intersects.length > 0) {
-        controls.enabled = false; // 點到方塊時，暫停視角控制
+        controls.enabled = false;
         selectedCubie = intersects[0].object;
         selectedFaceNormal = intersects[0].face.normal.clone();
         isDragging = true;
@@ -99,42 +101,46 @@ function onPointerDown(event) {
 }
 
 function onPointerMove(event) {
-    if (!isDragging || isAnimating) return;
+    if (!isDragging) return; // 如果不在拖曳狀態，直接返回
     const pointer = (event.touches) ? event.touches[0] : event;
     const currentPoint = new THREE.Vector2((pointer.clientX / window.innerWidth) * 2 - 1, -(pointer.clientY / window.innerHeight) * 2 + 1);
     const dragVector = currentPoint.clone().sub(dragStartPoint);
 
     if (dragVector.length() > 0.07) {
-        isDragging = false; // 防止重複觸發
         const worldNormal = selectedFaceNormal.clone().applyQuaternion(selectedCubie.quaternion);
-        let faceAxis, rotationAxis, direction;
+        let rotationAxis, direction;
         const absNormal = new THREE.Vector3(Math.abs(worldNormal.x), Math.abs(worldNormal.y), Math.abs(worldNormal.z));
         const isHorizontalDrag = Math.abs(dragVector.x) > Math.abs(dragVector.y);
-
+        
         if (absNormal.x > absNormal.y && absNormal.x > absNormal.z) {
             rotationAxis = isHorizontalDrag ? 'y' : 'z';
             direction = (isHorizontalDrag ? dragVector.y : -dragVector.x) * Math.sign(worldNormal.x);
         } else if (absNormal.y > absNormal.x && absNormal.y > absNormal.z) {
-            rotationAxis = isHorizontalDrag ? 'x' : 'z';
-            direction = (isHorizontalDrag ? -dragVector.x : dragVector.y) * Math.sign(worldNormal.y);
+            rotationAxis = isHorizontalDrag ? 'z' : 'x';
+            direction = (isHorizontalDrag ? -dragVector.x : -dragVector.y) * Math.sign(worldNormal.y);
         } else {
-            rotationAxis = isHorizontalDrag ? 'x' : 'y';
-            direction = (isHorizontalDrag ? dragVector.x : dragVector.y) * Math.sign(worldNormal.z);
+            rotationAxis = isHorizontalDrag ? 'y' : 'x';
+            direction = (isHorizontalDrag ? dragVector.x : -dragVector.y) * Math.sign(worldNormal.z);
         }
-        
+
+        // 觸發旋轉後，立刻停止當前的拖曳判斷，防止重複觸發
+        isDragging = false; 
         rotateLayer(selectedCubie.position, rotationAxis, Math.sign(direction));
     }
 }
 
 function onPointerUp() {
-    controls.enabled = true; // 無論如何都恢復視角控制
-    isDragging = false;
+    if (!isAnimating) {
+        controls.enabled = true; // 如果沒有動畫在跑，恢復視角控制
+    }
+    isDragging = false; // 停止拖曳
 }
 
 function rotateLayer(pivotPoint, axis, direction) {
     return new Promise(resolve => {
         isAnimating = true;
-        setButtonsEnabled(false);
+        setAllControlsEnabled(false);
+
         const layer = cubies.filter(c => Math.abs(c.position[axis] - pivotPoint[axis]) < 0.5);
         const pivot = new THREE.Object3D();
         scene.add(pivot);
@@ -149,6 +155,7 @@ function rotateLayer(pivotPoint, axis, direction) {
             const t = Math.min(1, (time - startTime) / animationDuration);
             const easedT = 1 - Math.pow(1 - t, 3);
             pivot.setRotationFromAxisAngle(rotationAxisVec, targetAngle * easedT);
+
             if (t < 1) {
                 requestAnimationFrame(animateRotation);
             } else {
@@ -156,14 +163,14 @@ function rotateLayer(pivotPoint, axis, direction) {
                 scene.remove(pivot);
                 layer.forEach(c => {
                     const worldPos = new THREE.Vector3();
+                    const worldQuat = new THREE.Quaternion();
                     c.getWorldPosition(worldPos);
+                    c.getWorldQuaternion(worldQuat);
                     rubiksCube.attach(c);
                     c.position.copy(worldPos).divideScalar(positionOffset).round().multiplyScalar(positionOffset);
-                    c.rotation.setFromQuaternion(pivot.quaternion.multiply(c.quaternion));
+                    c.quaternion.copy(worldQuat);
                 });
-                isAnimating = false;
-                setButtonsEnabled(true);
-                if (!isDragging) controls.enabled = true;
+                setAllControlsEnabled(true);
                 resolve();
             }
         };
@@ -173,8 +180,7 @@ function rotateLayer(pivotPoint, axis, direction) {
 
 // --- 打亂與重置功能 ---
 async function scrambleCube() {
-    isAnimating = true;
-    setButtonsEnabled(false);
+    setAllControlsEnabled(false);
     const moves = 25;
     const axes = ['x', 'y', 'z'];
     const layers = [-1, 0, 1];
@@ -186,13 +192,11 @@ async function scrambleCube() {
         pivotPoint[axis] = layerIndex * positionOffset;
         await rotateLayer(pivotPoint, axis, direction);
     }
-    isAnimating = false;
-    setButtonsEnabled(true);
+    setAllControlsEnabled(true);
 }
 
 function resetCube() {
-    isAnimating = true;
-    setButtonsEnabled(false);
+    setAllControlsEnabled(false);
     let completed = 0;
     cubies.forEach(cubie => {
         const targetPos = cubie.userData.initialPosition;
@@ -214,9 +218,7 @@ function resetCube() {
                 cubie.quaternion.copy(targetQuat);
                 completed++;
                 if (completed === cubies.length) {
-                    isAnimating = false;
-                    setButtonsEnabled(true);
-                    controls.enabled = true;
+                    setAllControlsEnabled(true);
                 }
             }
         };

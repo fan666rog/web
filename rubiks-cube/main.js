@@ -22,6 +22,7 @@ controls.enableZoom = false;
 // --- UI 按鈕 ---
 const scrambleBtn = document.getElementById('scramble-btn');
 const resetBtn = document.getElementById('reset-btn');
+const undoBtn = document.getElementById('undo-btn');
 
 // --- 光源 ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
@@ -69,7 +70,8 @@ for (let x = -1; x <= 1; x++) {
 }
 scene.add(rubiksCube);
 
-// --- 旋轉邏輯 ---
+// --- 旋轉與歷史紀錄邏輯 ---
+let moveHistory = [];
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let selectedCubie = null, selectedFaceNormal = null, isDragging = false, dragStartPoint = new THREE.Vector2();
@@ -80,6 +82,7 @@ function setControlsEnabled(enabled) {
     controls.enabled = enabled;
     scrambleBtn.disabled = !enabled;
     resetBtn.disabled = !enabled;
+    undoBtn.disabled = !enabled || moveHistory.length === 0;
 }
 
 function onPointerDown(event) {
@@ -117,7 +120,7 @@ function onPointerMove(event) {
             if (dot > maxDot) { maxDot = dot; mainAxis = axis; }
         });
         const direction = Math.sign(new THREE.Vector3(mainAxis === 'x' ? 1 : 0, mainAxis === 'y' ? 1 : 0, mainAxis === 'z' ? 1 : 0).dot(rotationAxis));
-        rotateLayer(selectedCubie.position, mainAxis, direction);
+        rotateLayer({ pivot: selectedCubie.position.clone(), axis: mainAxis, direction: direction }, true);
     }
 }
 
@@ -126,9 +129,13 @@ function onPointerUp() {
     isDragging = false;
 }
 
-function rotateLayer(pivotPoint, axis, direction) {
+function rotateLayer(move, recordMove = false) {
     return new Promise(resolve => {
+        if (recordMove) {
+            moveHistory.push(move);
+        }
         setControlsEnabled(false);
+        const { pivot: pivotPoint, axis, direction } = move;
         const layer = cubies.filter(c => Math.abs(c.position[axis] - pivotPoint[axis]) < 0.5);
         const pivot = new THREE.Object3D();
         scene.add(pivot);
@@ -171,9 +178,20 @@ async function scrambleCube() {
         const direction = Math.random() < 0.5 ? 1 : -1;
         const pivotPoint = new THREE.Vector3();
         pivotPoint[axis] = layerIndex * positionOffset;
-        await rotateLayer(pivotPoint, axis, direction);
+        await rotateLayer({ pivot: pivotPoint, axis: axis, direction: direction }, true);
     }
     setControlsEnabled(true);
+}
+
+async function undoMove() {
+    if (moveHistory.length === 0) return;
+    const lastMove = moveHistory.pop();
+    const reversedMove = {
+        pivot: lastMove.pivot,
+        axis: lastMove.axis,
+        direction: -lastMove.direction
+    };
+    await rotateLayer(reversedMove, false);
 }
 
 // --- 事件監聽 ---
@@ -181,9 +199,8 @@ renderer.domElement.addEventListener('pointerdown', onPointerDown);
 renderer.domElement.addEventListener('pointermove', onPointerMove);
 renderer.domElement.addEventListener('pointerup', onPointerUp);
 scrambleBtn.addEventListener('click', scrambleCube);
-resetBtn.addEventListener('click', () => {
-    window.location.reload();
-});
+resetBtn.addEventListener('click', () => { window.location.reload(); });
+undoBtn.addEventListener('click', undoMove);
 
 // --- 動畫循環 ---
 function animate() {
@@ -200,6 +217,7 @@ window.addEventListener('resize', () => {
 });
 
 // --- 初始化執行 ---
+setControlsEnabled(true);
 animate();
 
 // --- 新增：設定版權年份 ---

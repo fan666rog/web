@@ -22,7 +22,7 @@ controls.enableZoom = false;
 // --- UI 按鈕 ---
 const scrambleBtn = document.getElementById('scramble-btn');
 const resetBtn = document.getElementById('reset-btn');
-const undoBtn = document.getElementById('undo-btn'); // 新增的按鈕
+const undoBtn = document.getElementById('undo-btn');
 
 // --- 光源 ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
@@ -53,6 +53,8 @@ for (let x = -1; x <= 1; x++) {
         for (let z = -1; z <= 1; z++) {
             if (x === 0 && y === 0 && z === 0) continue;
             const cubieGeometry = new THREE.BoxGeometry(CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE);
+            
+            // *** 這就是被誤刪的關鍵程式碼 ***
             const cubieMaterials = [
                 x === 1 ? materials.right : materials.inside,
                 x === -1 ? materials.left : materials.inside,
@@ -61,6 +63,8 @@ for (let x = -1; x <= 1; x++) {
                 z === 1 ? materials.front : materials.inside,
                 z === -1 ? materials.back : materials.inside
             ];
+            // *********************************
+
             const cubie = new THREE.Mesh(cubieGeometry, cubieMaterials);
             cubie.position.set(x * positionOffset, y * positionOffset, z * positionOffset);
             rubiksCube.add(cubie);
@@ -71,7 +75,7 @@ for (let x = -1; x <= 1; x++) {
 scene.add(rubiksCube);
 
 // --- 旋轉與歷史紀錄邏輯 ---
-let moveHistory = []; // *** 動作儲存器 ***
+let moveHistory = [];
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let selectedCubie = null, selectedFaceNormal = null, isDragging = false, dragStartPoint = new THREE.Vector2();
@@ -82,7 +86,6 @@ function setControlsEnabled(enabled) {
     controls.enabled = enabled;
     scrambleBtn.disabled = !enabled;
     resetBtn.disabled = !enabled;
-    // 上一步按鈕只有在歷史紀錄中有東西時才能按
     undoBtn.disabled = !enabled || moveHistory.length === 0;
 }
 
@@ -121,8 +124,6 @@ function onPointerMove(event) {
             if (dot > maxDot) { maxDot = dot; mainAxis = axis; }
         });
         const direction = Math.sign(new THREE.Vector3(mainAxis === 'x' ? 1 : 0, mainAxis === 'y' ? 1 : 0, mainAxis === 'z' ? 1 : 0).dot(rotationAxis));
-        
-        // 執行旋轉，並告知需要記錄這次操作
         rotateLayer({ pivot: selectedCubie.position, axis: mainAxis, direction: direction }, true);
     }
 }
@@ -134,7 +135,6 @@ function onPointerUp() {
 
 function rotateLayer(move, recordMove = false) {
     return new Promise(resolve => {
-        // 如果需要，就記錄下來
         if (recordMove) {
             moveHistory.push(move);
         }
@@ -187,16 +187,15 @@ async function scrambleCube() {
     setControlsEnabled(true);
 }
 
-// *** 新增：上一步功能 ***
 async function undoMove() {
-    if (moveHistory.length === 0) return; // 如果沒紀錄就返回
-    const lastMove = moveHistory.pop(); // 取出最後一步
+    if (moveHistory.length === 0) return;
+    const lastMove = moveHistory.pop();
     const reversedMove = {
         pivot: lastMove.pivot,
         axis: lastMove.axis,
-        direction: -lastMove.direction // *** 關鍵：方向相反 ***
+        direction: -lastMove.direction
     };
-    await rotateLayer(reversedMove, false); // 執行反向旋轉，且不記錄
+    await rotateLayer(reversedMove, false);
 }
 
 // --- 事件監聽 ---
@@ -205,7 +204,7 @@ renderer.domElement.addEventListener('pointermove', onPointerMove);
 renderer.domElement.addEventListener('pointerup', onPointerUp);
 scrambleBtn.addEventListener('click', scrambleCube);
 resetBtn.addEventListener('click', () => { window.location.reload(); });
-undoBtn.addEventListener('click', undoMove); // 綁定新功能
+undoBtn.addEventListener('click', undoMove);
 
 // --- 動畫循環 ---
 function animate() {

@@ -30,7 +30,7 @@ scene.add(directionalLight);
 const rubiksCube = new THREE.Group();
 const CUBIE_SIZE = 1;
 const CUBIE_GAP = 0.1;
-const CUBE_DIMENSION = 3;
+const positionOffset = CUBIE_SIZE + CUBIE_GAP;
 
 const materials = {
     right: new THREE.MeshStandardMaterial({ color: 0xff0000 }),  // 紅色 (+X)
@@ -58,7 +58,6 @@ for (let x = -1; x <= 1; x++) {
                 z === -1 ? materials.back : materials.inside
             ];
             const cubie = new THREE.Mesh(cubieGeometry, cubieMaterials);
-            const positionOffset = CUBIE_SIZE + CUBIE_GAP;
             cubie.position.set(x * positionOffset, y * positionOffset, z * positionOffset);
             rubiksCube.add(cubie);
             cubies.push(cubie);
@@ -102,42 +101,40 @@ function onPointerMove(event) {
         (pointer.clientX / window.innerWidth) * 2 - 1,
         -(pointer.clientY / window.innerHeight) * 2 + 1
     );
-
     const dragVector = currentPoint.clone().sub(dragStartPoint);
 
-    if (dragVector.length() > 0.05) {
+    if (dragVector.length() > 0.05) { // 拖曳偵測的靈敏度
         const worldNormal = selectedFaceNormal.clone().applyQuaternion(selectedCubie.quaternion);
-
+        
+        // 取得相機視角的右方與上方向量
         const cameraRight = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
         const cameraUp = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
         
-        const dragDir3D_X = cameraRight.multiplyScalar(dragVector.x);
-        const dragDir3D_Y = cameraUp.multiplyScalar(dragVector.y);
-        const dragDir3D = dragDir3D_X.add(dragDir3D_Y);
-
+        // 將2D拖曳向量轉換為3D空間中的拖曳方向
+        const dragDir3D = cameraRight.multiplyScalar(dragVector.x).add(cameraUp.multiplyScalar(dragVector.y));
+        
+        // 透過叉積計算出垂直於「表面法線」和「拖曳方向」的旋轉軸
         const rotationAxis = new THREE.Vector3().crossVectors(worldNormal, dragDir3D).normalize();
-
-        const axes = [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)];
+        
+        // 將計算出的旋轉軸，校正到最接近的X, Y, Z主軸上
         let mainAxis = 'x';
         let maxDot = 0;
-        axes.forEach((axis, i) => {
-            const dot = Math.abs(axis.dot(rotationAxis));
+        ['x', 'y', 'z'].forEach(axis => {
+            const axisVec = new THREE.Vector3(axis === 'x' ? 1:0, axis === 'y' ? 1:0, axis === 'z' ? 1:0);
+            const dot = Math.abs(axisVec.dot(rotationAxis));
             if (dot > maxDot) {
                 maxDot = dot;
-                mainAxis = i === 0 ? 'x' : i === 1 ? 'y' : 'z';
+                mainAxis = axis;
             }
         });
         
-        const mainRotationVec = new THREE.Vector3(
-            mainAxis === 'x' ? 1 : 0, 
-            mainAxis === 'y' ? 1 : 0, 
-            mainAxis === 'z' ? 1 : 0
-        );
-
+        // 判斷旋轉方向 (順時針/逆時針)
+        const mainRotationVec = new THREE.Vector3(mainAxis === 'x' ? 1:0, mainAxis === 'y' ? 1:0, mainAxis === 'z' ? 1:0);
         const direction = Math.sign(mainRotationVec.dot(rotationAxis));
         
+        // 執行旋轉
         rotateLayer(selectedCubie.position, mainAxis, direction);
-        isDragging = false;
+        isDragging = false; // 觸發一次後就停止，防止重複旋轉
     }
 }
 
@@ -164,27 +161,20 @@ function rotateLayer(pivotPoint, axis, direction) {
         axis === 'y' ? 1 : 0,
         axis === 'z' ? 1 : 0
     );
-
-    const start = { angle: 0 };
-    const end = { angle: targetAngle };
     const animationDuration = 300; // ms
+    const startTime = performance.now();
 
     const animateRotation = (time) => {
         const elapsed = time - startTime;
         const t = Math.min(1, elapsed / animationDuration);
+        const easedT = 1 - Math.pow(1 - t, 3); // EaseOutCubic 緩動效果
         
-        // 使用簡單的 ease-out 效果
-        const easedT = t * (2 - t);
-        const angle = start.angle + (end.angle - start.angle) * easedT;
-
-        pivot.setRotationFromAxisAngle(rotationAxisVec, angle);
+        pivot.setRotationFromAxisAngle(rotationAxisVec, targetAngle * easedT);
 
         if (t < 1) {
             requestAnimationFrame(animateRotation);
         } else {
-            pivot.setRotationFromAxisAngle(rotationAxisVec, end.angle);
-            
-            // 更新方塊的世界座標並放回場景
+            pivot.setRotationFromAxisAngle(rotationAxisVec, targetAngle);
             scene.remove(pivot);
             layer.forEach(cubie => {
                 const worldPosition = new THREE.Vector3();
@@ -193,19 +183,12 @@ function rotateLayer(pivotPoint, axis, direction) {
                 cubie.getWorldQuaternion(worldQuaternion);
                 
                 rubiksCube.attach(cubie);
-                cubie.position.copy(worldPosition);
+                cubie.position.copy(worldPosition).divideScalar(positionOffset).round().multiplyScalar(positionOffset);
                 cubie.quaternion.copy(worldQuaternion);
-
-                const positionOffset = CUBIE_SIZE + CUBIE_GAP;
-                cubie.position.x = Math.round(cubie.position.x / positionOffset) * positionOffset;
-                cubie.position.y = Math.round(cubie.position.y / positionOffset) * positionOffset;
-                cubie.position.z = Math.round(cubie.position.z / positionOffset) * positionOffset;
             });
             isRotating = false;
         }
     };
-    
-    const startTime = performance.now();
     requestAnimationFrame(animateRotation);
 }
 
@@ -214,9 +197,6 @@ function rotateLayer(pivotPoint, axis, direction) {
 renderer.domElement.addEventListener('pointerdown', onPointerDown);
 renderer.domElement.addEventListener('pointermove', onPointerMove);
 renderer.domElement.addEventListener('pointerup', onPointerUp);
-renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
-renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
-renderer.domElement.addEventListener('touchend', onPointerUp);
 
 // --- 動畫循環 ---
 function animate() {

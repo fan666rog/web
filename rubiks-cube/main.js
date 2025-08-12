@@ -28,7 +28,6 @@ const resetBtn = document.getElementById('reset-btn');
 const undoBtn = document.getElementById('undo-btn');
 const resetViewBtn = document.getElementById('reset-view-btn');
 const invertViewBtn = document.getElementById('invert-view-btn');
-// 修改重點：獲取新的「旋轉視角」按鈕
 const rotateViewBtn = document.getElementById('rotate-view-btn');
 
 
@@ -93,7 +92,6 @@ function setControlsEnabled(enabled) {
     undoBtn.disabled = !enabled || moveHistory.length === 0;
     if(resetViewBtn) resetViewBtn.disabled = !enabled;
     if(invertViewBtn) invertViewBtn.disabled = !enabled;
-    // 修改重點：同步控制新按鈕的狀態
     if(rotateViewBtn) rotateViewBtn.disabled = !enabled;
 }
 
@@ -212,25 +210,19 @@ function resetCameraOrientation() {
     camera.up.set(0, 1, 0);
 }
 
+// 修改重點：簡化並修正上下顛倒的邏輯
 function invertCamera() {
-    camera.position.y = -camera.position.y;
-    camera.up.y = -camera.up.y;
-    if (camera.up.lengthSq() === 0) {
-        camera.up.set(0, 1, 0);
-    }
+    // 直接將攝影機自身的 "up" 向量反轉
+    camera.up.negate();
 }
 
-// 修改重點：新增旋轉視角的函式
 function rotateCameraView() {
-    // 取得攝影機望向目標的向量
     const lookDirection = new THREE.Vector3();
     camera.getWorldDirection(lookDirection);
     
-    // 建立一個繞著該向量旋轉 -90 度的四元數
     const quaternion = new THREE.Quaternion();
-    quaternion.setFromAxisAngle(lookDirection, -Math.PI / 2); // -90度 = 順時針
+    quaternion.setFromAxisAngle(lookDirection, -Math.PI / 2);
 
-    // 將這個旋轉應用於攝影機的 "up" 向量
     camera.up.applyQuaternion(quaternion);
 }
 
@@ -244,7 +236,6 @@ resetBtn.addEventListener('click', () => { window.location.reload(); });
 undoBtn.addEventListener('click', undoMove);
 if(resetViewBtn) resetViewBtn.addEventListener('click', resetCameraOrientation);
 if(invertViewBtn) invertViewBtn.addEventListener('click', invertCamera);
-// 修改重點：為新按鈕綁定點擊事件
 if(rotateViewBtn) rotateViewBtn.addEventListener('click', rotateCameraView);
 
 

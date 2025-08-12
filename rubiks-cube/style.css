@@ -71,3 +71,18 @@ footer a {
 footer a:hover {
     text-decoration: underline;
 }
+
+/* --- Gizmo 樣式 --- */
+#gizmo-container {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 150px;
+    height: 150px;
+    z-index: 101;
+    pointer-events: none; /* The container itself doesn't capture clicks */
+}
+
+#gizmo-container canvas {
+    pointer-events: auto; /* The canvas within the container can be interacted with */
+}

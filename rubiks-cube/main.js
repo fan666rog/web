@@ -29,8 +29,7 @@ const undoBtn = document.getElementById('undo-btn');
 const resetViewBtn = document.getElementById('reset-view-btn');
 const invertViewBtn = document.getElementById('invert-view-btn');
 const rotateViewBtn = document.getElementById('rotate-view-btn');
-const rotateLeftBtn = document.getElementById('rotate-left-btn');
-const rotateRightBtn = document.getElementById('rotate-right-btn');
+// 修改重點：移除左右旋轉按鈕的宣告
 
 
 // --- 光源 ---
@@ -95,8 +94,7 @@ function setControlsEnabled(enabled) {
     if(resetViewBtn) resetViewBtn.disabled = !enabled;
     if(invertViewBtn) invertViewBtn.disabled = !enabled;
     if(rotateViewBtn) rotateViewBtn.disabled = !enabled;
-    if(rotateLeftBtn) rotateLeftBtn.disabled = !enabled;
-    if(rotateRightBtn) rotateRightBtn.disabled = !enabled;
+    // 修改重點：移除對左右旋轉按鈕的控制
 }
 
 function onPointerDown(event) {
@@ -228,19 +226,7 @@ function rotateCameraView() {
     camera.up.applyQuaternion(quaternion);
 }
 
-// 修改重點：最終修正版的水平旋轉函式
-function rotateCameraHorizontally(direction) {
-    const angle = (Math.PI / 2) * direction; // 90度
-    
-    // 建立一個繞著攝影機當前 "up" 向量旋轉的四元數
-    const quaternion = new THREE.Quaternion().setFromAxisAngle(camera.up, angle);
-
-    // 只將這個旋轉應用於攝影機的位置向量
-    camera.position.applyQuaternion(quaternion);
-    
-    // 重新讓攝影機望向場景中心，它會根據新的位置和既有的 up 向量自動校正
-    camera.lookAt(0, 0, 0);
-}
+// 修改重點：移除 rotateCameraHorizontally 函式
 
 
 // --- 事件監聽 ---
@@ -253,8 +239,6 @@ undoBtn.addEventListener('click', undoMove);
 if(resetViewBtn) resetViewBtn.addEventListener('click', resetCameraOrientation);
 if(invertViewBtn) invertViewBtn.addEventListener('click', invertCamera);
 if(rotateViewBtn) rotateViewBtn.addEventListener('click', rotateCameraView);
-if(rotateLeftBtn) rotateLeftBtn.addEventListener('click', () => rotateCameraHorizontally(-1));
-if(rotateRightBtn) rotateRightBtn.addEventListener('click', () => rotateCameraHorizontally(1));
 
 
 // --- 動畫循環 ---

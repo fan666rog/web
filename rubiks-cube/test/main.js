@@ -299,9 +299,7 @@ function onPointerMove(event) {
 }
 
 function onPointerUp() {
-    if (!isAnimating) {
-        controls.enabled = true;
-    }
+    controls.enabled = true;
     isDragging = false;
 }
 
@@ -443,3 +441,6 @@ const yearSpan = document.getElementById('copyright-year');
 if (yearSpan) {
     yearSpan.textContent = new Date().getFullYear();
 }
+
+// --- For Testing ---
+window.camera = camera;

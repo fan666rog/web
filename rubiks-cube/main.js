@@ -29,6 +29,9 @@ const undoBtn = document.getElementById('undo-btn');
 const resetViewBtn = document.getElementById('reset-view-btn');
 const invertViewBtn = document.getElementById('invert-view-btn');
 const rotateViewBtn = document.getElementById('rotate-view-btn');
+// 修改重點：獲取新的左右旋轉按鈕
+const rotateLeftBtn = document.getElementById('rotate-left-btn');
+const rotateRightBtn = document.getElementById('rotate-right-btn');
 
 
 // --- 光源 ---
@@ -93,6 +96,9 @@ function setControlsEnabled(enabled) {
     if(resetViewBtn) resetViewBtn.disabled = !enabled;
     if(invertViewBtn) invertViewBtn.disabled = !enabled;
     if(rotateViewBtn) rotateViewBtn.disabled = !enabled;
+    // 修改重點：同步控制新按鈕的狀態
+    if(rotateLeftBtn) rotateLeftBtn.disabled = !enabled;
+    if(rotateRightBtn) rotateRightBtn.disabled = !enabled;
 }
 
 function onPointerDown(event) {
@@ -210,9 +216,7 @@ function resetCameraOrientation() {
     camera.up.set(0, 1, 0);
 }
 
-// 修改重點：簡化並修正上下顛倒的邏輯
 function invertCamera() {
-    // 直接將攝影機自身的 "up" 向量反轉
     camera.up.negate();
 }
 
@@ -226,6 +230,20 @@ function rotateCameraView() {
     camera.up.applyQuaternion(quaternion);
 }
 
+// 修改重點：新增水平旋轉視角的函式
+function rotateCameraHorizontally(direction) {
+    const angle = (Math.PI / 2) * direction; // 90度
+    
+    // 建立一個繞著攝影機 "up" 向量旋轉的四元數
+    const quaternion = new THREE.Quaternion().setFromAxisAngle(camera.up, angle);
+
+    // 將這個旋轉應用於攝影機的當前位置向量
+    camera.position.applyQuaternion(quaternion);
+    
+    // 讓攝影機重新望向場景中心
+    camera.lookAt(0, 0, 0);
+}
+
 
 // --- 事件監聽 ---
 renderer.domElement.addEventListener('pointerdown', onPointerDown);
@@ -237,6 +255,9 @@ undoBtn.addEventListener('click', undoMove);
 if(resetViewBtn) resetViewBtn.addEventListener('click', resetCameraOrientation);
 if(invertViewBtn) invertViewBtn.addEventListener('click', invertCamera);
 if(rotateViewBtn) rotateViewBtn.addEventListener('click', rotateCameraView);
+// 修改重點：為新按鈕綁定點擊事件
+if(rotateLeftBtn) rotateLeftBtn.addEventListener('click', () => rotateCameraHorizontally(-1));
+if(rotateRightBtn) rotateRightBtn.addEventListener('click', () => rotateCameraHorizontally(1));
 
 
 // --- 動畫循環 ---

@@ -314,7 +314,7 @@ function rotateLayer(move, recordMove = false) {
         const { pivot: pivotPoint, axis, direction } = move;
         const layer = cubies.filter(c => Math.abs(c.position[axis] - pivotPoint[axis]) < 0.5);
         const pivot = new THREE.Object3D();
-        rubiksCube.add(pivot); // Attach to cube so it rotates with it
+        scene.add(pivot);
         layer.forEach(c => pivot.attach(c));
         const targetAngle = (Math.PI / 2) * direction;
         const rotationAxisVec = new THREE.Vector3(axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
@@ -327,12 +327,14 @@ function rotateLayer(move, recordMove = false) {
                 requestAnimationFrame(animateRotation);
             } else {
                 pivot.setRotationFromAxisAngle(rotationAxisVec, targetAngle);
-                rubiksCube.remove(pivot);
+                scene.remove(pivot);
                 layer.forEach(c => {
-                    c.applyMatrix4(pivot.matrixWorld);
-                    c.position.round();
-                    c.quaternion.normalize();
+                    const worldPos = new THREE.Vector3(), worldQuat = new THREE.Quaternion();
+                    c.getWorldPosition(worldPos);
+                    c.getWorldQuaternion(worldQuat);
                     rubiksCube.attach(c);
+                    c.position.copy(worldPos).divideScalar(positionOffset).round().multiplyScalar(positionOffset);
+                    c.quaternion.copy(worldQuat);
                 });
                 setControlsEnabled(true);
                 resolve();

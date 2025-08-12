@@ -26,8 +26,10 @@ controls.rotateSpeed = 3.0;
 const scrambleBtn = document.getElementById('scramble-btn');
 const resetBtn = document.getElementById('reset-btn');
 const undoBtn = document.getElementById('undo-btn');
-// 修改重點：獲取新的按鈕元素
 const resetViewBtn = document.getElementById('reset-view-btn');
+// 修改重點：獲取新的「上下顛倒」按鈕
+const invertViewBtn = document.getElementById('invert-view-btn');
+
 
 // --- 光源 ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
@@ -88,8 +90,9 @@ function setControlsEnabled(enabled) {
     scrambleBtn.disabled = !enabled;
     resetBtn.disabled = !enabled;
     undoBtn.disabled = !enabled || moveHistory.length === 0;
-    // 修改重點：也要同步控制新按鈕的狀態
     if(resetViewBtn) resetViewBtn.disabled = !enabled;
+    // 修改重點：同步控制新按鈕的狀態
+    if(invertViewBtn) invertViewBtn.disabled = !enabled;
 }
 
 function onPointerDown(event) {
@@ -207,6 +210,18 @@ function resetCameraOrientation() {
     camera.up.set(0, 1, 0);
 }
 
+// 修改重點：新增上下顛倒視角的函式
+function invertCamera() {
+    // 將攝影機的位置和 "up" 向量都取反
+    camera.position.y = -camera.position.y;
+    camera.up.y = -camera.up.y;
+    // 如果 up 向量變成 (0,0,0)，則重設它
+    if (camera.up.lengthSq() === 0) {
+        camera.up.set(0, 1, 0);
+    }
+}
+
+
 // --- 事件監聽 ---
 renderer.domElement.addEventListener('pointerdown', onPointerDown);
 renderer.domElement.addEventListener('pointermove', onPointerMove);
@@ -214,8 +229,10 @@ renderer.domElement.addEventListener('pointerup', onPointerUp);
 scrambleBtn.addEventListener('click', scrambleCube);
 resetBtn.addEventListener('click', () => { window.location.reload(); });
 undoBtn.addEventListener('click', undoMove);
-// 修改重點：為新按鈕綁定點擊事件
 if(resetViewBtn) resetViewBtn.addEventListener('click', resetCameraOrientation);
+// 修改重點：為新按鈕綁定點擊事件
+if(invertViewBtn) invertViewBtn.addEventListener('click', invertCamera);
+
 
 // --- 動畫循環 ---
 function animate() {

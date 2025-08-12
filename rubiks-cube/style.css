@@ -12,24 +12,21 @@ canvas {
     transform: translateX(-50%);
     z-index: 100;
     display: flex;
-    /* 修改重點：改為垂直欄位佈局 */
     flex-direction: column;
-    width: 90%; /* 設定寬度以利於內部元素排版 */
-    max-width: 400px; /* 設定最大寬度 */
-    gap: 10px; /* 設定行與行之間的間距 */
+    width: 90%; 
+    max-width: 400px;
+    gap: 10px;
 }
 
-/* 修改重點：新增 .button-row 的樣式 */
 .button-row {
     display: flex;
-    gap: 10px; /* 設定按鈕之間的間距 */
+    gap: 10px;
 }
 
-/* 修改重點：讓所有按鈕等寬 */
 #controls-container button {
-    flex: 1; /* 讓按鈕在 flex 容器中等分寬度 */
-    padding: 10px 5px; /* 微調內距，讓文字空間更足夠 */
-    font-size: 14px; /* 可微調字體大小以適應手機螢幕 */
+    flex: 1; /* 核心：讓按鈕在 flex 容器中自動等分寬度 */
+    padding: 10px 5px;
+    font-size: 16px; /* 稍微加大字體以清晰顯示 */
     font-family: '微軟正黑體', sans-serif;
     background-color: rgba(30, 30, 30, 0.7);
     color: white;
@@ -37,7 +34,7 @@ canvas {
     border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.3s, transform 0.1s;
-    white-space: nowrap; /* 防止文字換行 */
+    white-space: nowrap; 
 }
 #controls-container button:hover {
     background-color: rgba(0, 0, 0, 0.7);
@@ -62,13 +59,13 @@ footer {
     font-size: 14px;
     z-index: 100;
     text-shadow: 1px 1px 2px #000;
-    pointer-events: none; /* 讓滑鼠可以穿透頁尾，操作魔術方塊 */
+    pointer-events: none;
 }
 
 footer a {
     color: #fff;
     text-decoration: none;
-    pointer-events: auto; /* 恢復連結的點擊功能 */
+    pointer-events: auto;
 }
 
 footer a:hover {

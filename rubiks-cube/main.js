@@ -228,22 +228,19 @@ function rotateCameraView() {
     camera.up.applyQuaternion(quaternion);
 }
 
-// 修改重點：修正水平旋轉函式，使其永遠繞著世界Y軸旋轉
+// 修改重點：修正後的水平旋轉函式
 function rotateCameraHorizontally(direction) {
     const angle = (Math.PI / 2) * direction; // 90度
     
-    // 定義一個固定的、指向世界正上方的旋轉軸
+    // 永遠使用世界的 Y 軸 (0, 1, 0) 作為旋轉軸
     const worldUpAxis = new THREE.Vector3(0, 1, 0);
     
-    // 建立一個繞著世界 Y 軸旋轉的四元數
     const quaternion = new THREE.Quaternion().setFromAxisAngle(worldUpAxis, angle);
 
-    // 將這個旋轉應用於攝影機的當前位置向量
+    // 只將旋轉應用於攝影機的位置
     camera.position.applyQuaternion(quaternion);
-    // 同時也需要旋轉攝影機的 "up" 向量，以保持一致性
-    camera.up.applyQuaternion(quaternion);
     
-    // 讓攝影機重新望向場景中心
+    // 重新讓攝影機望向場景中心，Three.js 會根據 camera.up 自動處理好方向
     camera.lookAt(0, 0, 0);
 }
 

@@ -282,7 +282,7 @@ const materials = {
     bottom: new THREE.MeshStandardMaterial({ color: 0xffff00 }), // Yellow
     front: new THREE.MeshStandardMaterial({ color: 0x0000ff }), // Blue
     back: new THREE.MeshStandardMaterial({ color: 0x008000 }), // Green
-    inside: new THREE.MeshStandardMaterial({ color: 0x111111, side: THREE.DoubleSide })
+    inside: insideMaterial // 使用新的 ShaderMaterial
 };
 
 const cubies = [];
@@ -517,4 +517,5 @@ if (yearSpan) {
 
 // --- For Testing ---
 window.camera = camera;
+
 

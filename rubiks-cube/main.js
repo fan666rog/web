@@ -476,7 +476,7 @@ function animate() {
     const clock = new THREE.Clock();
     requestAnimationFrame(animate);
     const elapsedTime = clock.getElapsedTime();
-    materials.inside.uniforms.u_time.value = elapsedTime;
+    insideMaterial.uniforms.u_time.value = elapsedTime;
     controls.update(); 
     
     if (gizmoRenderer) {
@@ -520,6 +520,7 @@ if (yearSpan) {
 
 // --- For Testing ---
 window.camera = camera;
+
 
 
 

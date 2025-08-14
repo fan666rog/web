@@ -104,9 +104,34 @@ const electricMaterial = new THREE.ShaderMaterial({
         uniform float u_active;
         varying vec2 vUv;
 
-        // Function to create a moving wave
-        float wave(vec2 uv, float speed, float freq, float offset) {
-            return 0.5 + 0.5 * sin(uv.x * freq + u_time * speed + offset);
+        // 2D Random function
+        float random(vec2 st) {
+            return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+        }
+
+        // 2D Voronoi function
+        vec2 voronoi(vec2 x, float time) {
+            vec2 n = floor(x);
+            vec2 f = fract(x);
+            float min_dist = 1.0;
+            float sec_min_dist = 1.0;
+
+            for (int j = -1; j <= 1; j++) {
+                for (int i = -1; i <= 1; i++) {
+                    vec2 neighbor = vec2(float(i), float(j));
+                    vec2 point = n + neighbor;
+                    vec2 p_pos = point + 0.5 + 0.4 * sin(time + random(point) * 2.0 * 3.14159);
+                    float dist = length(p_pos - x);
+                    
+                    if (dist < min_dist) {
+                        sec_min_dist = min_dist;
+                        min_dist = dist;
+                    } else if (dist < sec_min_dist) {
+                        sec_min_dist = dist;
+                    }
+                }
+            }
+            return vec2(min_dist, sec_min_dist);
         }
 
         void main() {
@@ -114,22 +139,23 @@ const electricMaterial = new THREE.ShaderMaterial({
             vec3 finalColor = baseColor;
 
             if (u_active > 0.5) {
+                vec2 uv = vUv * 5.0; // Scale UV
+                float t = u_time * 0.2;
+
+                // Get Voronoi distances
+                vec2 dists = voronoi(uv, t);
+                
+                // Create glowing lines from the difference of the two closest distances
+                float voronoi_val = dists.y - dists.x;
+                
+                // Make the lines sharp and animated
+                float lines = smoothstep(0.01, 0.02, voronoi_val);
+                lines *= 0.5 + 0.5 * sin(dists.x * 10.0 + t * 5.0);
+                
                 // Time-varying color
-                vec3 dynamicColor = 0.5 + 0.5 * cos(u_time * 0.5 + vec3(0.0, 2.0, 4.0));
+                vec3 dynamicColor = 0.5 + 0.5 * cos(u_time * 0.8 + vec3(0.0, 1.5, 3.0));
 
-                // Create multiple layers of flowing waves
-                float wave1 = wave(vUv, 1.0, 20.0, 0.0);
-                float wave2 = wave(vUv.yx, 0.8, 15.0, 1.0);
-                
-                // Combine waves to create a more complex pattern
-                float combinedWaves = pow(wave1 * wave2, 2.0);
-                
-                // Make the effect pulse, not constantly bright
-                float pulse = 0.5 + 0.5 * sin(u_time * 2.0);
-                combinedWaves *= pulse;
-
-                // Mix the wave color with the base color
-                finalColor = mix(baseColor, dynamicColor, smoothstep(0.1, 0.3, combinedWaves));
+                finalColor = mix(baseColor, dynamicColor, lines);
             }
             gl_FragColor = vec4(finalColor, 1.0);
         }

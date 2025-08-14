@@ -470,10 +470,9 @@ if(resetViewBtn) resetViewBtn.addEventListener('click', resetCameraOrientation);
 if(invertViewBtn) invertViewBtn.addEventListener('click', invertCamera);
 if(rotateViewBtn) rotateViewBtn.addEventListener('click', rotateCameraView);
 
-
 // --- 動畫循環 ---
+const clock = new THREE.Clock();
 function animate() {
-    const clock = new THREE.Clock();
     requestAnimationFrame(animate);
     const elapsedTime = clock.getElapsedTime();
     insideMaterial.uniforms.u_time.value = elapsedTime;
@@ -520,6 +519,7 @@ if (yearSpan) {
 
 // --- For Testing ---
 window.camera = camera;
+
 
 
 

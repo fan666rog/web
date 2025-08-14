@@ -104,25 +104,34 @@ const electricMaterial = new THREE.ShaderMaterial({
         uniform float u_active;
         varying vec2 vUv;
 
-        float random(vec2 st) {
-            return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+        // Function to create a moving wave
+        float wave(vec2 uv, float speed, float freq, float offset) {
+            return 0.5 + 0.5 * sin(uv.x * freq + u_time * speed + offset);
         }
 
         void main() {
-            vec3 color = vec3(0.07); // Dark grey base color
+            vec3 baseColor = vec3(0.07);
+            vec3 finalColor = baseColor;
+
             if (u_active > 0.5) {
-                float time = u_time * 0.5;
-                vec2 uv = vUv * 10.0;
+                // Time-varying color
+                vec3 dynamicColor = 0.5 + 0.5 * cos(u_time * 0.5 + vec3(0.0, 2.0, 4.0));
+
+                // Create multiple layers of flowing waves
+                float wave1 = wave(vUv, 1.0, 20.0, 0.0);
+                float wave2 = wave(vUv.yx, 0.8, 15.0, 1.0);
                 
-                float line1 = step(0.9, sin(uv.x * 2.0 + time));
-                float line2 = step(0.9, sin(uv.y * 2.0 + time));
+                // Combine waves to create a more complex pattern
+                float combinedWaves = pow(wave1 * wave2, 2.0);
                 
-                float noise = random(vUv + time * 0.1);
-                vec3 noiseColor = vec3(0.0, 0.5, 1.0) * smoothstep(0.95, 1.0, noise);
-                
-                color = mix(color, vec3(0.5, 1.0, 1.0), line1 + line2) + noiseColor;
+                // Make the effect pulse, not constantly bright
+                float pulse = 0.5 + 0.5 * sin(u_time * 2.0);
+                combinedWaves *= pulse;
+
+                // Mix the wave color with the base color
+                finalColor = mix(baseColor, dynamicColor, smoothstep(0.1, 0.3, combinedWaves));
             }
-            gl_FragColor = vec4(color, 1.0);
+            gl_FragColor = vec4(finalColor, 1.0);
         }
     `,
     side: THREE.DoubleSide

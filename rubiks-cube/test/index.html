@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Rubik's Cube</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="controls-container">
+        <div class="button-row">
+            <button id="scramble-btn">打亂</button>
+            <button id="reset-btn">重置</button>
+            <button id="undo-btn">上一步</button>
+        </div>
+        <div class="button-row">
+            <button id="reset-view-btn">視角回正</button>
+            <button id="invert-view-btn">上下顛倒</button>
+            <button id="rotate-view-btn">右側當底</button>
+        </div>
+        </div>
+
+    <div id="gizmo-container"></div>
+
+    <footer>
+        <p>&copy; <span id="copyright-year"></span> <a href="https://github.com/fan666rog/web" target="_blank">fan666rog</a> & Gemini. All Rights Reserved.</p>
+    </footer>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>

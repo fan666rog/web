@@ -153,56 +153,24 @@ function resetIdleTimer() {
     idleTimer = setTimeout(startAutoRotation, 12000);
 }
 
-// --- Camera Animation & Control ---
-let cameraAnimationId = null;
-function animateCamera(targetPosition, targetUp) {
-    resetIdleTimer();
-    if (cameraAnimationId) {
-        cancelAnimationFrame(cameraAnimationId);
-    }
-    setControlsEnabled(false);
-
-    const startPosition = camera.position.clone();
-    const startUp = camera.up.clone();
-    const duration = 500;
-    const startTime = performance.now();
-
-    function animate() {
-        const t = Math.min(1, (performance.now() - startTime) / duration);
-        const easedT = 0.5 * (1 - Math.cos(t * Math.PI));
-
-        camera.position.lerpVectors(startPosition, targetPosition, easedT);
-        camera.up.lerpVectors(startUp, targetUp, easedT).normalize();
-        camera.lookAt(scene.position);
-
-        if (t < 1) {
-            cameraAnimationId = requestAnimationFrame(animate);
-        } else {
-            camera.position.copy(targetPosition);
-            camera.up.copy(targetUp).normalize();
-            camera.lookAt(scene.position);
-            cameraAnimationId = null;
-            setControlsEnabled(true);
-        }
-    }
-    animate();
-}
-
+// --- Camera Control Functions ---
 function resetCameraOrientation() {
-    animateCamera(new THREE.Vector3(4, 4, 6), new THREE.Vector3(0, 1, 0));
+    camera.position.set(4, 4, 6);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(scene.position);
 }
 
 function invertCamera() {
-    const newUp = camera.up.clone().negate();
-    animateCamera(camera.position.clone(), newUp);
+    camera.up.negate();
+    camera.lookAt(scene.position);
 }
 
 function rotateCameraView() {
     const lookDirection = new THREE.Vector3();
     camera.getWorldDirection(lookDirection);
     const quaternion = new THREE.Quaternion().setFromAxisAngle(lookDirection, -Math.PI / 2);
-    const newUp = camera.up.clone().applyQuaternion(quaternion);
-    animateCamera(camera.position.clone(), newUp);
+    camera.up.applyQuaternion(quaternion);
+    camera.lookAt(scene.position);
 }
 
 

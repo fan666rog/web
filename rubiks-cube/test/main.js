@@ -487,8 +487,17 @@ function animate() {
 
     // 新增：閒置時自動旋轉
     if (!isAnimating && Date.now() - lastInteractionTime > 12000) {
-        rubiksCube.rotation.y += 0.002;
-        rubiksCube.rotation.x += 0.0005;
+        // Rotate the camera around the cube instead of rotating the cube itself.
+        // This prevents conflicts with the cube's interaction logic and the gizmo's coordinate system.
+        const rotationY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0.002);
+        const rotationX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), 0.0005);
+
+        // Apply the rotation to both the camera's position and its 'up' vector.
+        camera.position.applyQuaternion(rotationY).applyQuaternion(rotationX);
+        camera.up.applyQuaternion(rotationY).applyQuaternion(rotationX);
+
+        // Ensure the camera always looks at the center of the cube.
+        camera.lookAt(scene.position);
     }
 
     if (gizmoRenderer) {

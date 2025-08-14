@@ -105,7 +105,6 @@ function initGizmo() {
 }
 
 function onGizmoClick(event) {
-    resetIdleTimer();
     if (isAnimating) return;
 
     const gizmoBounds = gizmoRenderer.domElement.getBoundingClientRect();
@@ -160,7 +159,6 @@ function animateCamera(targetPosition, targetUp) {
 }
 
 function snapCameraToView(axis) {
-    resetIdleTimer();
     const distance = camera.position.length();
     let position, up;
 
@@ -217,6 +215,67 @@ const CUBIE_SIZE = 1;
 const CUBIE_GAP = 0.1;
 const positionOffset = CUBIE_SIZE + CUBIE_GAP;
 
+// --- 新增：酷炫的內部材質 ---
+const insideMaterial = new THREE.ShaderMaterial({
+    side: THREE.DoubleSide,
+    uniforms: {
+        u_time: { value: 0.0 },
+    },
+    vertexShader: `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        uniform float u_time;
+        varying vec2 vUv;
+
+        // 2D隨機函數
+        float random(vec2 st) {
+            return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+        }
+
+        // 雜訊函數
+        float noise(vec2 st) {
+            vec2 i = floor(st);
+            vec2 f = fract(st);
+            float a = random(i);
+            float b = random(i + vec2(1.0, 0.0));
+            float c = random(i + vec2(0.0, 1.0));
+            float d = random(i + vec2(1.0, 1.0));
+            vec2 u = f * f * (3.0 - 2.0 * f);
+            return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.y * u.x;
+        }
+
+        void main() {
+            vec2 st = vUv * 5.0; 
+            st.x += u_time * 0.1; // 水平流動
+            
+            // 產生流動的雜訊圖案
+            float n = noise(st * vec2(1.0, 3.0) + vec2(0.0, u_time * 0.2));
+            
+            // 增強對比度，形成閃電般的線條
+            float intensity = pow(n, 20.0);
+            
+            // 定義電流顏色 (藍紫色系)
+            vec3 color1 = vec3(0.1, 0.0, 0.3); // 深藍紫
+            vec3 color2 = vec3(0.8, 0.5, 1.0); // 亮紫
+            
+            // 根據強度混合顏色
+            vec3 finalColor = mix(color1, color2, intensity);
+
+            // 加上隨時間閃爍的效果
+            float flash = sin(u_time * 3.0) * 0.5 + 0.5;
+            finalColor *= 0.5 + (flash * intensity * 1.5); // 只有亮部會閃爍
+
+            gl_FragColor = vec4(finalColor, 1.0);
+        }
+    `
+});
+
+
 const materials = {
     right: new THREE.MeshStandardMaterial({ color: 0xff0000 }), // Red
     left: new THREE.MeshStandardMaterial({ color: 0xffa500 }), // Orange
@@ -224,7 +283,7 @@ const materials = {
     bottom: new THREE.MeshStandardMaterial({ color: 0xffff00 }), // Yellow
     front: new THREE.MeshStandardMaterial({ color: 0x0000ff }), // Blue
     back: new THREE.MeshStandardMaterial({ color: 0x008000 }), // Green
-    inside: new THREE.MeshStandardMaterial({ color: 0x111111, side: THREE.DoubleSide })
+    inside: insideMaterial // 使用新的 ShaderMaterial
 };
 
 const cubies = [];
@@ -256,6 +315,7 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let selectedCubie = null, selectedFaceNormal = null, isDragging = false, dragStartPoint = new THREE.Vector2();
 let isAnimating = false;
+let lastInteractionTime = Date.now(); // 新增：用於追蹤使用者最後操作時間
 
 function setControlsEnabled(enabled) {
     isAnimating = !enabled;
@@ -269,8 +329,8 @@ function setControlsEnabled(enabled) {
 }
 
 function onPointerDown(event) {
-    resetIdleTimer();
     if (isAnimating) return;
+    lastInteractionTime = Date.now(); // 新增：更新使用者操作時間
     // Ignore clicks on the gizmo
     const gizmoContainer = document.getElementById('gizmo-container');
     if (gizmoContainer && gizmoContainer.contains(event.target)) {
@@ -292,6 +352,7 @@ function onPointerDown(event) {
 
 function onPointerMove(event) {
     if (!isDragging || isAnimating) return;
+    lastInteractionTime = Date.now(); // 新增：更新使用者操作時間
     const pointer = (event.touches) ? event.touches[0] : event;
     const currentPoint = new THREE.Vector2((pointer.clientX / window.innerWidth) * 2 - 1, -(pointer.clientY / window.innerHeight) * 2 + 1);
     const dragVector = currentPoint.clone().sub(dragStartPoint);
@@ -358,41 +419,8 @@ function rotateLayer(move, recordMove = false) {
     });
 }
 
-// --- 新增：閒置動畫功能 ---
-function startIdleAnimation() {
-    if (isAnimating) return; // 如果正在進行其他動畫，則不啟動閒置動畫
-    isIdleAnimationActive = true;
-    controls.enabled = false; // 禁用手動控制
-}
-
-function stopIdleAnimation() {
-    isIdleAnimationActive = false;
-    
-    // 將方塊旋轉歸零並還原內部材質
-    rubiksCube.rotation.set(0, 0, 0);
-    materials.inside.color.set(0x111111);
-    materials.inside.emissive.set(0x000000);
-    materials.inside.emissiveIntensity = 1.0; // 確保重設發光強度
-
-    // 這裡不需要手動設定 setControlsEnabled(true)，因為 resetIdleTimer 會在互動開始時被呼叫，
-    // 而互動函數（如 onPointerDown）本身會管理人機介面的啟用狀態。
-}
-
-function resetIdleTimer() {
-    clearTimeout(idleTimer);
-    if (isIdleAnimationActive) {
-        stopIdleAnimation();
-    }
-    // 當用戶再次開始互動時，確保控制項是啟用的
-    if (!isAnimating) {
-        setControlsEnabled(true);
-    }
-    idleTimer = setTimeout(startIdleAnimation, IDLE_TIMEOUT);
-}
-
 // --- 按鈕功能 ---
 async function scrambleCube() {
-    resetIdleTimer();
     setControlsEnabled(false);
     moveHistory = []; // Scramble clears history
     const moves = 25, axes = ['x', 'y', 'z'], layers = [-1, 0, 1];
@@ -408,7 +436,6 @@ async function scrambleCube() {
 }
 
 async function undoMove() {
-    resetIdleTimer();
     if (moveHistory.length === 0) return;
     const lastMove = moveHistory.pop();
     const reversedMove = {
@@ -420,18 +447,15 @@ async function undoMove() {
 }
 
 function resetCameraOrientation() {
-    resetIdleTimer();
     animateCamera(new THREE.Vector3(4, 4, 6), new THREE.Vector3(0, 1, 0));
 }
 
 function invertCamera() {
-    resetIdleTimer();
     const newUp = camera.up.clone().negate();
     animateCamera(camera.position.clone(), newUp);
 }
 
 function rotateCameraView() {
-    resetIdleTimer();
     const lookDirection = new THREE.Vector3();
     camera.getWorldDirection(lookDirection);
     const quaternion = new THREE.Quaternion().setFromAxisAngle(lookDirection, -Math.PI / 2);
@@ -449,34 +473,24 @@ undoBtn.addEventListener('click', undoMove);
 if(resetViewBtn) resetViewBtn.addEventListener('click', resetCameraOrientation);
 if(invertViewBtn) invertViewBtn.addEventListener('click', invertCamera);
 if(rotateViewBtn) rotateViewBtn.addEventListener('click', rotateCameraView);
+controls.addEventListener('change', () => { lastInteractionTime = Date.now(); }); // 新增：監聽視角操作
 
 
 // --- 動畫循環 ---
+const clock = new THREE.Clock(); // 新增：用於追蹤時間
 function animate() {
     requestAnimationFrame(animate);
+    controls.update(); 
+    
+    const elapsedTime = clock.getElapsedTime(); // 新增：取得經過的時間
+    insideMaterial.uniforms.u_time.value = elapsedTime; // 新增：更新shader時間
 
-    if (isIdleAnimationActive) {
-        // 自動旋轉視角
+    // 新增：閒置時自動旋轉
+    if (!isAnimating && Date.now() - lastInteractionTime > 12000) {
         rubiksCube.rotation.y += 0.002;
         rubiksCube.rotation.x += 0.0005;
-
-        // 內部顏色變化
-        const time = performance.now() * 0.001;
-        // 使用 HSL 色彩空間，僅變更色相(H)值，保持飽和度(S)與亮度(L)
-        const hue = (time * 0.1) % 1;
-        materials.inside.color.setHSL(hue, 0.8, 0.15);
-
-        // 電流閃現特效
-        if (Math.random() < 0.03) { // 約每秒 1-2 次
-            materials.inside.emissive.setHSL(hue, 1, 0.6);
-            materials.inside.emissiveIntensity = 2.0;
-        } else {
-            materials.inside.emissive.set(0x000000);
-        }
-    } else {
-        controls.update(); 
     }
-    
+
     if (gizmoRenderer) {
         gizmo.quaternion.copy(camera.quaternion);
         
@@ -507,7 +521,6 @@ window.addEventListener('resize', () => {
 
 // --- 初始化執行 ---
 setControlsEnabled(true);
-resetIdleTimer(); // 新增：初始化閒置計時器
 initGizmo();
 animate();
 
@@ -516,11 +529,6 @@ const yearSpan = document.getElementById('copyright-year');
 if (yearSpan) {
     yearSpan.textContent = new Date().getFullYear();
 }
-
-// --- 新增：閒置動畫變數 ---
-let idleTimer;
-let isIdleAnimationActive = false;
-const IDLE_TIMEOUT = 12000; // 12 seconds
 
 // --- For Testing ---
 window.camera = camera;

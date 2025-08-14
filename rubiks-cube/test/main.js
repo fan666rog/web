@@ -25,7 +25,7 @@ controls.dynamicDampingFactor = 0.2;
 controls.rotateSpeed = 3.0;
 
 // --- Gizmo 設定 ---
-let gizmoRenderer, labelRenderer, gizmoScene, gizmoCamera, gizmo;
+let gizmoRenderer, labelRenderer, gizmoScene, gizmoCamera, gizmo, gizmoRaycaster;
 
 function initGizmo() {
     const gizmoContainer = document.getElementById('gizmo-container');
@@ -34,11 +34,13 @@ function initGizmo() {
         return;
     }
 
+    // WebGL Renderer for Gizmo
     gizmoRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     gizmoRenderer.setSize(gizmoContainer.clientWidth, gizmoContainer.clientHeight);
     gizmoRenderer.setClearAlpha(0);
     gizmoContainer.appendChild(gizmoRenderer.domElement);
 
+    // CSS2D Renderer for Labels
     labelRenderer = new CSS2DRenderer();
     labelRenderer.setSize(gizmoContainer.clientWidth, gizmoContainer.clientHeight);
     labelRenderer.domElement.style.position = 'absolute';
@@ -49,11 +51,13 @@ function initGizmo() {
     gizmoScene = new THREE.Scene();
     gizmoScene.add(new THREE.AmbientLight(0xffffff, 3.0));
 
+    // Gizmo Camera
     const aspect = gizmoContainer.clientWidth / gizmoContainer.clientHeight;
-    gizmoCamera = new THREE.PerspectiveCamera(50, aspect, 0.1, 100);
-    gizmoCamera.position.set(0, 0, 4);
+    gizmoCamera = new THREE.PerspectiveCamera(60, aspect, 0.1, 100);
+    gizmoCamera.position.set(0, 0, 3.5);
     gizmoCamera.lookAt(0, 0, 0);
     
+    // Parent Group for all Gizmo objects
     gizmo = new THREE.Group();
     gizmoScene.add(gizmo);
 
@@ -68,9 +72,11 @@ function initGizmo() {
     ];
 
     axes.forEach(axisInfo => {
+        // Visual Arrow
         const arrow = new THREE.ArrowHelper(axisInfo.dir, new THREE.Vector3(0,0,0), axisLength, axisInfo.color, headLength, headWidth);
         gizmo.add(arrow);
 
+        // Visual Label
         const labelDiv = document.createElement('div');
         labelDiv.textContent = axisInfo.name;
         labelDiv.style.color = `#${axisInfo.color.toString(16).padStart(6, '0')}`;
@@ -78,125 +84,115 @@ function initGizmo() {
         labelDiv.style.fontSize = '16px';
         labelDiv.style.fontWeight = 'bold';
         labelDiv.style.textShadow = '0 0 3px #000';
+        labelDiv.style.pointerEvents = 'none';
         const label = new CSS2DObject(labelDiv);
         label.position.copy(axisInfo.dir).multiplyScalar(axisLength * 1.3);
         gizmo.add(label);
+
+        // Invisible Hitbox
+        const hitboxGeom = new THREE.CylinderGeometry(0.25, 0.25, axisLength, 8);
+        const hitboxMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0 });
+        const hitbox = new THREE.Mesh(hitboxGeom, hitboxMat);
+        hitbox.name = axisInfo.name;
+        hitbox.position.copy(axisInfo.dir).multiplyScalar(axisLength / 2);
+        hitbox.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axisInfo.dir.clone().normalize());
+        gizmo.add(hitbox);
     });
+    
+    // Gizmo Interaction
+    gizmoRaycaster = new THREE.Raycaster();
+    gizmoRenderer.domElement.addEventListener('pointerdown', onGizmoClick);
 }
 
-// --- Idle Rotation & Effects ---
-let idleTimer = null;
-let isAutoRotating = false;
-const electricMaterial = new THREE.ShaderMaterial({
-    uniforms: {
-        u_time: { value: 0.0 },
-        u_active: { value: 0.0 }
-    },
-    vertexShader: `
-        varying vec2 vUv;
-        void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+function onGizmoClick(event) {
+    resetIdleTimer();
+    if (isAnimating) return;
+
+    const gizmoBounds = gizmoRenderer.domElement.getBoundingClientRect();
+    const gizmoMouse = new THREE.Vector2();
+    gizmoMouse.x = ((event.clientX - gizmoBounds.left) / gizmoBounds.width) * 2 - 1;
+    gizmoMouse.y = -((event.clientY - gizmoBounds.top) / gizmoBounds.height) * 2 + 1;
+    
+    gizmoRaycaster.setFromCamera(gizmoMouse, gizmoCamera);
+    const intersects = gizmoRaycaster.intersectObjects(gizmo.children, true);
+
+    if (intersects.length > 0) {
+        // Find the named hitbox
+        const hit = intersects.find(i => i.object.name);
+        if (hit) {
+            const axisName = hit.object.name;
+            snapCameraToView(axisName);
         }
-    `,
-    fragmentShader: `
-        uniform float u_time;
-        uniform float u_active;
-        varying vec2 vUv;
+    }
+}
 
-        // 2D Random function
-        float random(vec2 st) {
-            return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+let cameraAnimationId = null;
+function animateCamera(targetPosition, targetUp) {
+    if (cameraAnimationId) {
+        cancelAnimationFrame(cameraAnimationId);
+    }
+    setControlsEnabled(false);
+
+    const startPosition = camera.position.clone();
+    const startUp = camera.up.clone();
+    const duration = 500;
+    const startTime = performance.now();
+
+    function animate() {
+        const t = Math.min(1, (performance.now() - startTime) / duration);
+        const easedT = 0.5 * (1 - Math.cos(t * Math.PI)); // Ease-in-out
+
+        camera.position.lerpVectors(startPosition, targetPosition, easedT);
+        camera.up.lerpVectors(startUp, targetUp, easedT).normalize();
+        camera.lookAt(scene.position);
+
+        if (t < 1) {
+            cameraAnimationId = requestAnimationFrame(animate);
+        } else {
+            camera.position.copy(targetPosition);
+            camera.up.copy(targetUp).normalize();
+            camera.lookAt(scene.position);
+            cameraAnimationId = null;
+            setControlsEnabled(true);
         }
-
-        // 2D Voronoi function
-        vec2 voronoi(vec2 x, float time) {
-            vec2 n = floor(x);
-            vec2 f = fract(x);
-            float min_dist = 1.0;
-            float sec_min_dist = 1.0;
-
-            for (int j = -1; j <= 1; j++) {
-                for (int i = -1; i <= 1; i++) {
-                    vec2 neighbor = vec2(float(i), float(j));
-                    vec2 point = n + neighbor;
-                    vec2 p_pos = point + 0.5 + 0.4 * sin(time + random(point) * 2.0 * 3.14159);
-                    float dist = length(p_pos - x);
-                    
-                    if (dist < min_dist) {
-                        sec_min_dist = min_dist;
-                        min_dist = dist;
-                    } else if (dist < sec_min_dist) {
-                        sec_min_dist = dist;
-                    }
-                }
-            }
-            return vec2(min_dist, sec_min_dist);
-        }
-
-        void main() {
-            vec3 baseColor = vec3(0.07);
-            vec3 finalColor = baseColor;
-
-            if (u_active > 0.5) {
-                vec2 uv = vUv * 5.0; // Scale UV
-                float t = u_time * 0.2;
-
-                // Get Voronoi distances
-                vec2 dists = voronoi(uv, t);
-                
-                // Create glowing lines from the difference of the two closest distances
-                float voronoi_val = dists.y - dists.x;
-                
-                // Make the lines sharp and animated
-                float lines = smoothstep(0.01, 0.02, voronoi_val);
-                lines *= 0.5 + 0.5 * sin(dists.x * 10.0 + t * 5.0);
-                
-                // Time-varying color
-                vec3 dynamicColor = 0.5 + 0.5 * cos(u_time * 0.8 + vec3(0.0, 1.5, 3.0));
-
-                finalColor = mix(baseColor, dynamicColor, lines);
-            }
-            gl_FragColor = vec4(finalColor, 1.0);
-        }
-    `,
-    side: THREE.DoubleSide
-});
-
-function startAutoRotation() {
-    isAutoRotating = true;
-    electricMaterial.uniforms.u_active.value = 1.0;
+    }
+    animate();
 }
 
-function stopAutoRotation() {
-    isAutoRotating = false;
-    electricMaterial.uniforms.u_active.value = 0.0;
-}
+function snapCameraToView(axis) {
+    resetIdleTimer();
+    const distance = camera.position.length();
+    let position, up;
 
-function resetIdleTimer() {
-    stopAutoRotation();
-    clearTimeout(idleTimer);
-    idleTimer = setTimeout(startAutoRotation, 12000);
-}
-
-// --- Camera Control Functions ---
-function resetCameraOrientation() {
-    camera.position.set(4, 4, 6);
-    camera.up.set(0, 1, 0);
-    camera.lookAt(scene.position);
-}
-
-function invertCamera() {
-    camera.up.negate();
-    camera.lookAt(scene.position);
-}
-
-function rotateCameraView() {
-    const lookDirection = new THREE.Vector3();
-    camera.getWorldDirection(lookDirection);
-    const quaternion = new THREE.Quaternion().setFromAxisAngle(lookDirection, -Math.PI / 2);
-    camera.up.applyQuaternion(quaternion);
-    camera.lookAt(scene.position);
+    switch (axis) {
+        case 'X': // Right face (Red)
+            position = new THREE.Vector3(distance, 0, 0);
+            up = new THREE.Vector3(0, 1, 0);
+            break;
+        case '-X': // Left face (from gizmo perspective)
+             position = new THREE.Vector3(-distance, 0, 0);
+             up = new THREE.Vector3(0, 1, 0);
+             break;
+        case 'Y': // Top face (Green)
+            position = new THREE.Vector3(0, distance, 0);
+            up = new THREE.Vector3(0, 0, -1);
+            break;
+        case '-Y':
+            position = new THREE.Vector3(0, -distance, 0);
+            up = new THREE.Vector3(0, 0, 1);
+            break;
+        case 'Z': // Front face (Blue)
+            position = new THREE.Vector3(0, 0, distance);
+            up = new THREE.Vector3(0, 1, 0);
+            break;
+        case '-Z':
+            position = new THREE.Vector3(0, 0, -distance);
+            up = new THREE.Vector3(0, 1, 0);
+            break;
+    }
+    if (position) {
+        animateCamera(position, up);
+    }
 }
 
 
@@ -222,13 +218,13 @@ const CUBIE_GAP = 0.1;
 const positionOffset = CUBIE_SIZE + CUBIE_GAP;
 
 const materials = {
-    right: new THREE.MeshStandardMaterial({ color: 0xff0000 }),
-    left: new THREE.MeshStandardMaterial({ color: 0xffa500 }),
-    top: new THREE.MeshStandardMaterial({ color: 0xffffff }),
-    bottom: new THREE.MeshStandardMaterial({ color: 0xffff00 }),
-    front: new THREE.MeshStandardMaterial({ color: 0x0000ff }),
-    back: new THREE.MeshStandardMaterial({ color: 0x008000 }),
-    inside: electricMaterial
+    right: new THREE.MeshStandardMaterial({ color: 0xff0000 }), // Red
+    left: new THREE.MeshStandardMaterial({ color: 0xffa500 }), // Orange
+    top: new THREE.MeshStandardMaterial({ color: 0xffffff }), // White
+    bottom: new THREE.MeshStandardMaterial({ color: 0xffff00 }), // Yellow
+    front: new THREE.MeshStandardMaterial({ color: 0x0000ff }), // Blue
+    back: new THREE.MeshStandardMaterial({ color: 0x008000 }), // Green
+    inside: new THREE.MeshStandardMaterial({ color: 0x111111, side: THREE.DoubleSide })
 };
 
 const cubies = [];
@@ -273,8 +269,13 @@ function setControlsEnabled(enabled) {
 }
 
 function onPointerDown(event) {
-    if (isAnimating) return;
     resetIdleTimer();
+    if (isAnimating) return;
+    // Ignore clicks on the gizmo
+    const gizmoContainer = document.getElementById('gizmo-container');
+    if (gizmoContainer && gizmoContainer.contains(event.target)) {
+        return;
+    }
     const pointer = (event.touches) ? event.touches[0] : event;
     mouse.x = (pointer.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(pointer.clientY / window.innerHeight) * 2 + 1;
@@ -291,7 +292,6 @@ function onPointerDown(event) {
 
 function onPointerMove(event) {
     if (!isDragging || isAnimating) return;
-    resetIdleTimer();
     const pointer = (event.touches) ? event.touches[0] : event;
     const currentPoint = new THREE.Vector2((pointer.clientX / window.innerWidth) * 2 - 1, -(pointer.clientY / window.innerHeight) * 2 + 1);
     const dragVector = currentPoint.clone().sub(dragStartPoint);
@@ -358,15 +358,43 @@ function rotateLayer(move, recordMove = false) {
     });
 }
 
-// --- 按鈕功能 ---
-function handleButton(action) {
-    resetIdleTimer();
-    action();
+// --- 新增：閒置動畫功能 ---
+function startIdleAnimation() {
+    if (isAnimating) return; // 如果正在進行其他動畫，則不啟動閒置動畫
+    isIdleAnimationActive = true;
+    controls.enabled = false; // 禁用手動控制
 }
 
-scrambleBtn.addEventListener('click', () => handleButton(async () => {
+function stopIdleAnimation() {
+    isIdleAnimationActive = false;
+    
+    // 將方塊旋轉歸零並還原內部材質
+    rubiksCube.rotation.set(0, 0, 0);
+    materials.inside.color.set(0x111111);
+    materials.inside.emissive.set(0x000000);
+    materials.inside.emissiveIntensity = 1.0; // 確保重設發光強度
+
+    // 這裡不需要手動設定 setControlsEnabled(true)，因為 resetIdleTimer 會在互動開始時被呼叫，
+    // 而互動函數（如 onPointerDown）本身會管理人機介面的啟用狀態。
+}
+
+function resetIdleTimer() {
+    clearTimeout(idleTimer);
+    if (isIdleAnimationActive) {
+        stopIdleAnimation();
+    }
+    // 當用戶再次開始互動時，確保控制項是啟用的
+    if (!isAnimating) {
+        setControlsEnabled(true);
+    }
+    idleTimer = setTimeout(startIdleAnimation, IDLE_TIMEOUT);
+}
+
+// --- 按鈕功能 ---
+async function scrambleCube() {
+    resetIdleTimer();
     setControlsEnabled(false);
-    moveHistory = [];
+    moveHistory = []; // Scramble clears history
     const moves = 25, axes = ['x', 'y', 'z'], layers = [-1, 0, 1];
     for (let i = 0; i < moves; i++) {
         const axis = axes[Math.floor(Math.random() * 3)];
@@ -374,47 +402,81 @@ scrambleBtn.addEventListener('click', () => handleButton(async () => {
         const direction = Math.random() < 0.5 ? 1 : -1;
         const pivotPoint = new THREE.Vector3();
         pivotPoint[axis] = layerIndex * positionOffset;
-        await rotateLayer({ pivot: pivotPoint, axis: axis, direction: direction }, false);
+        await rotateLayer({ pivot: pivotPoint, axis: axis, direction: direction }, false); // Don't record scramble moves for undo
     }
     setControlsEnabled(true);
-}));
+}
 
-undoBtn.addEventListener('click', () => handleButton(async () => {
+async function undoMove() {
+    resetIdleTimer();
     if (moveHistory.length === 0) return;
     const lastMove = moveHistory.pop();
-    const reversedMove = { pivot: lastMove.pivot, axis: lastMove.axis, direction: -lastMove.direction };
+    const reversedMove = {
+        pivot: lastMove.pivot,
+        axis: lastMove.axis,
+        direction: -lastMove.direction
+    };
     await rotateLayer(reversedMove, false);
-}));
+}
 
-resetBtn.addEventListener('click', () => { window.location.reload(); });
-if(resetViewBtn) resetViewBtn.addEventListener('click', () => handleButton(resetCameraOrientation));
-if(invertViewBtn) invertViewBtn.addEventListener('click', () => handleButton(invertCamera));
-if(rotateViewBtn) rotateViewBtn.addEventListener('click', () => handleButton(rotateCameraView));
+function resetCameraOrientation() {
+    resetIdleTimer();
+    animateCamera(new THREE.Vector3(4, 4, 6), new THREE.Vector3(0, 1, 0));
+}
 
+function invertCamera() {
+    resetIdleTimer();
+    const newUp = camera.up.clone().negate();
+    animateCamera(camera.position.clone(), newUp);
+}
+
+function rotateCameraView() {
+    resetIdleTimer();
+    const lookDirection = new THREE.Vector3();
+    camera.getWorldDirection(lookDirection);
+    const quaternion = new THREE.Quaternion().setFromAxisAngle(lookDirection, -Math.PI / 2);
+    const newUp = camera.up.clone().applyQuaternion(quaternion);
+    animateCamera(camera.position.clone(), newUp);
+}
 
 // --- 事件監聽 ---
-controls.addEventListener('start', resetIdleTimer);
 renderer.domElement.addEventListener('pointerdown', onPointerDown);
 renderer.domElement.addEventListener('pointermove', onPointerMove);
 renderer.domElement.addEventListener('pointerup', onPointerUp);
+scrambleBtn.addEventListener('click', scrambleCube);
+resetBtn.addEventListener('click', () => { window.location.reload(); });
+undoBtn.addEventListener('click', undoMove);
+if(resetViewBtn) resetViewBtn.addEventListener('click', resetCameraOrientation);
+if(invertViewBtn) invertViewBtn.addEventListener('click', invertCamera);
+if(rotateViewBtn) rotateViewBtn.addEventListener('click', rotateCameraView);
 
 
 // --- 動畫循環 ---
-const clock = new THREE.Clock();
 function animate() {
     requestAnimationFrame(animate);
-    const deltaTime = clock.getDelta();
-    controls.update(); 
-    
-    electricMaterial.uniforms.u_time.value += deltaTime;
 
-    if (isAutoRotating) {
-        const rotationSpeed = 0.2; // Radians per second
-        camera.position.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationSpeed * deltaTime);
-        camera.up.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationSpeed * deltaTime);
-        camera.lookAt(scene.position);
+    if (isIdleAnimationActive) {
+        // 自動旋轉視角
+        rubiksCube.rotation.y += 0.002;
+        rubiksCube.rotation.x += 0.0005;
+
+        // 內部顏色變化
+        const time = performance.now() * 0.001;
+        // 使用 HSL 色彩空間，僅變更色相(H)值，保持飽和度(S)與亮度(L)
+        const hue = (time * 0.1) % 1;
+        materials.inside.color.setHSL(hue, 0.8, 0.15);
+
+        // 電流閃現特效
+        if (Math.random() < 0.03) { // 約每秒 1-2 次
+            materials.inside.emissive.setHSL(hue, 1, 0.6);
+            materials.inside.emissiveIntensity = 2.0;
+        } else {
+            materials.inside.emissive.set(0x000000);
+        }
+    } else {
+        controls.update(); 
     }
-
+    
     if (gizmoRenderer) {
         gizmo.quaternion.copy(camera.quaternion);
         
@@ -445,8 +507,8 @@ window.addEventListener('resize', () => {
 
 // --- 初始化執行 ---
 setControlsEnabled(true);
+resetIdleTimer(); // 新增：初始化閒置計時器
 initGizmo();
-resetIdleTimer();
 animate();
 
 // --- 新增：設定版權年份 ---
@@ -455,6 +517,10 @@ if (yearSpan) {
     yearSpan.textContent = new Date().getFullYear();
 }
 
+// --- 新增：閒置動畫變數 ---
+let idleTimer;
+let isIdleAnimationActive = false;
+const IDLE_TIMEOUT = 12000; // 12 seconds
+
 // --- For Testing ---
 window.camera = camera;
-window.electricMaterial = electricMaterial;

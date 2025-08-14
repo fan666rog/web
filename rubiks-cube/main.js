@@ -215,6 +215,66 @@ const CUBIE_SIZE = 1;
 const CUBIE_GAP = 0.1;
 const positionOffset = CUBIE_SIZE + CUBIE_GAP;
 
+// --- 新增：酷炫的內部材質 ---
+const insideMaterial = new THREE.ShaderMaterial({
+    side: THREE.DoubleSide,
+    uniforms: {
+        u_time: { value: 0.0 },
+    },
+    vertexShader: `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        uniform float u_time;
+        varying vec2 vUv;
+
+        // 2D隨機函數
+        float random(vec2 st) {
+            return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+        }
+
+        // 雜訊函數
+        float noise(vec2 st) {
+            vec2 i = floor(st);
+            vec2 f = fract(st);
+            float a = random(i);
+            float b = random(i + vec2(1.0, 0.0));
+            float c = random(i + vec2(0.0, 1.0));
+            float d = random(i + vec2(1.0, 1.0));
+            vec2 u = f * f * (3.0 - 2.0 * f);
+            return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.y * u.x;
+        }
+
+        void main() {
+            vec2 st = vUv * 5.0; 
+            st.x += u_time * 0.1; // 水平流動
+            
+            // 產生流動的雜訊圖案
+            float n = noise(st * vec2(1.0, 3.0) + vec2(0.0, u_time * 0.2));
+            
+            // 增強對比度，形成閃電般的線條
+            float intensity = pow(n, 20.0);
+            
+            // 定義電流顏色 (藍紫色系)
+            vec3 color1 = vec3(0.1, 0.0, 0.3); // 深藍紫
+            vec3 color2 = vec3(0.8, 0.5, 1.0); // 亮紫
+            
+            // 根據強度混合顏色
+            vec3 finalColor = mix(color1, color2, intensity);
+
+            // 加上隨時間閃爍的效果
+            float flash = sin(u_time * 3.0) * 0.5 + 0.5;
+            finalColor *= 0.5 + (flash * intensity * 1.5); // 只有亮部會閃爍
+
+            gl_FragColor = vec4(finalColor, 1.0);
+        }
+    `
+});
+
 const materials = {
     right: new THREE.MeshStandardMaterial({ color: 0xff0000 }), // Red
     left: new THREE.MeshStandardMaterial({ color: 0xffa500 }), // Orange
@@ -457,3 +517,4 @@ if (yearSpan) {
 
 // --- For Testing ---
 window.camera = camera;
+

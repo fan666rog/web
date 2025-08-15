@@ -251,10 +251,10 @@ const insideMaterial = new THREE.ShaderMaterial({
 
         void main() {
             vec2 st = vUv * 5.0; 
-            st.x += u_time * 0.1; // 水平流動
+            st.x += u_time * 0.4; // 水平流動
             
             // 產生流動的雜訊圖案
-            float n = noise(st * vec2(1.0, 3.0) + vec2(0.0, u_time * 0.2));
+            float n = noise(st * vec2(1.0, 3.0) + vec2(0.0, u_time * 0.8));
             
             // 增強對比度，形成閃電般的線條
             float intensity = pow(n, 20.0);
@@ -519,6 +519,7 @@ if (yearSpan) {
 
 // --- For Testing ---
 window.camera = camera;
+
 
 
 

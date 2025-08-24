@@ -63,25 +63,25 @@ canvas {
 }
 
 .control-btn {
-    width: 80px;
-    height: 80px;
+    width: 100px; /* Increased size */
+    height: 100px; /* Increased size */
     background: var(--control-bg);
-    border: 2px solid var(--control-border);
+    border: 3px solid var(--control-border); /* Thicker border */
     border-radius: 50%;
-    box-shadow: 0 0 15px var(--control-shadow);
+    box-shadow: 0 0 20px var(--control-shadow); /* Larger shadow */
     color: var(--control-symbol);
-    font-size: 2rem;
-    line-height: 80px;
+    font-size: 2.5rem; /* Larger icon */
+    line-height: 100px;
     text-align: center;
     user-select: none;
     transition: all 0.2s ease;
 }
 
 .control-btn.launch {
-    width: 100px;
-    height: 100px;
-    line-height: 100px;
-    border-radius: 20px;
+    width: 120px; /* Increased size */
+    height: 120px; /* Increased size */
+    line-height: 120px;
+    border-radius: 30px; /* Adjusted radius */
     transform: rotate(45deg);
 }
 

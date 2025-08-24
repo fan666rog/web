@@ -2,15 +2,19 @@
     --bg-gradient-start: #6dd5ed;
     --bg-gradient-end: #2193b0;
     --container-bg: #000;
-    --container-border: #444;
     --font-color: #fff;
     --title-shadow: #2980b9;
+    --control-bg: rgba(0, 0, 0, 0.2);
+    --control-border: #00d9ff;
+    --control-shadow: rgba(0, 217, 255, 0.5);
+    --control-symbol: #fff;
 }
 
 * {
     padding: 0;
     margin: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent; /* Disable tap highlight on mobile */
 }
 
 body {
@@ -22,6 +26,7 @@ body {
     justify-content: center;
     height: 100vh;
     padding: 1rem;
+    overflow: hidden; /* Prevent scrollbars */
 }
 
 h1 {
@@ -33,12 +38,12 @@ h1 {
 
 .game-container {
     width: 100%;
-    max-width: 520px; /* Slightly larger for better padding */
+    max-width: 800px; /* Increased max-width as requested */
     aspect-ratio: 480 / 320;
     position: relative;
     box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     border-radius: 8px;
-    overflow: hidden; /* Ensures canvas corners are rounded */
+    overflow: hidden;
 }
 
 canvas {
@@ -46,4 +51,53 @@ canvas {
     display: block;
     width: 100%;
     height: 100%;
+}
+
+.controls-container {
+    display: none; /* Hidden by default */
+    width: 100%;
+    max-width: 800px; /* Match game container */
+    margin-top: 1rem;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.control-btn {
+    width: 80px;
+    height: 80px;
+    background: var(--control-bg);
+    border: 2px solid var(--control-border);
+    border-radius: 50%;
+    box-shadow: 0 0 15px var(--control-shadow);
+    color: var(--control-symbol);
+    font-size: 2rem;
+    line-height: 80px;
+    text-align: center;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.control-btn.launch {
+    width: 100px;
+    height: 100px;
+    line-height: 100px;
+    border-radius: 20px;
+    transform: rotate(45deg);
+}
+
+.control-btn.launch span {
+    display: inline-block;
+    transform: rotate(-45deg);
+}
+
+.control-btn:active {
+    background: var(--control-shadow);
+    transform: scale(0.95);
+}
+
+/* Media query for touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .controls-container {
+        display: flex;
+    }
 }

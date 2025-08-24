@@ -95,6 +95,29 @@ canvas {
     transform: scale(0.95);
 }
 
+/* --- Footer 樣式 --- */
+footer {
+    margin-top: 1.5rem;
+    padding: 0.5rem;
+    text-align: center;
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+footer a {
+    color: inherit; /* 繼承父元素顏色，保持一致性 */
+    text-decoration: none; /* 移除預設底線 */
+    font-weight: bold; /* 稍微加粗 */
+    transition: color 0.2s ease;
+}
+
+footer a:hover {
+    text-decoration: underline; /* 滑鼠懸停時顯示底線 */
+    color: #fff; /* 滑鼠懸停時變更亮 */
+}
+
+
 /* Media query for touch devices */
 @media (hover: none) and (pointer: coarse) {
     .controls-container {

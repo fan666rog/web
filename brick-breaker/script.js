@@ -1,7 +1,12 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// --- 全域變數 ---
+// --- DOM Elements ---
+const leftBtn = document.getElementById('left-btn');
+const rightBtn = document.getElementById('right-btn');
+const launchBtn = document.getElementById('launch-btn');
+
+// --- Global Variables ---
 let ball = {};
 let paddle = {};
 const bricks = [];
@@ -12,7 +17,7 @@ let rightPressed = false;
 let leftPressed = false;
 let gameState = 'paused'; // 'paused', 'running', 'gameOver'
 
-// --- 響應式設計與縮放 ---
+// --- Responsive Design & Scaling ---
 const originalCanvasWidth = 480;
 const originalCanvasHeight = 320;
 let scale = 1;
@@ -23,18 +28,17 @@ const brickConfig = {
     originalWidth: 75,
     originalHeight: 20,
     originalPadding: 10,
-    offsetTop: 40, // More space for UI
+    offsetTop: 40,
     offsetLeft: 30,
-    // 美化：磚塊顏色
     colors: [
-        ['#d32f2f', '#ff6659'], // Row 1
-        ['#f57c00', '#ffb04c'], // Row 2
-        ['#fbc02d', '#fff263']  // Row 3
+        ['#d32f2f', '#ff6659'],
+        ['#f57c00', '#ffb04c'],
+        ['#fbc02d', '#fff263']
     ],
     originalCornerRadius: 5
 };
 
-// --- 遊戲物件設定與重設 ---
+// --- Game Setup & Reset ---
 function setup() {
     let newWidth = canvas.parentElement.clientWidth;
     scale = newWidth / originalCanvasWidth;
@@ -72,7 +76,7 @@ function setup() {
 function resetBallAndPaddle() {
     paddle.x = (canvas.width - paddle.width) / 2;
     ball.x = paddle.x + paddle.width / 2;
-    ball.y = canvas.height - paddle.height - ball.radius - 2 * scale; // A small gap
+    ball.y = canvas.height - paddle.height - ball.radius - 2 * scale;
     ball.dx = ball.originalSpeedX * scale * (Math.random() < 0.5 ? 1 : -1);
     ball.dy = ball.originalSpeedY * scale;
 }
@@ -89,7 +93,7 @@ function createBricks() {
     }
 }
 
-// --- 繪圖函式 (美化版) ---
+// --- Drawing Functions ---
 function drawBackground() {
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     gradient.addColorStop(0, '#001a2e');
@@ -107,12 +111,10 @@ function drawBall() {
     ctx.fillStyle = gradient;
     ctx.shadowColor = 'rgba(148, 218, 255, 0.7)';
     ctx.shadowBlur = 15 * scale;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.closePath();
-    ctx.shadowBlur = 0; // Reset shadow
+    ctx.shadowBlur = 0;
 }
 
 function drawPaddle() {
@@ -123,7 +125,6 @@ function drawPaddle() {
     ctx.fillStyle = gradient;
     ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
     ctx.shadowBlur = 5 * scale;
-    ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 2 * scale;
     ctx.roundRect(paddle.x, canvas.height - paddle.height, paddle.width, paddle.height, paddle.cornerRadius);
     ctx.fill();
@@ -166,13 +167,13 @@ function drawUI() {
         ctx.textAlign = 'center';
         ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
         ctx.shadowBlur = 5 * scale;
-        ctx.fillText('按空白鍵開始', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('按空白鍵或發射鈕開始', canvas.width / 2, canvas.height / 2);
         ctx.textAlign = 'left';
         ctx.shadowBlur = 0;
     }
 }
 
-// --- 遊戲邏輯 (與之前相同) ---
+// --- Game Logic ---
 function collisionDetection() {
     for (let c = 0; c < brickConfig.columnCount; c++) {
         for (let r = 0; r < brickConfig.rowCount; r++) {
@@ -193,18 +194,15 @@ function collisionDetection() {
 }
 
 function update() {
-    if (rightPressed && paddle.x < canvas.width - paddle.width) {
-        paddle.x += paddle.speed;
-    } else if (leftPressed && paddle.x > 0) {
-        paddle.x -= paddle.speed;
-    }
+    if (rightPressed && paddle.x < canvas.width - paddle.width) paddle.x += paddle.speed;
+    else if (leftPressed && paddle.x > 0) paddle.x -= paddle.speed;
+
     if (gameState === 'paused') {
         ball.x = paddle.x + paddle.width / 2;
     }
+
     if (gameState === 'running') {
-        if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
-            ball.dx = -ball.dx;
-        }
+        if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) ball.dx = -ball.dx;
         if (ball.y + ball.dy < ball.radius) {
             ball.dy = -ball.dy;
         } else if (ball.y + ball.dy > canvas.height - ball.radius) {
@@ -239,30 +237,34 @@ function draw() {
 function gameLoop() {
     update();
     draw();
-    if (gameState === 'running') {
-        collisionDetection();
-    }
+    if (gameState === 'running') collisionDetection();
     requestAnimationFrame(gameLoop);
 }
 
-// --- 事件監聽 ---
-function keyDownHandler(e) {
+// --- Event Listeners ---
+function startGame() {
+    if (gameState === 'paused') gameState = 'running';
+}
+
+// Keyboard
+document.addEventListener('keydown', (e) => {
     if (e.key === 'Right' || e.key === 'ArrowRight') rightPressed = true;
     else if (e.key === 'Left' || e.key === 'ArrowLeft') leftPressed = true;
-}
-
-function keyUpHandler(e) {
+});
+document.addEventListener('keyup', (e) => {
     if (e.key === 'Right' || e.key === 'ArrowRight') rightPressed = false;
     else if (e.key === 'Left' || e.key === 'ArrowLeft') leftPressed = false;
-    else if (e.code === 'Space' || e.key === ' ') {
-        if (gameState === 'paused') gameState = 'running';
-    }
-}
+    else if (e.code === 'Space' || e.key === ' ') startGame();
+});
 
-document.addEventListener('keydown', keyDownHandler, false);
-document.addEventListener('keyup', keyUpHandler, false);
+// Touch Controls
+leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); leftPressed = true; }, { passive: false });
+leftBtn.addEventListener('touchend', (e) => { e.preventDefault(); leftPressed = false; }, { passive: false });
+rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); rightPressed = true; }, { passive: false });
+rightBtn.addEventListener('touchend', (e) => { e.preventDefault(); rightPressed = false; }, { passive: false });
+launchBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startGame(); }, { passive: false });
 
-// --- 初始化 ---
+// --- Initialization ---
 window.addEventListener('resize', setup);
 setup();
 gameLoop();

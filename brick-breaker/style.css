@@ -1,0 +1,49 @@
+:root {
+    --bg-gradient-start: #6dd5ed;
+    --bg-gradient-end: #2193b0;
+    --container-bg: #000;
+    --container-border: #444;
+    --font-color: #fff;
+    --title-shadow: #2980b9;
+}
+
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(45deg, var(--bg-gradient-start), var(--bg-gradient-end));
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 1rem;
+}
+
+h1 {
+    color: var(--font-color);
+    margin-bottom: 1rem;
+    font-size: 2.5rem;
+    text-shadow: 2px 2px 4px var(--title-shadow);
+}
+
+.game-container {
+    width: 100%;
+    max-width: 520px; /* Slightly larger for better padding */
+    aspect-ratio: 480 / 320;
+    position: relative;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    border-radius: 8px;
+    overflow: hidden; /* Ensures canvas corners are rounded */
+}
+
+canvas {
+    background: var(--container-bg);
+    display: block;
+    width: 100%;
+    height: 100%;
+}

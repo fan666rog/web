@@ -63,15 +63,15 @@ canvas {
 }
 
 .control-btn {
-    width: 100px; /* Increased size */
-    height: 100px; /* Increased size */
+    width: 140px; /* Final size increase */
+    height: 140px; /* Final size increase */
     background: var(--control-bg);
-    border: 3px solid var(--control-border); /* Thicker border */
+    border: 3px solid var(--control-border);
     border-radius: 50%;
-    box-shadow: 0 0 20px var(--control-shadow); /* Larger shadow */
+    box-shadow: 0 0 20px var(--control-shadow);
     color: var(--control-symbol);
-    font-size: 2.5rem; /* Larger icon */
-    line-height: 100px;
+    font-size: 3rem; /* Larger icon */
+    line-height: 140px;
     text-align: center;
     user-select: none;
     transition: all 0.2s ease;

@@ -6,3 +6,4 @@
 日後升級可能加入難度較高的關卡
 
 core資料夾裡為gemini jules編寫的初始核心邏輯
+Copyright (c) 2025 fan666rog & Gemini. All Rights Reserved.

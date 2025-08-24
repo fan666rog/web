@@ -10,6 +10,7 @@ wheel-prize-picker / 輪盤抽獎(含權重版)
 Retro Mary: Pocket Money Killer / 復古小瑪莉：零用錢殺手
 game-snake / 貪食蛇小遊戲
 rubiks-cube / 3D魔術方塊模擬器
+brick-breaker / 打磚塊小遊戲
 104_87key_test / 鍵盤測試小程式
 
 若要直接觀看以上展示項目請前往

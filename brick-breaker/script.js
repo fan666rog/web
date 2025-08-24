@@ -15,7 +15,10 @@ let score = 0;
 let lives = 3;
 let rightPressed = false;
 let leftPressed = false;
-let gameState = 'paused'; // 'paused', 'running', 'gameOver'
+let gameState = 'paused';
+
+// --- Timing for Delta Time ---
+let lastTime = 0;
 
 // --- Responsive Design & Scaling ---
 const originalCanvasWidth = 480;
@@ -49,14 +52,14 @@ function setup() {
     paddle.originalHeight = 12;
     paddle.width = paddle.originalWidth * scale;
     paddle.height = paddle.originalHeight * scale;
-    paddle.originalSpeed = 8;
+    paddle.originalSpeed = 350; // Speed in pixels per second
     paddle.speed = paddle.originalSpeed * scale;
     paddle.cornerRadius = 4 * scale;
 
     ball.originalRadius = 8;
     ball.radius = ball.originalRadius * scale;
-    ball.originalSpeedX = 2.5;
-    ball.originalSpeedY = -2.5;
+    ball.originalSpeedX = 180; // Speed in pixels per second
+    ball.originalSpeedY = -180; // Speed in pixels per second
 
     brickConfig.width = brickConfig.originalWidth * scale;
     brickConfig.height = brickConfig.originalHeight * scale;
@@ -174,7 +177,7 @@ function drawUI() {
 }
 
 // --- Game Logic ---
-function collisionDetection() {
+function collisionDetection(deltaTime) {
     for (let c = 0; c < brickConfig.columnCount; c++) {
         for (let r = 0; r < brickConfig.rowCount; r++) {
             const b = bricks[c][r];
@@ -193,19 +196,27 @@ function collisionDetection() {
     }
 }
 
-function update() {
-    if (rightPressed && paddle.x < canvas.width - paddle.width) paddle.x += paddle.speed;
-    else if (leftPressed && paddle.x > 0) paddle.x -= paddle.speed;
+function update(deltaTime) {
+    if (rightPressed && paddle.x < canvas.width - paddle.width) {
+        paddle.x += paddle.speed * deltaTime;
+    } else if (leftPressed && paddle.x > 0) {
+        paddle.x -= paddle.speed * deltaTime;
+    }
 
     if (gameState === 'paused') {
         ball.x = paddle.x + paddle.width / 2;
     }
 
     if (gameState === 'running') {
-        if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) ball.dx = -ball.dx;
-        if (ball.y + ball.dy < ball.radius) {
+        let nextBallX = ball.x + ball.dx * deltaTime;
+        let nextBallY = ball.y + ball.dy * deltaTime;
+        
+        if (nextBallX > canvas.width - ball.radius || nextBallX < ball.radius) {
+            ball.dx = -ball.dx;
+        }
+        if (nextBallY < ball.radius) {
             ball.dy = -ball.dy;
-        } else if (ball.y + ball.dy > canvas.height - ball.radius) {
+        } else if (nextBallY > canvas.height - ball.radius) {
             if (ball.x > paddle.x - ball.radius && ball.x < paddle.x + paddle.width + ball.radius) {
                 ball.dy = -ball.dy;
             } else {
@@ -220,8 +231,8 @@ function update() {
                 }
             }
         }
-        ball.x += ball.dx;
-        ball.y += ball.dy;
+        ball.x += ball.dx * deltaTime;
+        ball.y += ball.dy * deltaTime;
     }
 }
 
@@ -234,16 +245,28 @@ function draw() {
     drawUI();
 }
 
-function gameLoop() {
-    update();
+function gameLoop(timestamp) {
+    if (!lastTime) {
+        lastTime = timestamp;
+    }
+    const deltaTime = (timestamp - lastTime) / 1000; // deltaTime in seconds
+
+    update(deltaTime);
     draw();
-    if (gameState === 'running') collisionDetection();
+    if (gameState === 'running') {
+        collisionDetection();
+    }
+    
+    lastTime = timestamp;
     requestAnimationFrame(gameLoop);
 }
 
 // --- Event Listeners ---
 function startGame() {
-    if (gameState === 'paused') gameState = 'running';
+    if (gameState === 'paused') {
+        gameState = 'running';
+        lastTime = 0; 
+    }
 }
 
 // Keyboard
@@ -267,4 +290,4 @@ launchBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startGame(
 // --- Initialization ---
 window.addEventListener('resize', setup);
 setup();
-gameLoop();
+requestAnimationFrame(gameLoop);

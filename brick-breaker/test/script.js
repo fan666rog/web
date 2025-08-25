@@ -397,7 +397,8 @@ function update(deltaTime) {
         if (nextBallY < ball.radius) {
             ball.dy = -ball.dy;
         } else if (nextBallY > canvas.height - ball.radius - paddle.height) {
-            if (ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+            // Check if the ball's horizontal span overlaps with the paddle's span
+            if (nextBallX + ball.radius > paddle.x && nextBallX - ball.radius < paddle.x + paddle.width) {
                 if (paddle.isSticky) {
                     paddle.ballStuck = true;
                     gameState = 'paused';

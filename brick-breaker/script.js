@@ -5,6 +5,11 @@ const ctx = canvas.getContext('2d');
 const leftBtn = document.getElementById('left-btn');
 const rightBtn = document.getElementById('right-btn');
 const launchBtn = document.getElementById('launch-btn');
+// --- 新增：說明視窗的元素 ---
+const helpBtn = document.getElementById('help-btn');
+const helpModal = document.getElementById('help-modal');
+const closeModalBtn = document.getElementById('close-modal-btn');
+
 
 // --- Global Variables ---
 let ball = {};
@@ -634,3 +639,18 @@ launchBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startGame(
 window.addEventListener('resize', setup);
 setup();
 requestAnimationFrame(gameLoop);
+
+
+// --- 新增：說明視窗的事件監聽 ---
+helpBtn.addEventListener('click', () => {
+    helpModal.classList.remove('hidden');
+});
+closeModalBtn.addEventListener('click', () => {
+    helpModal.classList.add('hidden');
+});
+helpModal.addEventListener('click', (e) => {
+    // 如果點擊的是半透明的背景，而不是內容區域，就關閉視窗
+    if (e.target === helpModal) {
+        helpModal.classList.add('hidden');
+    }
+});

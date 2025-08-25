@@ -106,6 +106,7 @@ function setup() {
 }
 
 function resetBallAndPaddle() {
+    clearAllPowerUps();
     paddle.x = (canvas.width - paddle.width) / 2;
     paddle.ballStuck = false;
     ball.x = paddle.x + paddle.width / 2;
@@ -457,6 +458,20 @@ function deactivatePowerUp(type) {
             break;
     }
     delete activePowerUps[type];
+}
+
+function clearAllPowerUps() {
+    // Clear all scheduled deactivations
+    for (const type in activePowerUps) {
+        clearTimeout(activePowerUps[type]);
+    }
+    activePowerUps = {};
+
+    // Reset all paddle properties to default
+    paddle.width = paddle.originalWidth * scale;
+    paddle.controlsReversed = false;
+    paddle.isSticky = false;
+    paddle.hasLasers = false;
 }
 
 function updatePowerUps(deltaTime) {

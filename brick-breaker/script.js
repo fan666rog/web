@@ -329,13 +329,24 @@ function spawnPowerUp(brick) {
     powerUps.push(powerUp);
 }
 
-function collisionDetection(deltaTime) {
+function collisionDetection() {
     for (let r = 0; r < bricks.length; r++) {
         for (let c = 0; c < bricks[r].length; c++) {
             const b = bricks[r][c];
             if (b.status === 1) {
-                if (ball.x > b.x && ball.x < b.x + b.width && ball.y > b.y && ball.y < b.y + b.height) {
-                    ball.dy = -ball.dy;
+                // Find the closest point on the brick to the ball's center
+                const closestX = Math.max(b.x, Math.min(ball.x, b.x + b.width));
+                const closestY = Math.max(b.y, Math.min(ball.y, b.y + b.height));
+
+                // Calculate the distance between the ball's center and this closest point
+                const distX = ball.x - closestX;
+                const distY = ball.y - closestY;
+                const distanceSquared = (distX * distX) + (distY * distY);
+
+                // Check for collision
+                if (distanceSquared < (ball.radius * ball.radius)) {
+                    // Collision occurred, handle it
+                    
                     b.lives--;
                     score++;
 
@@ -347,6 +358,7 @@ function collisionDetection(deltaTime) {
                         }
                         if (brickCount === 0) {
                             nextLevel();
+                            return; // Exit since the level is over
                         }
                     } else {
                         // Update color based on remaining lives
@@ -355,6 +367,24 @@ function collisionDetection(deltaTime) {
                             case 1: b.color = brickConfig.colors.red; break;
                         }
                     }
+
+                    // --- Handle collision response ---
+                    // Calculate overlap to determine collision axis
+                    const overlapX = ball.radius - Math.abs(distX);
+                    const overlapY = ball.radius - Math.abs(distY);
+
+                    if (overlapX > overlapY) {
+                        // Vertical collision
+                        ball.dy = -ball.dy;
+                        ball.y += Math.sign(distY) * overlapY;
+                    } else {
+                        // Horizontal collision
+                        ball.dx = -ball.dx;
+                        ball.x += Math.sign(distX) * overlapX;
+                    }
+
+                    // Exit the function after handling one collision to prevent multi-hits in one frame
+                    return;
                 }
             }
         }

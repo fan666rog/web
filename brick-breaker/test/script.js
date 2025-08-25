@@ -126,14 +126,24 @@ function createBricks() {
         ],
         // Level 2
         [
-            [2, {type: 2, powerUp: powerUpTypes.LONGER_PADDLE}, 3, {type: 2, powerUp: powerUpTypes.SHORTER_PADDLE}, 2],
-            [1, 1, {type:2, powerUp: powerUpTypes.LASER_PADDLE}, 1, 1],
-            [1, {type: 1, powerUp: powerUpTypes.FAST_BALL}, 1, {type: 1, powerUp: powerUpTypes.STICKY_PADDLE}, 1]
+            [2, 2, {type: 2, powerUp: powerUpTypes.LONGER_PADDLE}, 3, 3, {type: 2, powerUp: powerUpTypes.SHORTER_PADDLE}, 2, 2, 2, 2],
+            [1, 1, 1, {type: 2, powerUp: powerUpTypes.LASER_PADDLE}, 2, 2, {type: 1, powerUp: powerUpTypes.REVERSE_CONTROLS}, 1, 1, 1],
+            [1, {type: 1, powerUp: powerUpTypes.FAST_BALL}, 1, 1, 1, 1, 1, 1, {type: 1, powerUp: powerUpTypes.STICKY_PADDLE}, 1]
         ]
     ];
 
     const layout = levelLayouts[level - 1];
     if (!layout) return;
+
+    let levelBrickWidth = brickConfig.width;
+    let levelBrickPadding = brickConfig.padding;
+
+    if (level === 2) {
+        // Halve the width and padding for the 10-column layout
+        const totalWidth = (brickConfig.width * 5) + (brickConfig.padding * 4);
+        levelBrickWidth = (totalWidth - (brickConfig.padding * 9)) / 10;
+        levelBrickPadding = brickConfig.padding;
+    }
 
     for (let r = 0; r < layout.length; r++) {
         bricks[r] = [];
@@ -143,7 +153,7 @@ function createBricks() {
             const powerUpType = typeof brickData === 'object' ? brickData.powerUp : null;
 
             if (brickType > 0) {
-                const brickX = (c * (brickConfig.width + brickConfig.padding)) + brickConfig.scaledOffsetLeft;
+                const brickX = (c * (levelBrickWidth + levelBrickPadding)) + brickConfig.scaledOffsetLeft;
                 const brickY = (r * (brickConfig.height + brickConfig.padding)) + brickConfig.scaledOffsetTop;
                 let color;
                 switch(brickType) {
@@ -155,6 +165,8 @@ function createBricks() {
                 bricks[r][c] = {
                     x: brickX,
                     y: brickY,
+                    width: level === 2 ? levelBrickWidth : brickConfig.width,
+                    height: brickConfig.height,
                     status: 1,
                     lives: brickType,
                     originalColor: color,
@@ -213,12 +225,12 @@ function drawBricks() {
         for (let c = 0; c < bricks[r].length; c++) {
             const b = bricks[r][c];
             if (b.status === 1) {
-                const gradient = ctx.createLinearGradient(b.x, b.y, b.x + brickConfig.width, b.y + brickConfig.height);
+                const gradient = ctx.createLinearGradient(b.x, b.y, b.x + b.width, b.y + b.height);
                 gradient.addColorStop(0, b.color[0]);
                 gradient.addColorStop(1, b.color[1]);
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
-                ctx.roundRect(b.x, b.y, brickConfig.width, brickConfig.height, brickConfig.cornerRadius);
+                ctx.roundRect(b.x, b.y, b.width, b.height, brickConfig.cornerRadius);
                 ctx.fill();
                 ctx.closePath();
             }
@@ -268,7 +280,7 @@ function collisionDetection(deltaTime) {
         for (let c = 0; c < bricks[r].length; c++) {
             const b = bricks[r][c];
             if (b.status === 1) {
-                if (ball.x > b.x && ball.x < b.x + brickConfig.width && ball.y > b.y && ball.y < b.y + brickConfig.height) {
+                if (ball.x > b.x && ball.x < b.x + b.width && ball.y > b.y && ball.y < b.y + b.height) {
                     ball.dy = -ball.dy;
                     b.lives--;
                     score++;
@@ -486,7 +498,7 @@ function updateLasers(deltaTime) {
         for (let r = 0; r < bricks.length; r++) {
             for (let c = 0; c < bricks[r].length; c++) {
                 const b = bricks[r][c];
-                if (b.status === 1 && l.x > b.x && l.x < b.x + brickConfig.width && l.y > b.y && l.y < b.y + brickConfig.height) {
+                if (b.status === 1 && l.x > b.x && l.x < b.x + b.width && l.y > b.y && l.y < b.y + b.height) {
                     b.lives--;
                     score++;
                     if (b.lives === 0) {

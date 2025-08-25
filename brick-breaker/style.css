@@ -29,16 +29,47 @@ body {
     overflow: hidden; /* Prevent scrollbars */
 }
 
+/* --- 新增：標題容器 --- */
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
 h1 {
     color: var(--font-color);
-    margin-bottom: 1rem;
+    margin: 0; /* 移除 h1 的預設 margin */
     font-size: 2.5rem;
     text-shadow: 2px 2px 4px var(--title-shadow);
 }
 
+/* --- 新增：說明按鈕 --- */
+.help-button {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 2px solid var(--font-color);
+    color: var(--font-color);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.help-button:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+}
+
+
 .game-container {
     width: 100%;
-    max-width: 800px; /* Increased max-width as requested */
+    max-width: 800px;
     aspect-ratio: 480 / 320;
     position: relative;
     box-shadow: 0 10px 25px rgba(0,0,0,0.3);
@@ -63,14 +94,14 @@ canvas {
 }
 
 .control-btn {
-    width: 140px; /* Final size increase */
-    height: 140px; /* Final size increase */
+    width: 140px;
+    height: 140px;
     background: var(--control-bg);
     border: 3px solid var(--control-border);
     border-radius: 50%;
     box-shadow: 0 0 20px var(--control-shadow);
     color: var(--control-symbol);
-    font-size: 3rem; /* Larger icon */
+    font-size: 3rem;
     line-height: 140px;
     text-align: center;
     user-select: none;
@@ -78,10 +109,10 @@ canvas {
 }
 
 .control-btn.launch {
-    width: 120px; /* Increased size */
-    height: 120px; /* Increased size */
+    width: 120px;
+    height: 120px;
     line-height: 120px;
-    border-radius: 30px; /* Adjusted radius */
+    border-radius: 30px;
     transform: rotate(45deg);
 }
 
@@ -95,6 +126,62 @@ canvas {
     transform: scale(0.95);
 }
 
+/* --- 新增：彈出視窗樣式 --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.modal-overlay:not(.hidden) {
+    opacity: 1;
+}
+.modal-content {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 10px;
+    max-width: 90%;
+    width: 500px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+.modal-overlay:not(.hidden) .modal-content {
+    transform: scale(1);
+}
+.modal-content h2 { color: #333; text-align: center; margin-bottom: 1.5rem; }
+.modal-content h3 { color: #555; margin-top: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;}
+.modal-content h4 { color: #777; margin-top: 1rem; }
+.modal-content p, .modal-content ul { color: #444; line-height: 1.6; }
+.modal-content ul { list-style-position: inside; padding-left: 0; }
+.modal-content li { margin-bottom: 0.5rem; }
+.modal-content code { background-color: #eee; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+
+.close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #aaa;
+    background: none;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+}
+.close-button:hover { color: #333; }
+.hidden { display: none; }
+
+
 /* --- Footer 樣式 --- */
 footer {
     margin-top: 1.5rem;
@@ -106,15 +193,15 @@ footer {
 }
 
 footer a {
-    color: inherit; /* 繼承父元素顏色，保持一致性 */
-    text-decoration: none; /* 移除預設底線 */
-    font-weight: bold; /* 稍微加粗 */
+    color: inherit;
+    text-decoration: none;
+    font-weight: bold;
     transition: color 0.2s ease;
 }
 
 footer a:hover {
-    text-decoration: underline; /* 滑鼠懸停時顯示底線 */
-    color: #fff; /* 滑鼠懸停時變更亮 */
+    text-decoration: underline;
+    color: #fff;
 }
 
 

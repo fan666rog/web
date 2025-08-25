@@ -120,6 +120,51 @@ function resetBallAndPaddle() {
     ball.dy = ball.originalSpeedY * scale;
 }
 
+function createLevel3Layout() {
+    const layout = [];
+    const rows = 5;
+    const cols = 10;
+    const powerUpPool = [
+        powerUpTypes.LONGER_PADDLE,
+        powerUpTypes.STICKY_PADDLE,
+        powerUpTypes.LASER_PADDLE,
+        powerUpTypes.SHORTER_PADDLE,
+        powerUpTypes.FAST_BALL,
+        powerUpTypes.REVERSE_CONTROLS
+    ];
+
+    for (let r = 0; r < rows; r++) {
+        const row = [];
+        for (let c = 0; c < cols; c++) {
+            // 70% chance to place a brick
+            if (Math.random() > 0.3) {
+                let brickType = 1;
+                let powerUp = null;
+
+                // 20% chance for a multi-life brick
+                if (Math.random() < 0.2) {
+                    brickType = Math.random() < 0.5 ? 2 : 3; // 50/50 chance for 2 or 3 lives
+                }
+
+                // 15% chance for a power-up
+                if (Math.random() < 0.15) {
+                    powerUp = powerUpPool[Math.floor(Math.random() * powerUpPool.length)];
+                }
+                
+                if (powerUp) {
+                    row.push({ type: brickType, powerUp: powerUp });
+                } else {
+                    row.push(brickType);
+                }
+            } else {
+                row.push(0); // No brick
+            }
+        }
+        layout.push(row);
+    }
+    return layout;
+}
+
 function createBricks() {
     bricks.length = 0;
     brickCount = 0;
@@ -135,7 +180,9 @@ function createBricks() {
             [2, 2, {type: 2, powerUp: powerUpTypes.LONGER_PADDLE}, 3, 3, {type: 2, powerUp: powerUpTypes.SHORTER_PADDLE}, 2, 2, 2, 2],
             [1, 1, 1, {type: 2, powerUp: powerUpTypes.LASER_PADDLE}, 2, 2, {type: 1, powerUp: powerUpTypes.REVERSE_CONTROLS}, 1, 1, 1],
             [1, {type: 1, powerUp: powerUpTypes.FAST_BALL}, 1, 1, 1, 1, 1, 1, {type: 1, powerUp: powerUpTypes.STICKY_PADDLE}, 1]
-        ]
+        ],
+        // Level 3
+        createLevel3Layout()
     ];
 
     const layout = levelLayouts[level - 1];
@@ -144,11 +191,11 @@ function createBricks() {
     let levelBrickWidth = brickConfig.width;
     let levelBrickPadding = brickConfig.padding;
 
-    if (level === 2) {
-        // Halve the width and padding for the 10-column layout
-        const totalWidth = (brickConfig.width * 5) + (brickConfig.padding * 4);
-        levelBrickWidth = (totalWidth - (brickConfig.padding * 9)) / 10;
-        levelBrickPadding = brickConfig.padding;
+    if (level === 2 || level === 3) {
+        // Adjust width for 10-column layouts
+        const totalWidth = (brickConfig.originalWidth * 5) + (brickConfig.originalPadding * 4);
+        const newTotalPadding = brickConfig.originalPadding * 9;
+        levelBrickWidth = ((totalWidth - newTotalPadding) / 10) * scale;
     }
 
     for (let r = 0; r < layout.length; r++) {
@@ -159,7 +206,8 @@ function createBricks() {
             const powerUpType = typeof brickData === 'object' ? brickData.powerUp : null;
 
             if (brickType > 0) {
-                const brickX = (c * (levelBrickWidth + levelBrickPadding)) + brickConfig.scaledOffsetLeft;
+                const currentBrickWidth = (level === 2 || level === 3) ? levelBrickWidth : brickConfig.width;
+                const brickX = (c * (currentBrickWidth + brickConfig.padding)) + brickConfig.scaledOffsetLeft;
                 const brickY = (r * (brickConfig.height + brickConfig.padding)) + brickConfig.scaledOffsetTop;
                 let color;
                 switch(brickType) {
@@ -171,7 +219,7 @@ function createBricks() {
                 bricks[r][c] = {
                     x: brickX,
                     y: brickY,
-                    width: level === 2 ? levelBrickWidth : brickConfig.width,
+                    width: currentBrickWidth,
                     height: brickConfig.height,
                     status: 1,
                     lives: brickType,
@@ -315,7 +363,7 @@ function collisionDetection(deltaTime) {
 
 function nextLevel() {
     level++;
-    if (level > 2) { // Assuming 2 levels for now
+    if (level > 3) { // Now there are 3 levels
         alert('恭喜你，你贏了！');
         document.location.reload();
     } else {
@@ -349,7 +397,8 @@ function update(deltaTime) {
         if (nextBallY < ball.radius) {
             ball.dy = -ball.dy;
         } else if (nextBallY > canvas.height - ball.radius - paddle.height) {
-            if (ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+            // Check if the ball's horizontal span overlaps with the paddle's span
+            if (nextBallX + ball.radius > paddle.x && nextBallX - ball.radius < paddle.x + paddle.width) {
                 if (paddle.isSticky) {
                     paddle.ballStuck = true;
                     gameState = 'paused';

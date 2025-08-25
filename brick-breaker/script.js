@@ -10,12 +10,27 @@ const launchBtn = document.getElementById('launch-btn');
 let ball = {};
 let paddle = {};
 const bricks = [];
+const powerUps = [];
+const lasers = [];
+
+const powerUpTypes = {
+    LONGER_PADDLE: 'longer-paddle',
+    STICKY_PADDLE: 'sticky-paddle',
+    LASER_PADDLE: 'laser-paddle',
+    SHORTER_PADDLE: 'shorter-paddle',
+    FAST_BALL: 'fast-ball',
+    REVERSE_CONTROLS: 'reverse-controls'
+};
 
 let score = 0;
 let lives = 3;
+let level = 1; // Add level variable
 let rightPressed = false;
 let leftPressed = false;
 let gameState = 'paused';
+let brickCount = 0;
+let activePowerUps = {};
+
 
 // --- Timing for Delta Time ---
 let lastTime = 0;
@@ -33,12 +48,22 @@ const brickConfig = {
     originalPadding: 10,
     offsetTop: 40,
     offsetLeft: 30,
-    colors: [
-        ['#d32f2f', '#ff6659'],
-        ['#f57c00', '#ffb04c'],
-        ['#fbc02d', '#fff263']
-    ],
-    originalCornerRadius: 5
+    colors: {
+        red: ['#d32f2f', '#ff6659'],
+        orange: ['#f57c00', '#ffb04c'],
+        yellow: ['#fbc02d', '#fff263'],
+        silver: ['#bdc3c7', '#ecf0f1'],
+        gold: ['#f1c40f', '#f39c12']
+    },
+    originalCornerRadius: 5,
+    powerUpColors: {
+        'longer-paddle': '#2ecc71', // green
+        'sticky-paddle': '#3498db', // blue
+        'laser-paddle': '#e74c3c', // red
+        'shorter-paddle': '#f1c40f', // yellow
+        'fast-ball': '#9b59b6', // purple
+        'reverse-controls': '#e67e22' // orange
+    }
 };
 
 // --- Game Setup & Reset ---
@@ -55,6 +80,10 @@ function setup() {
     paddle.originalSpeed = 350; // Speed in pixels per second
     paddle.speed = paddle.originalSpeed * scale;
     paddle.cornerRadius = 4 * scale;
+    paddle.controlsReversed = false;
+    paddle.isSticky = false;
+    paddle.ballStuck = false;
+    paddle.hasLasers = false;
 
     ball.originalRadius = 8;
     ball.radius = ball.originalRadius * scale;
@@ -78,6 +107,7 @@ function setup() {
 
 function resetBallAndPaddle() {
     paddle.x = (canvas.width - paddle.width) / 2;
+    paddle.ballStuck = false;
     ball.x = paddle.x + paddle.width / 2;
     ball.y = canvas.height - paddle.height - ball.radius - 2 * scale;
     ball.dx = ball.originalSpeedX * scale * (Math.random() < 0.5 ? 1 : -1);
@@ -86,12 +116,67 @@ function resetBallAndPaddle() {
 
 function createBricks() {
     bricks.length = 0;
-    for (let c = 0; c < brickConfig.columnCount; c++) {
-        bricks[c] = [];
-        for (let r = 0; r < brickConfig.rowCount; r++) {
-            const brickX = (c * (brickConfig.width + brickConfig.padding)) + brickConfig.scaledOffsetLeft;
-            const brickY = (r * (brickConfig.height + brickConfig.padding)) + brickConfig.scaledOffsetTop;
-            bricks[c][r] = { x: brickX, y: brickY, status: 1, color: brickConfig.colors[r] };
+    brickCount = 0;
+    const levelLayouts = [
+        // Level 1
+        [
+            [1,1,1,1,1],
+            [1,1,1,1,1],
+            [1,1,1,1,1]
+        ],
+        // Level 2
+        [
+            [2, 2, {type: 2, powerUp: powerUpTypes.LONGER_PADDLE}, 3, 3, {type: 2, powerUp: powerUpTypes.SHORTER_PADDLE}, 2, 2, 2, 2],
+            [1, 1, 1, {type: 2, powerUp: powerUpTypes.LASER_PADDLE}, 2, 2, {type: 1, powerUp: powerUpTypes.REVERSE_CONTROLS}, 1, 1, 1],
+            [1, {type: 1, powerUp: powerUpTypes.FAST_BALL}, 1, 1, 1, 1, 1, 1, {type: 1, powerUp: powerUpTypes.STICKY_PADDLE}, 1]
+        ]
+    ];
+
+    const layout = levelLayouts[level - 1];
+    if (!layout) return;
+
+    let levelBrickWidth = brickConfig.width;
+    let levelBrickPadding = brickConfig.padding;
+
+    if (level === 2) {
+        // Halve the width and padding for the 10-column layout
+        const totalWidth = (brickConfig.width * 5) + (brickConfig.padding * 4);
+        levelBrickWidth = (totalWidth - (brickConfig.padding * 9)) / 10;
+        levelBrickPadding = brickConfig.padding;
+    }
+
+    for (let r = 0; r < layout.length; r++) {
+        bricks[r] = [];
+        for (let c = 0; c < layout[r].length; c++) {
+            const brickData = layout[r][c];
+            const brickType = typeof brickData === 'object' ? brickData.type : brickData;
+            const powerUpType = typeof brickData === 'object' ? brickData.powerUp : null;
+
+            if (brickType > 0) {
+                const brickX = (c * (levelBrickWidth + levelBrickPadding)) + brickConfig.scaledOffsetLeft;
+                const brickY = (r * (brickConfig.height + brickConfig.padding)) + brickConfig.scaledOffsetTop;
+                let color;
+                switch(brickType) {
+                    case 3: color = brickConfig.colors.gold; break;
+                    case 2: color = brickConfig.colors.silver; break;
+                    default: color = brickConfig.colors.red;
+                }
+
+                bricks[r][c] = {
+                    x: brickX,
+                    y: brickY,
+                    width: level === 2 ? levelBrickWidth : brickConfig.width,
+                    height: brickConfig.height,
+                    status: 1,
+                    lives: brickType,
+                    originalColor: color,
+                    color: color,
+                    powerUp: powerUpType
+                };
+                brickCount++;
+            } else {
+                bricks[r][c] = { status: 0 };
+            }
         }
     }
 }
@@ -136,16 +221,16 @@ function drawPaddle() {
 }
 
 function drawBricks() {
-    for (let c = 0; c < brickConfig.columnCount; c++) {
-        for (let r = 0; r < brickConfig.rowCount; r++) {
-            if (bricks[c][r].status === 1) {
-                const b = bricks[c][r];
-                const gradient = ctx.createLinearGradient(b.x, b.y, b.x + brickConfig.width, b.y + brickConfig.height);
+    for (let r = 0; r < bricks.length; r++) {
+        for (let c = 0; c < bricks[r].length; c++) {
+            const b = bricks[r][c];
+            if (b.status === 1) {
+                const gradient = ctx.createLinearGradient(b.x, b.y, b.x + b.width, b.y + b.height);
                 gradient.addColorStop(0, b.color[0]);
                 gradient.addColorStop(1, b.color[1]);
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
-                ctx.roundRect(b.x, b.y, brickConfig.width, brickConfig.height, brickConfig.cornerRadius);
+                ctx.roundRect(b.x, b.y, b.width, b.height, brickConfig.cornerRadius);
                 ctx.fill();
                 ctx.closePath();
             }
@@ -177,18 +262,44 @@ function drawUI() {
 }
 
 // --- Game Logic ---
+function spawnPowerUp(brick) {
+    const powerUp = {
+        x: brick.x + brickConfig.width / 2,
+        y: brick.y,
+        width: 15 * scale,
+        height: 15 * scale,
+        speed: 100 * scale,
+        type: brick.powerUp,
+        color: brickConfig.powerUpColors[brick.powerUp]
+    };
+    powerUps.push(powerUp);
+}
+
 function collisionDetection(deltaTime) {
-    for (let c = 0; c < brickConfig.columnCount; c++) {
-        for (let r = 0; r < brickConfig.rowCount; r++) {
-            const b = bricks[c][r];
+    for (let r = 0; r < bricks.length; r++) {
+        for (let c = 0; c < bricks[r].length; c++) {
+            const b = bricks[r][c];
             if (b.status === 1) {
-                if (ball.x > b.x && ball.x < b.x + brickConfig.width && ball.y > b.y && ball.y < b.y + brickConfig.height) {
+                if (ball.x > b.x && ball.x < b.x + b.width && ball.y > b.y && ball.y < b.y + b.height) {
                     ball.dy = -ball.dy;
-                    b.status = 0;
+                    b.lives--;
                     score++;
-                    if (score === brickConfig.rowCount * brickConfig.columnCount) {
-                        alert('恭喜你，你贏了！');
-                        document.location.reload();
+
+                    if (b.lives === 0) {
+                        b.status = 0;
+                        brickCount--;
+                        if (b.powerUp) {
+                            spawnPowerUp(b);
+                        }
+                        if (brickCount === 0) {
+                            nextLevel();
+                        }
+                    } else {
+                        // Update color based on remaining lives
+                        switch(b.lives) {
+                            case 2: b.color = brickConfig.colors.silver; break;
+                            case 1: b.color = brickConfig.colors.red; break;
+                        }
                     }
                 }
             }
@@ -196,10 +307,25 @@ function collisionDetection(deltaTime) {
     }
 }
 
+function nextLevel() {
+    level++;
+    if (level > 2) { // Assuming 2 levels for now
+        alert('恭喜你，你贏了！');
+        document.location.reload();
+    } else {
+        gameState = 'paused';
+        createBricks();
+        resetBallAndPaddle();
+    }
+}
+
 function update(deltaTime) {
-    if (rightPressed && paddle.x < canvas.width - paddle.width) {
+    const moveRight = paddle.controlsReversed ? leftPressed : rightPressed;
+    const moveLeft = paddle.controlsReversed ? rightPressed : leftPressed;
+
+    if (moveRight && paddle.x < canvas.width - paddle.width) {
         paddle.x += paddle.speed * deltaTime;
-    } else if (leftPressed && paddle.x > 0) {
+    } else if (moveLeft && paddle.x > 0) {
         paddle.x -= paddle.speed * deltaTime;
     }
 
@@ -216,9 +342,21 @@ function update(deltaTime) {
         }
         if (nextBallY < ball.radius) {
             ball.dy = -ball.dy;
-        } else if (nextBallY > canvas.height - ball.radius) {
-            if (ball.x > paddle.x - ball.radius && ball.x < paddle.x + paddle.width + ball.radius) {
-                ball.dy = -ball.dy;
+        } else if (nextBallY > canvas.height - ball.radius - paddle.height) {
+            if (ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+                if (paddle.isSticky) {
+                    paddle.ballStuck = true;
+                    gameState = 'paused';
+                } else {
+                    ball.dy = -ball.dy;
+                    // Reset ball speed if fast ball power-up was active
+                    if (activePowerUps[powerUpTypes.FAST_BALL]) {
+                        ball.dx /= 1.5;
+                        ball.dy /= 1.5;
+                        clearTimeout(activePowerUps[powerUpTypes.FAST_BALL]);
+                        deactivatePowerUp(powerUpTypes.FAST_BALL);
+                    }
+                }
             } else {
                 lives--;
                 if (!lives) {
@@ -236,13 +374,182 @@ function update(deltaTime) {
     }
 }
 
+function drawPowerUps() {
+    const powerUpText = {
+        'longer-paddle': '+',
+        'shorter-paddle': '-',
+        'sticky-paddle': 'S',
+        'laser-paddle': 'L',
+        'fast-ball': 'F',
+        'reverse-controls': 'R'
+    };
+
+    for (let i = 0; i < powerUps.length; i++) {
+        const p = powerUps[i];
+        // Draw background
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x - p.width / 2, p.y, p.width, p.height);
+
+        // Draw text
+        const text = powerUpText[p.type] || '?';
+        const fontSize = 12 * scale;
+        ctx.font = `bold ${fontSize}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, p.x, p.y + p.height / 2);
+    }
+    // Reset alignment
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+}
+
+function activatePowerUp(type) {
+    // Clear any existing timer for this power-up type
+    if (activePowerUps[type]) {
+        clearTimeout(activePowerUps[type]);
+    }
+
+    const duration = 10000; // 10 seconds
+
+    switch(type) {
+        case powerUpTypes.LONGER_PADDLE:
+            paddle.width = paddle.originalWidth * scale * 1.5;
+            break;
+        case powerUpTypes.SHORTER_PADDLE:
+            paddle.width = paddle.originalWidth * scale * 0.5;
+            break;
+        case powerUpTypes.FAST_BALL:
+            ball.dx *= 1.5;
+            ball.dy *= 1.5;
+            break;
+        case powerUpTypes.REVERSE_CONTROLS:
+            paddle.controlsReversed = true;
+            break;
+        case powerUpTypes.STICKY_PADDLE:
+            paddle.isSticky = true;
+            break;
+        case powerUpTypes.LASER_PADDLE:
+            paddle.hasLasers = true;
+            break;
+    }
+
+    activePowerUps[type] = setTimeout(() => deactivatePowerUp(type), duration);
+}
+
+function deactivatePowerUp(type) {
+    switch(type) {
+        case powerUpTypes.LONGER_PADDLE:
+        case powerUpTypes.SHORTER_PADDLE:
+            paddle.width = paddle.originalWidth * scale;
+            break;
+        case powerUpTypes.FAST_BALL:
+            // This will be reset when ball hits paddle or a new life starts
+            break;
+        case powerUpTypes.REVERSE_CONTROLS:
+            paddle.controlsReversed = false;
+            break;
+        case powerUpTypes.STICKY_PADDLE:
+            paddle.isSticky = false;
+            break;
+        case powerUpTypes.LASER_PADDLE:
+            paddle.hasLasers = false;
+            break;
+    }
+    delete activePowerUps[type];
+}
+
+function updatePowerUps(deltaTime) {
+    for (let i = powerUps.length - 1; i >= 0; i--) {
+        const p = powerUps[i];
+        p.y += p.speed * deltaTime;
+
+        // Collision with paddle
+        if (p.x > paddle.x && p.x < paddle.x + paddle.width && p.y + p.height > canvas.height - paddle.height && p.y < canvas.height) {
+            activatePowerUp(p.type);
+            powerUps.splice(i, 1);
+            continue;
+        }
+
+        // Remove if off-screen
+        if (p.y > canvas.height) {
+            powerUps.splice(i, 1);
+        }
+    }
+}
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
     drawBricks();
     drawBall();
     drawPaddle();
+    drawPowerUps();
+    drawLasers();
     drawUI();
+}
+
+function updateLasers(deltaTime) {
+    for (let i = lasers.length - 1; i >= 0; i--) {
+        const l = lasers[i];
+        l.y -= l.speed * deltaTime;
+
+        // Check for collision with bricks
+        for (let r = 0; r < bricks.length; r++) {
+            for (let c = 0; c < bricks[r].length; c++) {
+                const b = bricks[r][c];
+                if (b.status === 1 && l.x > b.x && l.x < b.x + b.width && l.y > b.y && l.y < b.y + b.height) {
+                    b.lives--;
+                    score++;
+                    if (b.lives === 0) {
+                        b.status = 0;
+                        brickCount--;
+                        if (b.powerUp) {
+                            spawnPowerUp(b);
+                        }
+                        if (brickCount === 0) {
+                            nextLevel();
+                        }
+                    } else {
+                        switch(b.lives) {
+                            case 2: b.color = brickConfig.colors.silver; break;
+                            case 1: b.color = brickConfig.colors.red; break;
+                        }
+                    }
+                    lasers.splice(i, 1);
+                    return; // Stop checking for this laser
+                }
+            }
+        }
+        
+        if (l.y < 0) {
+            lasers.splice(i, 1);
+        }
+    }
+}
+
+function drawLasers() {
+    ctx.fillStyle = '#ff0000';
+    for(const laser of lasers) {
+        ctx.fillRect(laser.x - laser.width / 2, laser.y, laser.width, laser.height);
+    }
+}
+
+function fireLasers() {
+    lasers.push({
+        x: paddle.x + 5 * scale,
+        y: canvas.height - paddle.height,
+        width: 4 * scale,
+        height: 10 * scale,
+        speed: 300 * scale
+    });
+    lasers.push({
+        x: paddle.x + paddle.width - 5 * scale,
+        y: canvas.height - paddle.height,
+        width: 4 * scale,
+        height: 10 * scale,
+        speed: 300 * scale
+    });
 }
 
 function gameLoop(timestamp) {
@@ -252,6 +559,10 @@ function gameLoop(timestamp) {
     const deltaTime = (timestamp - lastTime) / 1000; // deltaTime in seconds
 
     update(deltaTime);
+    if (gameState === 'running') {
+        updatePowerUps(deltaTime);
+        updateLasers(deltaTime);
+    }
     draw();
     if (gameState === 'running') {
         collisionDetection();
@@ -263,9 +574,26 @@ function gameLoop(timestamp) {
 
 // --- Event Listeners ---
 function startGame() {
+    // If ball is in play and we have lasers, fire lasers
+    if (gameState === 'running' && paddle.hasLasers) {
+        fireLasers();
+        return;
+    }
+
+    // If game is paused, start it
     if (gameState === 'paused') {
+        if (paddle.ballStuck) {
+            // Ensure the ball moves upwards on launch from a sticky state
+            ball.dy = -Math.abs(ball.dy);
+            // Make sticky paddle a one-time use per catch
+            paddle.isSticky = false;
+            if (activePowerUps[powerUpTypes.STICKY_PADDLE]) {
+                clearTimeout(activePowerUps[powerUpTypes.STICKY_PADDLE]);
+                delete activePowerUps[powerUpTypes.STICKY_PADDLE];
+            }
+        }
         gameState = 'running';
-        lastTime = 0; 
+        paddle.ballStuck = false;
     }
 }
 

@@ -573,6 +573,12 @@ function startGame() {
         if (paddle.ballStuck) {
             // Ensure the ball moves upwards on launch from a sticky state
             ball.dy = -Math.abs(ball.dy);
+            // Make sticky paddle a one-time use per catch
+            paddle.isSticky = false;
+            if (activePowerUps[powerUpTypes.STICKY_PADDLE]) {
+                clearTimeout(activePowerUps[powerUpTypes.STICKY_PADDLE]);
+                delete activePowerUps[powerUpTypes.STICKY_PADDLE];
+            }
         }
         gameState = 'running';
         paddle.ballStuck = false;

@@ -570,6 +570,10 @@ function startGame() {
 
     // If game is paused, start it
     if (gameState === 'paused') {
+        if (paddle.ballStuck) {
+            // Ensure the ball moves upwards on launch from a sticky state
+            ball.dy = -Math.abs(ball.dy);
+        }
         gameState = 'running';
         paddle.ballStuck = false;
     }

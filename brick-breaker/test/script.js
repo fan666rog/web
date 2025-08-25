@@ -363,11 +363,33 @@ function update(deltaTime) {
 }
 
 function drawPowerUps() {
+    const powerUpText = {
+        'longer-paddle': '+',
+        'shorter-paddle': '-',
+        'sticky-paddle': 'S',
+        'laser-paddle': 'L',
+        'fast-ball': 'F',
+        'reverse-controls': 'R'
+    };
+
     for (let i = 0; i < powerUps.length; i++) {
         const p = powerUps[i];
+        // Draw background
         ctx.fillStyle = p.color;
         ctx.fillRect(p.x - p.width / 2, p.y, p.width, p.height);
+
+        // Draw text
+        const text = powerUpText[p.type] || '?';
+        const fontSize = 12 * scale;
+        ctx.font = `bold ${fontSize}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, p.x, p.y + p.height / 2);
     }
+    // Reset alignment
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
 }
 
 function activatePowerUp(type) {
@@ -550,7 +572,6 @@ function startGame() {
     if (gameState === 'paused') {
         gameState = 'running';
         paddle.ballStuck = false;
-        lastTime = 0; 
     }
 }
 

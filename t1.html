@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>fan666rog 的展示區</title>
+    <meta name="description" content="fan666rog 的網頁應用程式與遊戲展示區，包含多種實用工具與趣味小遊戲。">
+    <style>
+        /* --- 載入動畫 --- */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0d0d0d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(0, 191, 255, 0.3);
+            border-top-color: #00bfff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* --- 整體與深色主題 --- */
+        :root {
+            --primary-glow-color: #00bfff; /* 主點綴色 (青色) */
+        }
+        body {
+            font-family: '微軟正黑體', 'Microsoft JhengHei', sans-serif;
+            background-color: #0d0d0d; /* 碳黑背景 */
+            color: #e0e0e0;
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden; /* 防止粒子特效產生水平滾動條 */
+        }
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            position: relative; /* 為了讓內容浮在粒子背景之上 */
+            z-index: 2;
+        }
+
+        /* --- 背景動態粒子 --- */
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* --- 標題與特效 --- */
+        header {
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+        header h1 {
+            font-size: clamp(2.5rem, 8vw, 4rem); /* RWD 字體大小 */
+            font-weight: 700;
+            color: var(--primary-glow-color);
+            text-shadow: 0 0 5px var(--primary-glow-color), 0 0 15px rgba(0, 191, 255, 0.7);
+            margin: 0;
+            cursor: pointer; /* 提示可點擊 */
+            min-height: 1.2em; /* 防止轉換時跳動 */
+        }
+        .legend-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        /* --- 專案卡片與 RGB 呼吸燈特效 --- */
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .project-card {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease; /* 保留浮動效果 */
+            position: relative; /* 為了偽元素定位 */
+            overflow: hidden; /* 隱藏超出邊框的光暈 */
+        }
+        .project-card::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+            height: 10px; /* 陰影高度 */
+            z-index: -1;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .project-card:hover {
+            transform: translateY(-8px);
+        }
+        .project-card:hover::after {
+            animation: rgb-shadow 4s linear infinite;
+        }
+
+        @keyframes rgb-shadow {
+            0% { box-shadow: 0 15px 30px -5px hsl(0, 80%, 70%); }
+            20% { box-shadow: 0 15px 30px -5px hsl(72, 80%, 70%); }
+            40% { box-shadow: 0 15px 30px -5px hsl(144, 80%, 70%); }
+            60% { box-shadow: 0 15px 30px -5px hsl(216, 80%, 70%); }
+            80% { box-shadow: 0 15px 30px -5px hsl(288, 80%, 70%); }
+            100% { box-shadow: 0 15px 30px -5px hsl(360, 80%, 70%); }
+        }
+
+        .project-card .project-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .project-card h2 {
+            font-size: 1.5rem;
+            margin: 0;
+            color: #00bfff; /* 標題使用點綴色 */
+        }
+        .mobile-icon {
+            width: 1.1rem;
+            height: 1.1rem;
+            fill: #888;
+            flex-shrink: 0;
+        }
+        .project-card p {
+            font-size: 1rem;
+            color: #ccc;
+            flex-grow: 1;
+            margin-bottom: 1.5rem;
+        }
+        .project-card a {
+            display: inline-block;
+            background-color: var(--primary-glow-color);
+            color: #0d0d0d;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            text-decoration: none;
+            text-align: center;
+            font-weight: bold;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+        .project-card a:hover {
+            background-color: #fff;
+            transform: scale(1.05);
+        }
+
+        /* --- 頁尾 --- */
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #333;
+            color: #888;
+            font-size: 0.9rem;
+        }
+        footer a {
+            color: var(--primary-glow-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        footer a:hover {
+            color: #fff;
+        }
+
+        /* 手機排版微調 */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            .portfolio-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <div id="particles-js"></div>
+
+    <div class="container">
+        <header>
+            <h1 id="predator-title"></h1>
+            <div class="legend-area">
+                <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                <span>圖示代表此專案支援手機瀏覽</span>
+            </div>
+        </header>
+
+        <main class="portfolio-grid">
+            <div class="project-card">
+                <div class="project-title">
+                    <h2>彩券-摸彩箱抽獎程式</h2>
+                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                </div>
+                <p>一個本地端執行的網頁抽獎程式，可設定標題主題、多個彩券本、獎項與排除號碼，確保抽獎公開透明。</p>
+                <a href="./client-side-lottery/v2/index.html" target="_blank">V2.1</a>
+            </div>
+
+            <div class="project-card">
+                <div class="project-title">
+                    <h2>生辰命評雙系統查詢</h2>
+                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                </div>
+                <p>整合兩種民俗命理系統，可依據農曆年月日時辰查詢，並包含袁天罡秤骨命評。</p>
+                <a href="./bazi-data-query-viewer/index.html" target="_blank">展示觀看</a>
+            </div>
+            
+            <div class="project-card">
+                <div class="project-title">
+                    <h2>輪盤抽獎 (權重版)</h2>
+                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                </div>
+                <p>可自訂獎項、權重、數量、顏色，權重越高，中獎機率越大。支援更改主題標籤與中獎紀錄功能。</p>
+                <a href="./wheel-prize-picker/V26_Special_Edition/index.html" target="_blank">V2.6 Special Edition</a>
+            </div>
+
+             <div class="project-card">
+                <h2>復古小瑪莉：零用錢殺手</h2>
+                <p>經典的跑燈遊戲，透過押分贏得彩金，並挑戰刺激的「比大小」讓彩金翻倍！</p>
+                <a href="./RetroMary/index.html" target="_blank">PC版</a>
+            </div>
+
+            <div class="project-card">
+                <div class="project-title">
+                    <h2>貪食蛇小遊戲</h2>
+                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                </div>
+                <p>懷舊的貪食蛇遊戲，加入障礙物與可消除障礙物的特殊道具，增加挑戰性。</p>
+                <a href="./game-snake/snakeV151.html" target="_blank">V1.5.1</a>
+            </div>
+
+            <div class="project-card">
+                <div class="project-title">
+                    <h2>3D Rubik's Cube</h2>
+                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                </div>
+                <p>這是一個使用Three.js函式庫建立的網頁版 3D魔術方塊模擬器，具備完整的互動遊玩功能。</p>
+                <a href="./rubiks-cube/index.html" target="_blank">V2.3Final 連線版</a>
+            </div>
+
+            <div class="project-card">
+                <div class="project-title">
+                    <h2>打磚塊遊戲</h2>
+                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                </div>
+                <p>一個經典的復古打磚塊遊戲，使用鍵盤或觸控來控制球拍，挑戰你的反應速度！(共3關)</p>
+                <a href="./brick-breaker/index.html" target="_blank">V2.6Final</a>
+            </div>
+            
+            <div class="project-card">
+                <h2>104/87鍵 鍵盤測試</h2>
+                <p>一個用於測試鍵盤按鍵是否正常的工具，可切換 104 鍵與 87 鍵佈局。</p>
+                <a href="./104_87key_test/index.html" target="_blank">PC版專用</a>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2025/0825 <a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer">fan666rog</a> & Gemini</p>
+            <p style="margin-top: 1rem; margin-bottom: 0.2rem;">本站建議最佳瀏覽環境</p>
+            <p style="margin: 0.2rem 0;">PC: Win+Chrome</p>
+            <p style="margin: 0.2rem 0;">手機: Android+Chrome</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- 載入動畫 ---
+            const loader = document.getElementById('loader');
+            window.addEventListener('load', () => {
+                loader.style.opacity = '0';
+                loader.style.visibility = 'hidden';
+            });
+
+            // --- 粒子背景初始化 ---
+            particlesJS('particles-js', {
+                "particles": {
+                    "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+                    "color": { "value": "#00bfff" },
+                    "shape": { "type": "circle" },
+                    "opacity": { "value": 0.5, "random": true },
+                    "size": { "value": 3, "random": true },
+                    "line_linked": { "enable": true, "distance": 150, "color": "#00bfff", "opacity": 0.4, "width": 1 },
+                    "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
+                },
+                "interactivity": {
+                    "detect_on": "canvas",
+                    "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": true, "mode": "push" }, "resize": true },
+                    "modes": { "repulse": { "distance": 100, "duration": 0.4 }, "push": { "particles_nb": 4 } }
+                },
+                "retina_detect": true
+            });
+
+
+            // --- 標題特效 ---
+            const titleElement = document.getElementById('predator-title');
+            const initialText = 'fan666rog';
+            const targetText = 'WELCOME';
+            const chars = '!<>-_\\/[]{}—=+*^?#________';
+            let currentText = initialText;
+
+            const scrambleEffect = (element, newText) => {
+                let iteration = 0;
+                const interval = setInterval(() => {
+                    element.textContent = newText.split('')
+                        .map((letter, index) => {
+                            if(index < iteration) {
+                                return newText[index];
+                            }
+                            return chars[Math.floor(Math.random() * chars.length)];
+                        })
+                        .join('');
+                    
+                    if(iteration >= newText.length) {
+                        clearInterval(interval);
+                    }
+                    iteration += 1 / 3;
+                }, 30);
+            };
+
+            // 初始顯示
+            scrambleEffect(titleElement, initialText);
+
+            // 點擊觸發轉換
+            titleElement.addEventListener('click', () => {
+                const nextText = titleElement.textContent === initialText ? targetText : initialText;
+                scrambleEffect(titleElement, nextText);
+            });
+        });
+    </script>
+</body>
+</html>

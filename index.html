@@ -108,10 +108,10 @@
 
         .project-card:hover {
             transform: translateY(-8px);
-            animation: rgb-breathing-glow 5s linear infinite;
+            /* 最終修正：將動畫速度減慢一半 */
+            animation: rgb-breathing-glow 10s linear infinite;
         }
         
-        /* 最終修正：加入明確的明暗循環來創造呼吸效果 */
         @keyframes rgb-breathing-glow {
             0%   { box-shadow: 0 0 25px 5px hsla(0, 80%, 70%, 0.8); }
             10%  { box-shadow: 0 0 10px 2px hsla(36, 80%, 70%, 0.4); }

@@ -108,17 +108,22 @@
 
         .project-card:hover {
             transform: translateY(-8px);
-            animation: rgb-glow 4s linear infinite;
+            animation: rgb-breathing-glow 5s linear infinite;
         }
         
-        /* 修正：加強光暈效果 */
-        @keyframes rgb-glow {
-            0%   { box-shadow: 0 0 35px 8px hsla(0, 80%, 70%, 0.8); }
-            20%  { box-shadow: 0 0 35px 8px hsla(72, 80%, 70%, 0.8); }
-            40%  { box-shadow: 0 0 35px 8px hsla(144, 80%, 70%, 0.8); }
-            60%  { box-shadow: 0 0 35px 8px hsla(216, 80%, 70%, 0.8); }
-            80%  { box-shadow: 0 0 35px 8px hsla(288, 80%, 70%, 0.8); }
-            100% { box-shadow: 0 0 35px 8px hsla(360, 80%, 70%, 0.8); }
+        /* 最終修正：加入明確的明暗循環來創造呼吸效果 */
+        @keyframes rgb-breathing-glow {
+            0%   { box-shadow: 0 0 25px 5px hsla(0, 80%, 70%, 0.8); }
+            10%  { box-shadow: 0 0 10px 2px hsla(36, 80%, 70%, 0.4); }
+            20%  { box-shadow: 0 0 25px 5px hsla(72, 80%, 70%, 0.8); }
+            30%  { box-shadow: 0 0 10px 2px hsla(108, 80%, 70%, 0.4); }
+            40%  { box-shadow: 0 0 25px 5px hsla(144, 80%, 70%, 0.8); }
+            50%  { box-shadow: 0 0 10px 2px hsla(180, 80%, 70%, 0.4); }
+            60%  { box-shadow: 0 0 25px 5px hsla(216, 80%, 70%, 0.8); }
+            70%  { box-shadow: 0 0 10px 2px hsla(252, 80%, 70%, 0.4); }
+            80%  { box-shadow: 0 0 25px 5px hsla(288, 80%, 70%, 0.8); }
+            90%  { box-shadow: 0 0 10px 2px hsla(324, 80%, 70%, 0.4); }
+            100% { box-shadow: 0 0 25px 5px hsla(360, 80%, 70%, 0.8); }
         }
 
         .project-card .project-title {
@@ -342,7 +347,7 @@
                 }, 50);
             };
 
-            // 修正：初始顯示邏輯
+            // 初始顯示邏輯
             // 1. 立刻靜態顯示初始文字
             titleElement.textContent = initialText; 
 

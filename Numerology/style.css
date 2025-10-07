@@ -229,20 +229,48 @@ button:active {
     font-size: 1.1em;
 }
 
-#missing-details .missing-item {
+#missing-details .missing-item,
+#connections-details .connection-item {
     margin-top: 15px;
     padding-top: 15px;
     border-top: 1px solid var(--border-color);
 }
 
-#missing-details .missing-item:first-child {
+#missing-details .missing-item:first-child,
+#connections-details .connection-item:first-child {
     border-top: none;
     margin-top: 0;
     padding-top: 0;
 }
 
-#missing-details strong {
+#missing-details strong,
+#connections-details strong {
     color: var(--accent-color);
+}
+
+/* --- 新增：連線區塊的樣式 --- */
+.connection-group-title {
+    color: var(--text-muted-color);
+    font-size: 1em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 25px;
+    margin-bottom: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--border-color);
+}
+.connection-group-title:first-of-type {
+    margin-top: 0;
+}
+.connection-item {
+    padding-top: 15px;
+    margin-top: 0;
+    border-top: none; /* 移除 connection-item 自身的 border-top */
+}
+.connection-item p {
+    margin-top: 5px;
+    margin-bottom: 0;
 }
 
 footer {

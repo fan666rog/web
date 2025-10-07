@@ -277,7 +277,7 @@ button:active {
 hr.connection-divider {
     border: 0;
     height: 1px;
-    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), var(--border-color), rgba(0, 0, 0, 0));
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), var(--accent-color), rgba(0, 0, 0, 0));
     margin: 30px 0; /* 控制分隔線上下的間距 */
 }
 

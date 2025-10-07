@@ -46,16 +46,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const connectionLinesMeanings = {
         '147': { title: "1-4-7 主導執行力/務實線", description: "高度自律且具有行動力，比較不會做白日夢，相信努力付出才有收穫。" },
         '258': { title: "2-5-8 主導心智力", description: "情感豐富、能很好地表達自己內心的想法，對藝術感受力強也帶有浪漫特質。" },
-        '369': { title: "3-6-9 又稱智慧線", description: "充滿智慧、學習力強，可以跳脫框架去思考。" },
+        '369': { title: "3-6-9 智慧線", description: "充滿智慧、學習力強，可以跳脫框架去思考。" },
         '123': { title: "1-2-3 主導藝術力", description: "較具藝術氣息、對「美」的感知力高，願意嘗試新事物。" },
         '456': { title: "4-5-6 主導組織規劃力", description: "做事情井然有序、具有責任感，善於為大家解決問題。" },
-        '789': { title: "7-8-9 又稱權力線", description: "身邊常有貴人相助，充滿領袖氣質的魅力人格。" },
+        '789': { title: "7-8-9 權力線", description: "身邊常有貴人相助，充滿領袖氣質的魅力人格。" },
         '357': { title: "3-5-7 主導好人緣運", description: "有表達自己的慾望、能面面俱到，通常人緣極佳。" },
         '159': { title: "1-5-9 主導堅持力/事業線", description: "好惡分明，對事業充滿強烈企圖心，設定目標後會堅持地前進。" },
-        '42': { title: "2-4 主導精簡和優化的能力", description: "反應快、懂得變通，喜歡以有效率的方式完成事情。" },
-        '48': { title: "4-8 主導勤勞力", description: "喜歡穩定性、金錢觀較為務實，即便放假也時常閒不下來。" },
-        '62': { title: "2-6 主導和平力", description: "性格溫暖，盡力維持和平、和諧的人際關係。" },
-        '68': { title: "6-8 主導誠懇力", description: "誠懇且誠實，十分在意他人的想法。" }
+        '42': { title: "2-4 優化線", description: "反應快、懂得變通，喜歡以有效率的方式完成事情。" },
+        '48': { title: "4-8 勤勞線", description: "喜歡穩定性、金錢觀較為務實，即便放假也時常閒不下來。" },
+        '62': { title: "2-6 和平線", description: "性格溫暖，盡力維持和平、和諧的人際關係。" },
+        '68': { title: "6-8 誠懇線", description: "誠懇且誠實，十分在意他人的想法。" }
     };
 
 
@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderConnections(prioritizedConnections, normalConnections);
     }
     
-    // --- 新增：渲染連線結果 ---
+    // --- 修改：渲染連線結果 ---
     function renderConnections(prioritized, normal) {
         let html = '';
 
@@ -182,6 +182,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>${line.description}</p>
                 </div>
             `).join('');
+        }
+
+        // --- 修改重點：當兩者都存在時，加入分隔線 ---
+        if (prioritized.length > 0 && normal.length > 0) {
+            html += `<hr class="connection-divider">`;
         }
 
         if (normal.length > 0) {
@@ -300,4 +305,3 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     populateModal();
 });
-

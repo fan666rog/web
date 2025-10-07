@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         
         // Life Path Analysis
-        lifepathAnalysisEl.innerHTML = `<h3>你的主性格：生命靈數 ${lifePathNumber} 號人</h3><p>${lifePathMeanings[lifePathNumber]}</p>`;
+        lifepathAnalysisEl.innerHTML = `<h3>你的主性格：生命靈數 ${lifePathNumber} 號人</h3><p>${lifePathMeanings[lifePathNumber].replace(/\n/g, '<br>')}</p>`;
 
         // Grid and Missing Numbers
         renderGrid(counts);
@@ -111,7 +111,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderGrid(counts) {
         numerologyGridEl.innerHTML = '';
-        for (let i = 1; i <= 9; i++) {
+        // *** 修改重點：更改九宮格的生成順序 ***
+        const gridOrder = [1, 4, 7, 2, 5, 8, 3, 6, 9];
+
+        gridOrder.forEach(i => {
             const cell = document.createElement('div');
             cell.classList.add('grid-cell');
             const count = counts[i];
@@ -126,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cell.style.opacity = '0.3';
             }
             numerologyGridEl.appendChild(cell);
-        }
+        });
     }
 
     function renderMissingNumbers(counts) {
@@ -136,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
             missingNumbersSummaryEl.innerHTML = `<p>您的空缺數是：<strong>${missing.join(', ')}</strong></p>`;
             missingDetailsEl.innerHTML = missing.map(num => `
                 <div class="missing-item">
-                    <p>${missingNumberMeanings[num]}</p>
+                    <p>${missingNumberMeanings[num].replace(/\n/g, '<br>')}</p>
                 </div>
             `).join('');
             missingDetailsEl.parentElement.classList.remove('hidden');

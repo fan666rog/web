@@ -1,5 +1,29 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- DATA SOURCE FROM sn.txt ---
+    
+    // *** 更新：加入更完整的計算方式說明文字 ***
+    const calculationMethod = `【生命靈數計算方式】
+想知道你的生命靈數只需將自己的西元出生年月日全部數字加總，若得出的數字是二位數，便繼續相加直至成為個位數字。
+例如1988/01/23出生的人，生命靈數即為1+9+8+8+0+1+2+3=32，3+2 = 5，此人為5號人。
+
+---------------------------------------
+
+【生命靈數九宮格是什麼？】
+在基本了解生命靈數後，還可進一步透過繪製「生命靈數九宮格」深入剖析自己。
+本計算機會自動找出您的「先天數」、「生命數」、「天賦數」及「星座數」，並將這些數字圈入九宮格中。
+
+「先天數」：即為你的西元出生年月日數字。（舉例：1988/01/23，那麼先天數就為「1、9、8、8、1、2、3」。)
+
+「生命數」：即為你的生命靈數。（舉例：1988/01/23出生的人，1+9+8+8+0+1+2+3=32，3+2 = 5，你的生命數就是5。）
+
+「天賦數」：有兩個數字，即是把西元出生年月日全部數字相加、計算至二位數字。（舉例：1+9+8+8+0+1+2+3=32，你的天賦數就是3跟2）
+
+「星座數」：每個星座都有自己代表的數字，牡羊座&摩羯座1、金牛座&水瓶座2、雙子座&雙魚座3、巨蟹座4、獅子座5、處女座6、天秤座7、天蠍座8、射手座9
+
+圈圈愈多的數字代表你擁有它的能量愈高，而九宮格上沒有的數字即為「空缺數」。
+
+---------------------------------------`;
+
     const lifePathMeanings = {
         1: "【1號人：開創領袖】\n正面特質是具有開創性，天生較獨立、領導能力強，在工作中適合擔任管理職。但缺點是容易太自我、忽略別人的想法，需要學會協調及與他人合作，身為1號人的伴侶也需要多提供他支持與尊重。",
         2: "【2號人：合群藝術家】\n較為合群且具有同理心，適合從事如教師、心理諮詢工作，他們對於色彩與美感具有細膩感知，也被認為適合當藝術家。但2號人情緒易受外界影響，和戀人相處時也會較黏人、即便分手也可能和舊愛繼續當朋友，需學習不要過分倚賴他人，適合和能為另一半著想的人交往。",
@@ -111,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderGrid(counts) {
         numerologyGridEl.innerHTML = '';
-        // *** 修改重點：更改九宮格的生成順序 ***
         const gridOrder = [1, 4, 7, 2, 5, 8, 3, 6, 9];
 
         gridOrder.forEach(i => {
@@ -151,18 +174,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function populateModal() {
-        let sourceText = "--- 生命靈數1到9代表意義 ---\n\n";
+        let sourceText = calculationMethod + "\n\n";
+        
+        sourceText += "--- 生命靈數1到9代表意義 ---\n\n";
         for (let i = 1; i <= 9; i++) {
             sourceText += lifePathMeanings[i] + "\n\n";
         }
+        
         sourceText += "--- 生命靈數空缺數1到9代表意義 ---\n\n";
         for (let i = 1; i <= 9; i++) {
             sourceText += missingNumberMeanings[i] + "\n\n";
         }
+
         sourceText += "--- 星座對應數字 ---\n\n";
         for (const key in zodiacNumbers) {
             sourceText += `${zodiacNumbers[key]}: ${key}號\n`;
         }
+        
         sourceDataContentEl.textContent = sourceText;
     }
 

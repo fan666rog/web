@@ -42,6 +42,23 @@ document.addEventListener('DOMContentLoaded', () => {
         7: "天秤座", 8: "天蠍座", 9: "射手座"
     };
 
+    // --- 新增：九宮格連線資料 ---
+    const connectionLinesMeanings = {
+        '147': { title: "1-4-7 主導執行力/務實線", description: "高度自律且具有行動力，比較不會做白日夢，相信努力付出才有收穫。" },
+        '258': { title: "2-5-8 主導心智力", description: "情感豐富、能很好地表達自己內心的想法，對藝術感受力強也帶有浪漫特質。" },
+        '369': { title: "3-6-9 智慧線", description: "充滿智慧、學習力強，可以跳脫框架去思考。" },
+        '123': { title: "1-2-3 主導藝術力", description: "較具藝術氣息、對「美」的感知力高，願意嘗試新事物。" },
+        '456': { title: "4-5-6 主導組織規劃力", description: "做事情井然有序、具有責任感，善於為大家解決問題。" },
+        '789': { title: "7-8-9 權力線", description: "身邊常有貴人相助，充滿領袖氣質的魅力人格。" },
+        '357': { title: "3-5-7 主導好人緣運", description: "有表達自己的慾望、能面面俱到，通常人緣極佳。" },
+        '159': { title: "1-5-9 主導堅持力/事業線", description: "好惡分明，對事業充滿強烈企圖心，設定目標後會堅持地前進。" },
+        '42': { title: "2-4 優化線", description: "反應快、懂得變通，喜歡以有效率的方式完成事情。" },
+        '48': { title: "4-8 勤勞線", description: "喜歡穩定性、金錢觀較為務實，即便放假也時常閒不下來。" },
+        '62': { title: "2-6 和平線", description: "性格溫暖，盡力維持和平、和諧的人際關係。" },
+        '68': { title: "6-8 誠懇線", description: "誠懇且誠實，十分在意他人的想法。" }
+    };
+
+
     // --- DOM Elements ---
     const calculateBtn = document.getElementById('calculate-btn');
     const resultsSection = document.getElementById('results-section');
@@ -52,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const lifepathAnalysisEl = document.getElementById('lifepath-analysis');
     const numerologyGridEl = document.getElementById('numerology-grid');
     const missingNumbersSummaryEl = document.getElementById('missing-numbers-summary');
+    const connectionsDetailsEl = document.getElementById('connections-details');
     const missingDetailsEl = document.getElementById('missing-details');
 
     const viewSourceBtn = document.getElementById('view-source-btn');
@@ -106,6 +124,30 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsSection.scrollIntoView({ behavior: 'smooth' });
     }
 
+    // --- 新增：分析九宮格連線 ---
+    function analyzeConnections(counts) {
+        const prioritizedConnections = [];
+        const normalConnections = [];
+        const linesToCheck = ['147', '258', '369', '123', '456', '789', '357', '159', '42', '48', '62', '68'];
+
+        linesToCheck.forEach(line => {
+            const nums = line.split('').map(Number);
+            const isConnected = nums.every(num => counts[num] > 0);
+
+            if (isConnected) {
+                const isPrioritized = nums.every(num => counts[num] >= 2);
+                const lineInfo = connectionLinesMeanings[line];
+                if (isPrioritized) {
+                    prioritizedConnections.push(lineInfo);
+                } else {
+                    normalConnections.push(lineInfo);
+                }
+            }
+        });
+        return { prioritizedConnections, normalConnections };
+    }
+
+
     function displayResults(lifePathNumber, talentNumbers, counts) {
         summaryEl.innerHTML = `
             <p>您的生命靈數是：<strong>${lifePathNumber}</strong> 號人</p>
@@ -116,7 +158,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderGrid(counts);
         renderMissingNumbers(counts);
+
+        // --- 新增：呼叫連線分析與渲染 ---
+        const { prioritizedConnections, normalConnections } = analyzeConnections(counts);
+        renderConnections(prioritizedConnections, normalConnections);
     }
+    
+    // --- 新增：渲染連線結果 ---
+    function renderConnections(prioritized, normal) {
+        let html = '';
+
+        if (prioritized.length === 0 && normal.length === 0) {
+            html = '<p>您沒有任何主連線，這代表您的發展較為均衡，或潛力尚待開發。</p>';
+            connectionsDetailsEl.innerHTML = html;
+            return;
+        }
+
+        if (prioritized.length > 0) {
+            html += `<h4 class="connection-group-title">主要特質</h4>`;
+            html += prioritized.map(line => `
+                <div class="connection-item">
+                    <strong>${line.title}</strong>
+                    <p>${line.description}</p>
+                </div>
+            `).join('');
+        }
+
+        if (normal.length > 0) {
+            html += `<h4 class="connection-group-title">次要特質</h4>`;
+            html += normal.map(line => `
+                <div class="connection-item">
+                    <strong>${line.title}</strong>
+                    <p>${line.description}</p>
+                </div>
+            `).join('');
+        }
+        
+        connectionsDetailsEl.innerHTML = html;
+    }
+
 
     function renderGrid(counts) {
         numerologyGridEl.innerHTML = '';
@@ -158,11 +238,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // *** 修改重點：重寫此函式以生成美化的 HTML ***
     function populateModal() {
         let htmlContent = '';
 
-        // 加上計算說明的區塊
         const calcTitle = calculationMethod.match(/【(.*?)】/)[1];
         const calcDesc = calculationMethod.replace(/【.*?】\n/, '');
         const gridTitle = gridCalculationMethod.match(/【(.*?)】/)[1];
@@ -175,7 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
         htmlContent += `<p>${gridDesc.replace(/\n/g, '<br>')}</p>`;
         htmlContent += `<hr>`;
 
-        // 加上 1-9 號人解析
         htmlContent += `<h2>生命靈數 1-9 號人解析</h2>`;
         for (let i = 1; i <= 9; i++) {
             const fullText = lifePathMeanings[i];
@@ -185,7 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         htmlContent += `<hr>`;
 
-        // 加上空缺數解析
         htmlContent += `<h2>空缺數 1-9 意義</h2>`;
         for (let i = 1; i <= 9; i++) {
             const fullText = missingNumberMeanings[i];
@@ -195,13 +271,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         htmlContent += `<hr>`;
 
-        // 加上星座對應數字
         htmlContent += `<h2>星座對應數字</h2>`;
         htmlContent += `<ul class="zodiac-list">`;
         for (const key in zodiacNumbers) {
             htmlContent += `<li><strong>${key} 號：</strong>${zodiacNumbers[key]}</li>`;
         }
         htmlContent += `</ul>`;
+        
+        // --- 新增：將連線說明也加入彈出視窗 ---
+        htmlContent += `<hr>`;
+        htmlContent += `<h2>九宮格連線意義</h2>`;
+        for (const key in connectionLinesMeanings) {
+            const line = connectionLinesMeanings[key];
+            htmlContent += `<h3>${line.title}</h3><p>${line.description}</p>`;
+        }
 
         sourceDataContentEl.innerHTML = htmlContent;
     }
@@ -217,4 +300,3 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     populateModal();
 });
-

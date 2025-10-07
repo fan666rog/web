@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生命靈數全解析計算機</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>生命靈數全解析計算機</h1>
+            <p>輸入您的資料，深入探索自我特質與人生課題。</p>
+        </header>
+
+        <main>
+            <section id="input-section">
+                <div class="input-group">
+                    <label for="birthdate">您的西元生日</label>
+                    <input type="date" id="birthdate" required>
+                </div>
+                <div class="input-group">
+                    <label for="zodiac">您的星座</label>
+                    <select id="zodiac" required>
+                        <option value="" disabled selected>請選擇星座</option>
+                        <option value="1">牡羊座 (Aries)</option>
+                        <option value="2">金牛座 (Taurus)</option>
+                        <option value="3">雙子座 (Gemini)</option>
+                        <option value="4">巨蟹座 (Cancer)</option>
+                        <option value="5">獅子座 (Leo)</option>
+                        <option value="6">處女座 (Virgo)</option>
+                        <option value="7">天秤座 (Libra)</option>
+                        <option value="8">天蠍座 (Scorpio)</option>
+                        <option value="9">射手座 (Sagittarius)</option>
+                        <option value="1">摩羯座 (Capricorn)</option>
+                        <option value="2">水瓶座 (Aquarius)</option>
+                        <option value="3">雙魚座 (Pisces)</option>
+                    </select>
+                </div>
+                <button type="button" id="calculate-btn">開始分析</button>
+            </section>
+
+            <section id="results-section" class="hidden">
+                <h2>你的生命靈數分析結果</h2>
+                
+                <div class="card" id="summary">
+                    </div>
+
+                <div class="card" id="lifepath-analysis">
+                    </div>
+
+                <div class="card">
+                    <h3>天賦與挑戰：生命靈數九宮格</h3>
+                    <div id="numerology-grid">
+                        </div>
+                    <div id="missing-numbers-summary">
+                        </div>
+                </div>
+
+                <div class="card" id="missing-numbers-analysis">
+                     <h3>你的人生課題：空缺數解析</h3>
+                    <div id="missing-details">
+                        </div>
+                </div>
+
+                 <button type="button" id="view-source-btn">查看原始資料定義</button>
+            </section>
+        </main>
+
+        <footer>
+            <p>
+                Coded by 
+                <a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer">fan666rog</a> 
+                &amp; Gemini
+            </p>
+        </footer>
+    </div>
+
+    <div id="source-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h3>生命靈數資料定義</h3>
+            <pre id="source-data-content"></pre>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

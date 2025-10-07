@@ -273,6 +273,15 @@ button:active {
     margin-bottom: 0;
 }
 
+/* --- 新增：漸層分隔線樣式 --- */
+.connection-divider {
+    border: 0;
+    height: 1px;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), var(--border-color), rgba(0, 0, 0, 0));
+    margin: 25px 0 0 0; /* 調整與上方區塊的間距 */
+}
+
+
 footer {
     text-align: center;
     margin-top: 40px;

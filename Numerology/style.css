@@ -248,7 +248,7 @@ button:active {
     color: var(--accent-color);
 }
 
-/* --- 新增：連線區塊的樣式 --- */
+/* --- 連線區塊的樣式 --- */
 .connection-group-title {
     color: var(--text-muted-color);
     font-size: 1em;
@@ -266,19 +266,24 @@ button:active {
 .connection-item {
     padding-top: 15px;
     margin-top: 0;
-    border-top: none; /* 移除 connection-item 自身的 border-top */
+    border-top: none; 
 }
 .connection-item p {
     margin-top: 5px;
     margin-bottom: 0;
 }
 
-/* --- 新增：漸層分隔線樣式 --- */
-.connection-divider {
+/* --- 修正：漸層分隔線樣式 --- */
+hr.connection-divider {
     border: 0;
     height: 1px;
     background-image: linear-gradient(to right, rgba(0, 0, 0, 0), var(--border-color), rgba(0, 0, 0, 0));
-    margin: 25px 0 0 0; /* 調整與上方區塊的間距 */
+    margin: 30px 0; /* 控制分隔線上下的間距 */
+}
+
+/* --- 修正：如果 h4 前面是分隔線，就取消 h4 的上邊距 --- */
+hr.connection-divider + .connection-group-title {
+    margin-top: 0;
 }
 
 
@@ -368,7 +373,7 @@ footer a:hover {
 }
 
 
-/* --- 新增：美化彈出視窗內容的樣式 --- */
+/* --- 美化彈出視窗內容的樣式 --- */
 #source-data-content h2 {
     color: var(--accent-color);
     border-bottom: 2px solid var(--primary-color);

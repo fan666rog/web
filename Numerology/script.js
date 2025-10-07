@@ -1,28 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- DATA SOURCE FROM sn.txt ---
-    
-    // *** 更新：加入更完整的計算方式說明文字 ***
     const calculationMethod = `【生命靈數計算方式】
-想知道你的生命靈數只需將自己的西元出生年月日全部數字加總，若得出的數字是二位數，便繼續相加直至成為個位數字。
-例如1988/01/23出生的人，生命靈數即為1+9+8+8+0+1+2+3=32，3+2 = 5，此人為5號人。
+想知道你的生命靈數只需將自己的西元出生年月日全部數字加總，若得出的數字是二位數，便繼續相加直至成為個位數字。\n例如1988/01/23出生的人，生命靈數即為1+9+8+8+0+1+2+3=32，3+2 = 5，此人為5號人。`;
 
----------------------------------------
+    const gridCalculationMethod = `【生命靈數九宮格是什麼？】
+在基本了解生命靈數後，還可進一步透過繪製「生命靈數九宮格」深入剖析自己。\n本計算機會自動找出您的「先天數」、「生命數」、「天賦數」及「星座數」，並將這些數字圈入九宮格中。\n
+「先天數」：即為你的西元出生年月日數字。（舉例：1988/01/23，那麼先天數就為「1、9、8、8、1、2、3」。)\n
+「生命數」：即為你的生命靈數。（舉例：1988/01/23出生的人，1+9+8+8+0+1+2+3=32，3+2 = 5，你的生命數就是5。）\n
+「天賦數」：有兩個數字，即是把西元出生年月日全部數字相加、計算至二位數字。（舉例：1+9+8+8+0+1+2+3=32，你的天賦數就是3跟2）\n
+「星座數」：每個星座都有自己代表的數字。\n
+圈圈愈多的數字代表你擁有它的能量愈高，而九宮格上沒有的數字即為「空缺數」。`;
 
-【生命靈數九宮格是什麼？】
-在基本了解生命靈數後，還可進一步透過繪製「生命靈數九宮格」深入剖析自己。
-本計算機會自動找出您的「先天數」、「生命數」、「天賦數」及「星座數」，並將這些數字圈入九宮格中。
-
-「先天數」：即為你的西元出生年月日數字。（舉例：1988/01/23，那麼先天數就為「1、9、8、8、1、2、3」。)
-
-「生命數」：即為你的生命靈數。（舉例：1988/01/23出生的人，1+9+8+8+0+1+2+3=32，3+2 = 5，你的生命數就是5。）
-
-「天賦數」：有兩個數字，即是把西元出生年月日全部數字相加、計算至二位數字。（舉例：1+9+8+8+0+1+2+3=32，你的天賦數就是3跟2）
-
-「星座數」：每個星座都有自己代表的數字，牡羊座&摩羯座1、金牛座&水瓶座2、雙子座&雙魚座3、巨蟹座4、獅子座5、處女座6、天秤座7、天蠍座8、射手座9
-
-圈圈愈多的數字代表你擁有它的能量愈高，而九宮格上沒有的數字即為「空缺數」。
-
----------------------------------------`;
 
     const lifePathMeanings = {
         1: "【1號人：開創領袖】\n正面特質是具有開創性，天生較獨立、領導能力強，在工作中適合擔任管理職。但缺點是容易太自我、忽略別人的想法，需要學會協調及與他人合作，身為1號人的伴侶也需要多提供他支持與尊重。",
@@ -119,16 +107,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayResults(lifePathNumber, talentNumbers, counts) {
-        // Summary
         summaryEl.innerHTML = `
             <p>您的生命靈數是：<strong>${lifePathNumber}</strong> 號人</p>
             <p>您的天賦數是：<strong>${talentNumbers.join(' 和 ')}</strong></p>
         `;
         
-        // Life Path Analysis
         lifepathAnalysisEl.innerHTML = `<h3>你的主性格：生命靈數 ${lifePathNumber} 號人</h3><p>${lifePathMeanings[lifePathNumber].replace(/\n/g, '<br>')}</p>`;
 
-        // Grid and Missing Numbers
         renderGrid(counts);
         renderMissingNumbers(counts);
     }
@@ -173,25 +158,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // *** 修改重點：重寫此函式以生成美化的 HTML ***
     function populateModal() {
-        let sourceText = calculationMethod + "\n\n";
-        
-        sourceText += "--- 生命靈數1到9代表意義 ---\n\n";
-        for (let i = 1; i <= 9; i++) {
-            sourceText += lifePathMeanings[i] + "\n\n";
-        }
-        
-        sourceText += "--- 生命靈數空缺數1到9代表意義 ---\n\n";
-        for (let i = 1; i <= 9; i++) {
-            sourceText += missingNumberMeanings[i] + "\n\n";
-        }
+        let htmlContent = '';
 
-        sourceText += "--- 星座對應數字 ---\n\n";
-        for (const key in zodiacNumbers) {
-            sourceText += `${zodiacNumbers[key]}: ${key}號\n`;
+        // 加上計算說明的區塊
+        const calcTitle = calculationMethod.match(/【(.*?)】/)[1];
+        const calcDesc = calculationMethod.replace(/【.*?】\n/, '');
+        const gridTitle = gridCalculationMethod.match(/【(.*?)】/)[1];
+        const gridDesc = gridCalculationMethod.replace(/【.*?】\n/, '');
+
+        htmlContent += `<h2>計算方式說明</h2>`;
+        htmlContent += `<h3>${calcTitle}</h3>`;
+        htmlContent += `<p>${calcDesc.replace(/\n/g, '<br>')}</p>`;
+        htmlContent += `<h3>${gridTitle}</h3>`;
+        htmlContent += `<p>${gridDesc.replace(/\n/g, '<br>')}</p>`;
+        htmlContent += `<hr>`;
+
+        // 加上 1-9 號人解析
+        htmlContent += `<h2>生命靈數 1-9 號人解析</h2>`;
+        for (let i = 1; i <= 9; i++) {
+            const fullText = lifePathMeanings[i];
+            const title = fullText.match(/【(.*?)】/)[1];
+            const description = fullText.replace(/【.*?】\n/, '');
+            htmlContent += `<h3>${title}</h3><p>${description.replace(/\n/g, '<br>')}</p>`;
         }
-        
-        sourceDataContentEl.textContent = sourceText;
+        htmlContent += `<hr>`;
+
+        // 加上空缺數解析
+        htmlContent += `<h2>空缺數 1-9 意義</h2>`;
+        for (let i = 1; i <= 9; i++) {
+            const fullText = missingNumberMeanings[i];
+            const title = fullText.match(/【(.*?)】/)[1];
+            const description = fullText.replace(/【.*?】\n/, '');
+            htmlContent += `<h3>${title}</h3><p>${description.replace(/\n/g, '<br>')}</p>`;
+        }
+        htmlContent += `<hr>`;
+
+        // 加上星座對應數字
+        htmlContent += `<h2>星座對應數字</h2>`;
+        htmlContent += `<ul class="zodiac-list">`;
+        for (const key in zodiacNumbers) {
+            htmlContent += `<li><strong>${key} 號：</strong>${zodiacNumbers[key]}</li>`;
+        }
+        htmlContent += `</ul>`;
+
+        sourceDataContentEl.innerHTML = htmlContent;
     }
 
     function openModal() {

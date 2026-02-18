@@ -25,28 +25,27 @@
             --shadow-controls: 0 -2px 10px rgba(0,0,0,0.1);
 
             /* --- 完整 17 色定義 --- */
-            --c-red: #e74c3c;       /* あか */
-            --c-pink: #ff9ff3;      /* ピンク */
-            --c-black: #2d3436;     /* くろ */
-            --c-blue: #0984e3;      /* あお */
-            --c-lemon: #f6e58d;     /* レモン */
-            --c-grey: #636e72;      /* はいいろ */
-            --c-green: #00b894;     /* みどり */
-            --c-lightgreen: #badc58;/* きみどり */
-            --c-white: #ffffff;     /* しろ */
-            --c-yellow: #f1c40f;    /* きいろ */
-            --c-lightblue: #74b9ff; /* みず */
-            --c-orange: #e67e22;    /* オレンジ */
-            --c-violet: #a29bfe;    /* すみれ */
-            --c-brown: #8d6e63;     /* ちゃ */
-            --c-beige: #dcdde1;     /* ベージュ */
-            --c-flesh: #fab1a0;     /* はだ */
-            --c-mint: #55efc4;      /* ペパーミント */
+            --c-red: #e74c3c;
+            --c-pink: #ff9ff3;
+            --c-black: #2d3436;
+            --c-blue: #0984e3;
+            --c-lemon: #f6e58d;
+            --c-grey: #636e72;
+            --c-green: #00b894;
+            --c-lightgreen: #badc58;
+            --c-white: #ffffff;
+            --c-yellow: #f1c40f;
+            --c-lightblue: #74b9ff;
+            --c-orange: #e67e22;
+            --c-violet: #a29bfe;
+            --c-brown: #8d6e63;
+            --c-beige: #dcdde1;
+            --c-flesh: #fab1a0;
+            --c-mint: #55efc4;
 
             --cell-size: 20px;
         }
 
-        /* 深色模式覆蓋 */
         [data-theme="dark"] {
             --bg-body: #121212;
             --bg-header: #000;
@@ -65,12 +64,11 @@
             --shadow-controls: 0 -2px 10px rgba(255,255,255,0.05);
         }
 
-        /* 關鍵修正：確保 Body 填滿「可視」區域，而不是「理論」區域 */
         html, body {
             height: 100%;
             width: 100%;
-            overflow: hidden; /* 禁止捲動 */
-            position: fixed; /* 強制鎖定，防止 iOS/Android 彈性滾動 */
+            overflow: hidden;
+            position: fixed;
             inset: 0;
         }
 
@@ -81,17 +79,15 @@
             margin: 0;
             display: flex;
             flex-direction: column;
-            /* 優先使用 dvh (動態視口高度)，不支援則回退到 100% */
             height: 100%; 
             height: 100dvh; 
             transition: background-color 0.3s;
         }
 
-        /* 頂部 Header */
         header {
             flex: 0 0 auto;
-            padding: 0 15px; /* 稍微減少上下 padding 節省空間 */
-            height: 44px; /* 手機標準點擊高度 */
+            padding: 0 15px;
+            height: 44px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -101,10 +97,7 @@
             z-index: 10;
         }
 
-        .header-title {
-            font-weight: bold;
-            font-size: 16px;
-        }
+        .header-title { font-weight: bold; font-size: 16px; }
 
         .header-credit {
             font-size: 12px;
@@ -125,9 +118,7 @@
             border-bottom-style: solid;
         }
 
-        @media (max-width: 500px) {
-            .header-credit { display: none; }
-        }
+        @media (max-width: 500px) { .header-credit { display: none; } }
 
         .theme-toggle {
             background: none;
@@ -139,9 +130,8 @@
             font-size: 13px;
         }
 
-        /* 畫布區 */
         #game-container {
-            flex: 1 1 auto; /* 佔滿剩餘空間 */
+            flex: 1 1 auto;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -149,11 +139,10 @@
             padding: 10px;
             box-sizing: border-box;
             background: var(--bg-container);
-            overflow: hidden; /* 重要：防止格子太大撐開版面 */
+            overflow: hidden;
             position: relative;
         }
 
-        /* 網格 */
         #grid {
             display: grid;
             grid-template-columns: repeat(17, 1fr);
@@ -163,7 +152,6 @@
             border: 5px solid var(--bg-grid-border);
             border-radius: 4px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            /* 大小由 JS 計算，不在此寫死 */
             touch-action: none;
             transition: border-color 0.3s, background-color 0.3s;
         }
@@ -173,7 +161,7 @@
             width: 100%;
             height: 100%;
             cursor: pointer;
-            position: relative;
+            position: relative; /* 關鍵：讓內部的 block 可以絕對定位 */
             box-shadow: var(--c-empty-shadow);
         }
 
@@ -184,6 +172,9 @@
             border: 1px solid rgba(0,0,0,0.1);
             box-shadow: inset 2px 2px 0 rgba(255,255,255,0.3), inset -2px -2px 0 rgba(0,0,0,0.1);
             pointer-events: none; 
+            position: absolute; /* 關鍵：允許重疊 */
+            top: 0;
+            left: 0;
         }
 
         .triangle-tl { clip-path: polygon(0 0, 100% 0, 0 100%); }
@@ -191,14 +182,13 @@
         .triangle-br { clip-path: polygon(100% 0, 100% 100%, 0 100%); }
         .triangle-bl { clip-path: polygon(0 0, 100% 100%, 0 100%); }
 
-        /* 底部控制區 */
         #controls {
-            flex: 0 0 auto; /* 高度由內容決定，不伸縮 */
+            flex: 0 0 auto;
             width: 100%;
             background: var(--bg-controls);
             color: var(--text-controls);
             padding-top: 10px;
-            padding-bottom: max(15px, env(safe-area-inset-bottom)); /* 確保底部有呼吸空間 */
+            padding-bottom: max(15px, env(safe-area-inset-bottom));
             box-shadow: var(--shadow-controls);
             display: flex;
             flex-direction: column;
@@ -249,7 +239,7 @@
         }
 
         .tool-btn {
-            padding: 8px 20px; /* 加大按鈕觸控區 */
+            padding: 8px 20px;
             border: 1px solid var(--border-tool-btn);
             background: var(--bg-tool-btn);
             color: var(--text-controls);
@@ -337,7 +327,6 @@
     const gridEl = document.getElementById('grid');
     const colorBtns = document.querySelectorAll('.color-btn');
 
-    // --- 主題 ---
     function toggleTheme() {
         const html = document.documentElement;
         const btn = document.getElementById('theme-btn');
@@ -351,21 +340,16 @@
         }
     }
 
-    // --- 網格初始化 ---
     function initGrid(firstLoad = false) {
         const container = document.getElementById('game-container');
         const w = container.clientWidth;
         const h = container.clientHeight;
-        
-        // 修正：更保守的計算，預留更多邊距避免貼邊
         const maxSize = Math.min(w, h) - 24; 
         const cellSize = Math.floor(maxSize / GRID_SIZE);
         
-        // 設定網格大小
         document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
         
-        // 設定 Grid 容器的寬高，確保置中
-        const totalSize = cellSize * GRID_SIZE + (GRID_SIZE); // 格子+gap
+        const totalSize = cellSize * GRID_SIZE + (GRID_SIZE); 
         gridEl.style.width = totalSize + 'px';
         gridEl.style.height = totalSize + 'px';
 
@@ -375,7 +359,6 @@
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
                 cell.dataset.index = i;
-                cell.dataset.rotation = 0; 
                 
                 cell.addEventListener('mousedown', (e) => {
                     isDrawing = true;
@@ -394,43 +377,115 @@
         }
     }
 
-    // --- 核心邏輯 ---
+    // --- 核心邏輯 (V1.1 雙層堆疊版) ---
     function updateCell(cell, isDragging = false) {
         if (!cell) return;
 
         if (isEraserMode) {
             cell.innerHTML = '';
-            cell.dataset.type = 'empty';
+            delete cell.dataset.type;
+            delete cell.dataset.layerCount; // 清除圖層計數
+            delete cell.dataset.color; 
             return;
         }
 
-        // 三角形旋轉
-        if (!isDragging && currentShape === 'triangle' && cell.dataset.type === 'triangle') {
-            let rot = parseInt(cell.dataset.rotation || 0);
-            rot = (rot + 1) % 4;
-            cell.dataset.rotation = rot;
-            if(cell.firstChild) updateTriangleClass(cell.firstChild, rot);
+        // 檢查目前格子有幾個積木
+        const layerCount = parseInt(cell.dataset.layerCount || 0);
+
+        // --- 情況 1: 正方體工具 ---
+        // 強制覆蓋所有內容
+        if (currentShape === 'square') {
+            cell.innerHTML = '';
+            const block = createBlock('square', currentColor);
+            cell.appendChild(block);
+            
+            cell.dataset.type = 'square';
+            cell.dataset.layerCount = 1;
+            cell.dataset.color = currentColor;
             return;
         }
 
-        // 放置
-        cell.innerHTML = ''; 
+        // --- 情況 2: 三角形工具 ---
+        if (currentShape === 'triangle') {
+            
+            // A. 如果格子是正方形 -> 覆蓋成單一三角形
+            if (cell.dataset.type === 'square') {
+                overwriteWithTriangle(cell);
+                return;
+            }
+
+            // B. 如果格子已經有 1 個三角形
+            if (layerCount === 1) {
+                // B-1: 同顏色 -> 旋轉 (和舊版一樣)
+                if (!isDragging && cell.dataset.color === currentColor) {
+                    const block = cell.firstChild;
+                    let rot = parseInt(block.dataset.rotation || 0);
+                    rot = (rot + 1) % 4;
+                    block.dataset.rotation = rot;
+                    updateTriangleClass(block, rot);
+                    return;
+                } 
+                // B-2: 不同顏色 -> 【填滿剩下的一半】
+                else if (!isDragging) {
+                    // 取得目前那一個的旋轉角度
+                    const existingBlock = cell.firstChild;
+                    const existingRot = parseInt(existingBlock.dataset.rotation || 0);
+                    
+                    // 計算對角角度 (例如 左上(0) 的對角是 右下(2))
+                    // 數學公式：(角度 + 2) % 4
+                    const newRot = (existingRot + 2) % 4;
+
+                    // 加入第二個積木
+                    const newBlock = createBlock('triangle', currentColor, newRot);
+                    cell.appendChild(newBlock);
+                    
+                    cell.dataset.layerCount = 2; // 標記為滿了
+                    return;
+                }
+                // B-3: 拖曳中 -> 覆蓋 (維持單一)
+                else {
+                     overwriteWithTriangle(cell);
+                     return;
+                }
+            }
+
+            // C. 如果格子已經有 2 個三角形 (滿了) -> 覆蓋成單一新三角形
+            if (layerCount === 2) {
+                overwriteWithTriangle(cell);
+                return;
+            }
+
+            // D. 空格子 -> 放第一個三角形
+            overwriteWithTriangle(cell);
+        }
+    }
+
+    // 輔助函式：建立積木 DOM
+    function createBlock(type, color, rotation = 0) {
         const block = document.createElement('div');
         block.classList.add('block');
-        block.style.backgroundColor = `var(--c-${currentColor})`;
+        block.style.backgroundColor = `var(--c-${color})`;
         
-        if (currentShape === 'triangle') {
-            cell.dataset.type = 'triangle';
-            cell.dataset.rotation = 0; 
-            updateTriangleClass(block, 0);
-        } else {
-            cell.dataset.type = 'square';
+        if (type === 'triangle') {
+            block.dataset.rotation = rotation;
+            updateTriangleClass(block, rotation);
         }
-        
+        return block;
+    }
+
+    // 輔助函式：用單一三角形覆蓋格子
+    function overwriteWithTriangle(cell) {
+        cell.innerHTML = '';
+        const block = createBlock('triangle', currentColor, 0);
         cell.appendChild(block);
+        
+        cell.dataset.type = 'triangle';
+        cell.dataset.layerCount = 1;
+        cell.dataset.color = currentColor;
     }
 
     function updateTriangleClass(el, rotation) {
+        // 保留 block class，移除舊的方向 class
         el.className = 'block'; 
         const classes = ['triangle-tl', 'triangle-tr', 'triangle-br', 'triangle-bl'];
         el.classList.add(classes[rotation]);
@@ -495,8 +550,6 @@
     }
 
     window.addEventListener('resize', () => initGrid(false));
-    
-    // 延遲初始化確保視窗大小已定案 (解決部分手機瀏覽器載入時的高度跳動)
     setTimeout(() => initGrid(true), 50);
 
 </script>

@@ -94,10 +94,25 @@
             background: var(--bg-header);
             color: var(--text-header);
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 10;
+            z-index: 20;
+            position: relative;
         }
 
+        .header-left { display: flex; align-items: center; gap: 15px; }
         .header-title { font-weight: bold; font-size: 16px; }
+
+        /* 漢堡選單按鈕 */
+        .menu-btn {
+            background: none;
+            border: none;
+            color: var(--text-header);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
         .header-credit {
             font-size: 12px;
@@ -130,6 +145,99 @@
             font-size: 13px;
         }
 
+        /* --- 範例選單 Overlay --- */
+        #example-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            display: none; /* 預設隱藏 */
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        #example-menu-overlay.open {
+            display: flex;
+            opacity: 1;
+        }
+
+        .menu-container {
+            background: var(--bg-controls);
+            width: 85%;
+            max-width: 400px;
+            max-height: 80%;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .menu-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-tool-btn);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 18px;
+            background: var(--bg-body);
+        }
+
+        .close-menu-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-controls);
+            line-height: 1;
+        }
+
+        .example-list {
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .example-item {
+            padding: 12px;
+            background: var(--bg-tool-btn);
+            border: 1px solid var(--border-tool-btn);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.1s, background 0.2s;
+        }
+        .example-item:hover {
+            transform: scale(1.02);
+            background: var(--c-beige);
+        }
+        [data-theme="dark"] .example-item:hover {
+            background: #444;
+        }
+        
+        .example-icon {
+            width: 30px;
+            height: 30px;
+            background: #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        /* --- 主遊戲區 --- */
         #game-container {
             flex: 1 1 auto;
             display: flex;
@@ -161,7 +269,7 @@
             width: 100%;
             height: 100%;
             cursor: pointer;
-            position: relative; /* 關鍵：讓內部的 block 可以絕對定位 */
+            position: relative; 
             box-shadow: var(--c-empty-shadow);
         }
 
@@ -172,7 +280,7 @@
             border: 1px solid rgba(0,0,0,0.1);
             box-shadow: inset 2px 2px 0 rgba(255,255,255,0.3), inset -2px -2px 0 rgba(0,0,0,0.1);
             pointer-events: none; 
-            position: absolute; /* 關鍵：允許重疊 */
+            position: absolute; 
             top: 0;
             left: 0;
         }
@@ -273,12 +381,30 @@
 <body>
 
 <header>
-    <span class="header-title">Block Art 17色版</span>
+    <div class="header-left">
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <span class="header-title">Block Art</span>
+    </div>
+    
     <span class="header-credit">
         &copy; 2026 <a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer">fan666rog</a> & Gemini
     </span>
     <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
 </header>
+
+<div id="example-menu-overlay">
+    <div class="menu-container">
+        <div class="menu-header">
+            <span>範例圖庫</span>
+            <button class="close-menu-btn" onclick="toggleMenu()">×</button>
+        </div>
+        <div class="example-list" id="example-list">
+            </div>
+        <div style="padding: 10px; font-size: 12px; color: #888; text-align: center;">
+            提示: 使用 Console 執行 exportGrid() 可匯出目前作品
+        </div>
+    </div>
+</div>
 
 <div id="game-container">
     <div id="grid"></div>
@@ -327,6 +453,32 @@
     const gridEl = document.getElementById('grid');
     const colorBtns = document.querySelectorAll('.color-btn');
 
+    // --- 範例資料庫 (可以持續新增) ---
+    // 格式: { name: "顯示名稱", icon: "emoji", data: [...] }
+    const EXAMPLES = [
+        {
+            name: "愛心測試 (此愛心由Gemini自行繪畫)",
+            icon: "❤️",
+            data: [{"i":39,"l":[{"t":"square","c":"red","r":0}]},{"i":40,"l":[{"t":"square","c":"red","r":0}]},{"i":42,"l":[{"t":"square","c":"red","r":0}]},{"i":43,"l":[{"t":"square","c":"red","r":0}]},{"i":55,"l":[{"t":"square","c":"red","r":0}]},{"i":56,"l":[{"t":"square","c":"red","r":0}]},{"i":57,"l":[{"t":"square","c":"red","r":0}]},{"i":58,"l":[{"t":"square","c":"red","r":0}]},{"i":59,"l":[{"t":"square","c":"red","r":0}]},{"i":60,"l":[{"t":"square","c":"red","r":0}]},{"i":61,"l":[{"t":"square","c":"red","r":0}]},{"i":73,"l":[{"t":"square","c":"red","r":0}]},{"i":74,"l":[{"t":"square","c":"red","r":0}]},{"i":75,"l":[{"t":"square","c":"red","r":0}]},{"i":76,"l":[{"t":"square","c":"red","r":0}]},{"i":77,"l":[{"t":"square","c":"red","r":0}]},{"i":91,"l":[{"t":"square","c":"red","r":0}]},{"i":92,"l":[{"t":"square","c":"red","r":0}]},{"i":93,"l":[{"t":"square","c":"red","r":0}]},{"i":109,"l":[{"t":"square","c":"red","r":0}]}]
+        },
+
+        {
+            name: "溫馨小屋 (House)",
+            icon: "🏠",
+            data: 
+[{"i":24,"l":[{"t":"triangle","c":"red","r":2}]},{"i":25,"l":[{"t":"triangle","c":"red","r":3}]},{"i":40,"l":[{"t":"triangle","c":"red","r":2}]},{"i":41,"l":[{"t":"square","c":"red","r":0}]},{"i":42,"l":[{"t":"square","c":"red","r":0}]},{"i":43,"l":[{"t":"triangle","c":"red","r":3}]},{"i":45,"l":[{"t":"square","c":"blue","r":0}]},{"i":46,"l":[{"t":"square","c":"blue","r":0}]},{"i":56,"l":[{"t":"triangle","c":"red","r":2}]},{"i":57,"l":[{"t":"square","c":"red","r":0}]},{"i":58,"l":[{"t":"square","c":"red","r":0}]},{"i":59,"l":[{"t":"square","c":"red","r":0}]},{"i":60,"l":[{"t":"square","c":"red","r":0}]},{"i":61,"l":[{"t":"triangle","c":"red","r":3}]},{"i":62,"l":[{"t":"square","c":"blue","r":0}]},{"i":63,"l":[{"t":"square","c":"blue","r":0}]},{"i":72,"l":[{"t":"triangle","c":"red","r":2}]},{"i":73,"l":[{"t":"square","c":"red","r":0}]},{"i":74,"l":[{"t":"square","c":"red","r":0}]},{"i":75,"l":[{"t":"square","c":"red","r":0}]},{"i":76,"l":[{"t":"square","c":"red","r":0}]},{"i":77,"l":[{"t":"square","c":"red","r":0}]},{"i":78,"l":[{"t":"square","c":"red","r":0}]},{"i":79,"l":[{"t":"triangle","c":"red","r":3},{"t":"triangle","c":"blue","r":1}]},{"i":80,"l":[{"t":"square","c":"blue","r":0}]},{"i":88,"l":[{"t":"triangle","c":"red","r":2}]},{"i":89,"l":[{"t":"square","c":"red","r":0}]},{"i":90,"l":[{"t":"square","c":"red","r":0}]},{"i":91,"l":[{"t":"square","c":"red","r":0}]},{"i":92,"l":[{"t":"square","c":"red","r":0}]},{"i":93,"l":[{"t":"square","c":"red","r":0}]},{"i":94,"l":[{"t":"square","c":"red","r":0}]},{"i":95,"l":[{"t":"square","c":"red","r":0}]},{"i":96,"l":[{"t":"square","c":"red","r":0}]},{"i":97,"l":[{"t":"triangle","c":"red","r":3},{"t":"triangle","c":"blue","r":1}]},{"i":104,"l":[{"t":"triangle","c":"red","r":2}]},{"i":105,"l":[{"t":"square","c":"red","r":0}]},{"i":106,"l":[{"t":"square","c":"red","r":0}]},{"i":107,"l":[{"t":"square","c":"red","r":0}]},{"i":108,"l":[{"t":"square","c":"red","r":0}]},{"i":109,"l":[{"t":"square","c":"red","r":0}]},{"i":110,"l":[{"t":"square","c":"red","r":0}]},{"i":111,"l":[{"t":"square","c":"red","r":0}]},{"i":112,"l":[{"t":"square","c":"red","r":0}]},{"i":113,"l":[{"t":"square","c":"red","r":0}]},{"i":114,"l":[{"t":"square","c":"red","r":0}]},{"i":115,"l":[{"t":"triangle","c":"red","r":3}]},{"i":121,"l":[{"t":"square","c":"lemon","r":0}]},{"i":122,"l":[{"t":"square","c":"lemon","r":0}]},{"i":123,"l":[{"t":"square","c":"lemon","r":0}]},{"i":124,"l":[{"t":"square","c":"lemon","r":0}]},{"i":125,"l":[{"t":"square","c":"lemon","r":0}]},{"i":126,"l":[{"t":"square","c":"lemon","r":0}]},{"i":127,"l":[{"t":"square","c":"lemon","r":0}]},{"i":128,"l":[{"t":"square","c":"lemon","r":0}]},{"i":129,"l":[{"t":"square","c":"lemon","r":0}]},{"i":130,"l":[{"t":"square","c":"lemon","r":0}]},{"i":131,"l":[{"t":"square","c":"lemon","r":0}]},{"i":132,"l":[{"t":"square","c":"lemon","r":0}]},{"i":138,"l":[{"t":"square","c":"lemon","r":0}]},{"i":139,"l":[{"t":"square","c":"lemon","r":0}]},{"i":140,"l":[{"t":"square","c":"lemon","r":0}]},{"i":141,"l":[{"t":"square","c":"lemon","r":0}]},{"i":142,"l":[{"t":"square","c":"lemon","r":0}]},{"i":143,"l":[{"t":"square","c":"lemon","r":0}]},{"i":144,"l":[{"t":"square","c":"lemon","r":0}]},{"i":145,"l":[{"t":"square","c":"lemon","r":0}]},{"i":146,"l":[{"t":"square","c":"lemon","r":0}]},{"i":147,"l":[{"t":"square","c":"lemon","r":0}]},{"i":148,"l":[{"t":"square","c":"lemon","r":0}]},{"i":149,"l":[{"t":"square","c":"lemon","r":0}]},{"i":155,"l":[{"t":"square","c":"lemon","r":0}]},{"i":156,"l":[{"t":"square","c":"green","r":0}]},{"i":157,"l":[{"t":"square","c":"green","r":0}]},{"i":158,"l":[{"t":"square","c":"red","r":0}]},{"i":159,"l":[{"t":"square","c":"red","r":0}]},{"i":160,"l":[{"t":"square","c":"red","r":0}]},{"i":161,"l":[{"t":"square","c":"red","r":0}]},{"i":162,"l":[{"t":"square","c":"red","r":0}]},{"i":163,"l":[{"t":"square","c":"red","r":0}]},{"i":164,"l":[{"t":"square","c":"green","r":0}]},{"i":165,"l":[{"t":"square","c":"green","r":0}]},{"i":166,"l":[{"t":"square","c":"lemon","r":0}]},{"i":172,"l":[{"t":"square","c":"lemon","r":0}]},{"i":173,"l":[{"t":"square","c":"green","r":0}]},{"i":174,"l":[{"t":"square","c":"green","r":0}]},{"i":175,"l":[{"t":"square","c":"red","r":0}]},{"i":176,"l":[{"t":"square","c":"blue","r":0}]},{"i":177,"l":[{"t":"square","c":"blue","r":0}]},{"i":178,"l":[{"t":"square","c":"blue","r":0}]},{"i":179,"l":[{"t":"square","c":"blue","r":0}]},{"i":180,"l":[{"t":"square","c":"red","r":0}]},{"i":181,"l":[{"t":"square","c":"green","r":0}]},{"i":182,"l":[{"t":"square","c":"green","r":0}]},{"i":183,"l":[{"t":"square","c":"lemon","r":0}]},{"i":189,"l":[{"t":"square","c":"lemon","r":0}]},{"i":190,"l":[{"t":"square","c":"green","r":0}]},{"i":191,"l":[{"t":"square","c":"green","r":0}]},{"i":192,"l":[{"t":"square","c":"red","r":0}]},{"i":193,"l":[{"t":"square","c":"blue","r":0}]},{"i":194,"l":[{"t":"square","c":"blue","r":0}]},{"i":195,"l":[{"t":"square","c":"blue","r":0}]},{"i":196,"l":[{"t":"square","c":"blue","r":0}]},{"i":197,"l":[{"t":"square","c":"red","r":0}]},{"i":198,"l":[{"t":"square","c":"green","r":0}]},{"i":199,"l":[{"t":"square","c":"green","r":0}]},{"i":200,"l":[{"t":"square","c":"lemon","r":0}]},{"i":206,"l":[{"t":"square","c":"lemon","r":0}]},{"i":207,"l":[{"t":"square","c":"green","r":0}]},{"i":208,"l":[{"t":"square","c":"green","r":0}]},{"i":209,"l":[{"t":"square","c":"red","r":0}]},{"i":210,"l":[{"t":"square","c":"blue","r":0}]},{"i":211,"l":[{"t":"square","c":"blue","r":0}]},{"i":212,"l":[{"t":"square","c":"blue","r":0}]},{"i":213,"l":[{"t":"square","c":"blue","r":0}]},{"i":214,"l":[{"t":"square","c":"red","r":0}]},{"i":215,"l":[{"t":"square","c":"green","r":0}]},{"i":216,"l":[{"t":"square","c":"green","r":0}]},{"i":217,"l":[{"t":"square","c":"lemon","r":0}]},{"i":223,"l":[{"t":"square","c":"lemon","r":0}]},{"i":224,"l":[{"t":"square","c":"green","r":0}]},{"i":225,"l":[{"t":"square","c":"green","r":0}]},{"i":226,"l":[{"t":"square","c":"red","r":0}]},{"i":227,"l":[{"t":"square","c":"red","r":0}]},{"i":228,"l":[{"t":"square","c":"red","r":0}]},{"i":229,"l":[{"t":"square","c":"red","r":0}]},{"i":230,"l":[{"t":"square","c":"red","r":0}]},{"i":231,"l":[{"t":"square","c":"red","r":0}]},{"i":232,"l":[{"t":"square","c":"green","r":0}]},{"i":233,"l":[{"t":"square","c":"green","r":0}]},{"i":234,"l":[{"t":"square","c":"lemon","r":0}]},{"i":238,"l":[{"t":"square","c":"blue","r":0}]},{"i":239,"l":[{"t":"square","c":"blue","r":0}]},{"i":240,"l":[{"t":"square","c":"lemon","r":0}]},{"i":241,"l":[{"t":"square","c":"lemon","r":0}]},{"i":242,"l":[{"t":"square","c":"lemon","r":0}]},{"i":243,"l":[{"t":"square","c":"lemon","r":0}]},{"i":244,"l":[{"t":"square","c":"lemon","r":0}]},{"i":245,"l":[{"t":"square","c":"lemon","r":0}]},{"i":246,"l":[{"t":"square","c":"lemon","r":0}]},{"i":247,"l":[{"t":"square","c":"lemon","r":0}]},{"i":248,"l":[{"t":"square","c":"lemon","r":0}]},{"i":249,"l":[{"t":"square","c":"lemon","r":0}]},{"i":250,"l":[{"t":"square","c":"lemon","r":0}]},{"i":251,"l":[{"t":"square","c":"lemon","r":0}]},{"i":252,"l":[{"t":"square","c":"blue","r":0}]},{"i":253,"l":[{"t":"square","c":"blue","r":0}]},{"i":254,"l":[{"t":"square","c":"blue","r":0}]},{"i":255,"l":[{"t":"square","c":"blue","r":0}]},{"i":256,"l":[{"t":"square","c":"blue","r":0}]},{"i":257,"l":[{"t":"square","c":"green","r":0}]},{"i":258,"l":[{"t":"square","c":"green","r":0}]},{"i":259,"l":[{"t":"square","c":"green","r":0}]},{"i":260,"l":[{"t":"square","c":"green","r":0}]},{"i":261,"l":[{"t":"square","c":"green","r":0}]},{"i":262,"l":[{"t":"square","c":"green","r":0}]},{"i":263,"l":[{"t":"square","c":"green","r":0}]},{"i":264,"l":[{"t":"square","c":"green","r":0}]},{"i":265,"l":[{"t":"square","c":"green","r":0}]},{"i":266,"l":[{"t":"square","c":"green","r":0}]},{"i":267,"l":[{"t":"square","c":"green","r":0}]},{"i":268,"l":[{"t":"square","c":"green","r":0}]},{"i":269,"l":[{"t":"square","c":"blue","r":0}]},{"i":270,"l":[{"t":"square","c":"blue","r":0}]},{"i":271,"l":[{"t":"square","c":"blue","r":0}]}]
+        },
+
+        {
+            name: "貓頭鷹 (Owl)",
+            icon: "🦉",
+            data: 
+[{"i":0,"l":[{"t":"square","c":"black","r":0}]},{"i":1,"l":[{"t":"square","c":"black","r":0}]},{"i":2,"l":[{"t":"square","c":"black","r":0}]},{"i":3,"l":[{"t":"square","c":"black","r":0}]},{"i":4,"l":[{"t":"square","c":"black","r":0}]},{"i":5,"l":[{"t":"square","c":"black","r":0}]},{"i":6,"l":[{"t":"square","c":"black","r":0}]},{"i":7,"l":[{"t":"square","c":"black","r":0}]},{"i":8,"l":[{"t":"square","c":"black","r":0}]},{"i":9,"l":[{"t":"square","c":"black","r":0}]},{"i":10,"l":[{"t":"square","c":"black","r":0}]},{"i":11,"l":[{"t":"square","c":"black","r":0}]},{"i":12,"l":[{"t":"square","c":"black","r":0}]},{"i":13,"l":[{"t":"square","c":"black","r":0}]},{"i":14,"l":[{"t":"square","c":"black","r":0}]},{"i":15,"l":[{"t":"square","c":"black","r":0}]},{"i":16,"l":[{"t":"square","c":"black","r":0}]},{"i":17,"l":[{"t":"square","c":"black","r":0}]},{"i":18,"l":[{"t":"square","c":"black","r":0}]},{"i":19,"l":[{"t":"triangle","c":"black","r":0},{"t":"triangle","c":"brown","r":2}]},{"i":20,"l":[{"t":"square","c":"brown","r":0}]},{"i":21,"l":[{"t":"square","c":"brown","r":0}]},{"i":22,"l":[{"t":"square","c":"brown","r":0}]},{"i":23,"l":[{"t":"square","c":"brown","r":0}]},{"i":24,"l":[{"t":"square","c":"brown","r":0}]},{"i":25,"l":[{"t":"square","c":"brown","r":0}]},{"i":26,"l":[{"t":"square","c":"brown","r":0}]},{"i":27,"l":[{"t":"square","c":"brown","r":0}]},{"i":28,"l":[{"t":"triangle","c":"brown","r":3},{"t":"triangle","c":"black","r":1}]},{"i":29,"l":[{"t":"square","c":"black","r":0}]},{"i":30,"l":[{"t":"square","c":"black","r":0}]},{"i":31,"l":[{"t":"triangle","c":"yellow","r":2},{"t":"triangle","c":"black","r":0}]},{"i":32,"l":[{"t":"triangle","c":"yellow","r":0},{"t":"triangle","c":"black","r":2}]},{"i":33,"l":[{"t":"square","c":"black","r":0}]},{"i":34,"l":[{"t":"square","c":"black","r":0}]},{"i":35,"l":[{"t":"triangle","c":"black","r":0},{"t":"triangle","c":"brown","r":2}]},{"i":36,"l":[{"t":"triangle","c":"lemon","r":2},{"t":"triangle","c":"brown","r":0}]},{"i":37,"l":[{"t":"square","c":"lemon","r":0}]},{"i":38,"l":[{"t":"square","c":"lemon","r":0}]},{"i":39,"l":[{"t":"square","c":"lemon","r":0}]},{"i":40,"l":[{"t":"square","c":"lemon","r":0}]},{"i":41,"l":[{"t":"square","c":"lemon","r":0}]},{"i":42,"l":[{"t":"square","c":"lemon","r":0}]},{"i":43,"l":[{"t":"square","c":"lemon","r":0}]},{"i":44,"l":[{"t":"square","c":"lemon","r":0}]},{"i":45,"l":[{"t":"triangle","c":"lemon","r":3},{"t":"triangle","c":"brown","r":1}]},{"i":46,"l":[{"t":"triangle","c":"brown","r":3},{"t":"triangle","c":"black","r":1}]},{"i":47,"l":[{"t":"square","c":"black","r":0}]},{"i":48,"l":[{"t":"square","c":"yellow","r":0}]},{"i":49,"l":[{"t":"square","c":"black","r":0}]},{"i":50,"l":[{"t":"square","c":"black","r":0}]},{"i":51,"l":[{"t":"square","c":"black","r":0}]},{"i":52,"l":[{"t":"square","c":"brown","r":0}]},{"i":53,"l":[{"t":"square","c":"lemon","r":0}]},{"i":54,"l":[{"t":"triangle","c":"grey","r":2},{"t":"triangle","c":"lemon","r":0}]},{"i":55,"l":[{"t":"square","c":"grey","r":0}]},{"i":56,"l":[{"t":"triangle","c":"grey","r":3},{"t":"triangle","c":"lemon","r":1}]},{"i":57,"l":[{"t":"square","c":"lemon","r":0}]},{"i":58,"l":[{"t":"square","c":"lemon","r":0}]},{"i":59,"l":[{"t":"triangle","c":"grey","r":2},{"t":"triangle","c":"lemon","r":0}]},{"i":60,"l":[{"t":"square","c":"grey","r":0}]},{"i":61,"l":[{"t":"triangle","c":"grey","r":3},{"t":"triangle","c":"lemon","r":1}]},{"i":62,"l":[{"t":"square","c":"lemon","r":0}]},{"i":63,"l":[{"t":"square","c":"brown","r":0}]},{"i":64,"l":[{"t":"square","c":"black","r":0}]},{"i":65,"l":[{"t":"triangle","c":"yellow","r":1},{"t":"triangle","c":"black","r":3}]},{"i":66,"l":[{"t":"triangle","c":"yellow","r":3},{"t":"triangle","c":"black","r":1}]},{"i":67,"l":[{"t":"square","c":"black","r":0}]},{"i":68,"l":[{"t":"square","c":"black","r":0}]},{"i":69,"l":[{"t":"square","c":"brown","r":0}]},{"i":70,"l":[{"t":"square","c":"lemon","r":0}]},{"i":71,"l":[{"t":"square","c":"beige","r":0}]},{"i":72,"l":[{"t":"square","c":"beige","r":0}]},{"i":73,"l":[{"t":"square","c":"black","r":0}]},{"i":74,"l":[{"t":"square","c":"lemon","r":0}]},{"i":75,"l":[{"t":"square","c":"lemon","r":0}]},{"i":76,"l":[{"t":"square","c":"black","r":0}]},{"i":77,"l":[{"t":"square","c":"beige","r":0}]},{"i":78,"l":[{"t":"square","c":"beige","r":0}]},{"i":79,"l":[{"t":"square","c":"lemon","r":0}]},{"i":80,"l":[{"t":"square","c":"brown","r":0}]},{"i":81,"l":[{"t":"square","c":"black","r":0}]},{"i":82,"l":[{"t":"square","c":"black","r":0}]},{"i":83,"l":[{"t":"square","c":"black","r":0}]},{"i":84,"l":[{"t":"square","c":"black","r":0}]},{"i":85,"l":[{"t":"square","c":"black","r":0}]},{"i":86,"l":[{"t":"square","c":"brown","r":0}]},{"i":87,"l":[{"t":"square","c":"lemon","r":0}]},{"i":88,"l":[{"t":"triangle","c":"lemon","r":3},{"t":"triangle","c":"beige","r":1}]},{"i":89,"l":[{"t":"square","c":"beige","r":0}]},{"i":90,"l":[{"t":"triangle","c":"lemon","r":2},{"t":"triangle","c":"beige","r":0}]},{"i":91,"l":[{"t":"square","c":"lemon","r":0}]},{"i":92,"l":[{"t":"square","c":"lemon","r":0}]},{"i":93,"l":[{"t":"triangle","c":"lemon","r":3},{"t":"triangle","c":"beige","r":1}]},{"i":94,"l":[{"t":"square","c":"beige","r":0}]},{"i":95,"l":[{"t":"triangle","c":"lemon","r":2},{"t":"triangle","c":"beige","r":0}]},{"i":96,"l":[{"t":"square","c":"lemon","r":0}]},{"i":97,"l":[{"t":"square","c":"brown","r":0}]},{"i":98,"l":[{"t":"square","c":"black","r":0}]},{"i":99,"l":[{"t":"square","c":"black","r":0}]},{"i":100,"l":[{"t":"square","c":"black","r":0}]},{"i":101,"l":[{"t":"square","c":"black","r":0}]},{"i":102,"l":[{"t":"square","c":"black","r":0}]},{"i":103,"l":[{"t":"square","c":"brown","r":0}]},{"i":104,"l":[{"t":"square","c":"lemon","r":0}]},{"i":105,"l":[{"t":"square","c":"lemon","r":0}]},{"i":106,"l":[{"t":"square","c":"lemon","r":0}]},{"i":107,"l":[{"t":"square","c":"lemon","r":0}]},{"i":108,"l":[{"t":"triangle","c":"lemon","r":3},{"t":"triangle","c":"yellow","r":1}]},{"i":109,"l":[{"t":"triangle","c":"lemon","r":2},{"t":"triangle","c":"yellow","r":0}]},{"i":110,"l":[{"t":"square","c":"lemon","r":0}]},{"i":111,"l":[{"t":"square","c":"lemon","r":0}]},{"i":112,"l":[{"t":"square","c":"lemon","r":0}]},{"i":113,"l":[{"t":"square","c":"lemon","r":0}]},{"i":114,"l":[{"t":"square","c":"brown","r":0}]},{"i":115,"l":[{"t":"square","c":"black","r":0}]},{"i":116,"l":[{"t":"square","c":"black","r":0}]},{"i":117,"l":[{"t":"square","c":"black","r":0}]},{"i":118,"l":[{"t":"square","c":"black","r":0}]},{"i":119,"l":[{"t":"square","c":"black","r":0}]},{"i":120,"l":[{"t":"square","c":"brown","r":0}]},{"i":121,"l":[{"t":"square","c":"lemon","r":0}]},{"i":122,"l":[{"t":"square","c":"lemon","r":0}]},{"i":123,"l":[{"t":"square","c":"lemon","r":0}]},{"i":124,"l":[{"t":"square","c":"lemon","r":0}]},{"i":125,"l":[{"t":"square","c":"lemon","r":0}]},{"i":126,"l":[{"t":"square","c":"lemon","r":0}]},{"i":127,"l":[{"t":"square","c":"lemon","r":0}]},{"i":128,"l":[{"t":"square","c":"lemon","r":0}]},{"i":129,"l":[{"t":"square","c":"lemon","r":0}]},{"i":130,"l":[{"t":"square","c":"lemon","r":0}]},{"i":131,"l":[{"t":"square","c":"brown","r":0}]},{"i":132,"l":[{"t":"square","c":"black","r":0}]},{"i":133,"l":[{"t":"square","c":"black","r":0}]},{"i":134,"l":[{"t":"square","c":"black","r":0}]},{"i":135,"l":[{"t":"square","c":"black","r":0}]},{"i":136,"l":[{"t":"square","c":"black","r":0}]},{"i":137,"l":[{"t":"square","c":"brown","r":0}]},{"i":138,"l":[{"t":"square","c":"lemon","r":0}]},{"i":139,"l":[{"t":"square","c":"lemon","r":0}]},{"i":140,"l":[{"t":"triangle","c":"brown","r":1},{"t":"triangle","c":"lemon","r":3}]},{"i":141,"l":[{"t":"square","c":"lemon","r":0}]},{"i":142,"l":[{"t":"triangle","c":"brown","r":1},{"t":"triangle","c":"lemon","r":3}]},{"i":143,"l":[{"t":"square","c":"lemon","r":0}]},{"i":144,"l":[{"t":"triangle","c":"brown","r":0},{"t":"triangle","c":"lemon","r":2}]},{"i":145,"l":[{"t":"square","c":"lemon","r":0}]},{"i":146,"l":[{"t":"triangle","c":"brown","r":0},{"t":"triangle","c":"lemon","r":2}]},{"i":147,"l":[{"t":"square","c":"lemon","r":0}]},{"i":148,"l":[{"t":"square","c":"brown","r":0}]},{"i":149,"l":[{"t":"square","c":"black","r":0}]},{"i":150,"l":[{"t":"square","c":"black","r":0}]},{"i":151,"l":[{"t":"triangle","c":"green","r":2},{"t":"triangle","c":"black","r":0}]},{"i":152,"l":[{"t":"square","c":"green","r":0}]},{"i":153,"l":[{"t":"square","c":"black","r":0}]},{"i":154,"l":[{"t":"square","c":"brown","r":0}]},{"i":155,"l":[{"t":"square","c":"lemon","r":0}]},{"i":156,"l":[{"t":"triangle","c":"brown","r":1},{"t":"triangle","c":"lemon","r":3}]},{"i":157,"l":[{"t":"square","c":"lemon","r":0}]},{"i":158,"l":[{"t":"triangle","c":"brown","r":1},{"t":"triangle","c":"lemon","r":3}]},{"i":159,"l":[{"t":"square","c":"lemon","r":0}]},{"i":160,"l":[{"t":"triangle","c":"brown","r":0},{"t":"triangle","c":"lemon","r":2}]},{"i":161,"l":[{"t":"square","c":"lemon","r":0}]},{"i":162,"l":[{"t":"triangle","c":"brown","r":0},{"t":"triangle","c":"lemon","r":2}]},{"i":163,"l":[{"t":"square","c":"lemon","r":0}]},{"i":164,"l":[{"t":"square","c":"lemon","r":0}]},{"i":165,"l":[{"t":"square","c":"brown","r":0}]},{"i":166,"l":[{"t":"square","c":"black","r":0}]},{"i":167,"l":[{"t":"triangle","c":"green","r":2},{"t":"triangle","c":"black","r":0}]},{"i":168,"l":[{"t":"square","c":"green","r":0}]},{"i":169,"l":[{"t":"triangle","c":"green","r":0},{"t":"triangle","c":"black","r":2}]},{"i":170,"l":[{"t":"square","c":"black","r":0}]},{"i":171,"l":[{"t":"square","c":"brown","r":0}]},{"i":172,"l":[{"t":"square","c":"lemon","r":0}]},{"i":173,"l":[{"t":"square","c":"lemon","r":0}]},{"i":174,"l":[{"t":"triangle","c":"brown","r":1},{"t":"triangle","c":"lemon","r":3}]},{"i":175,"l":[{"t":"square","c":"lemon","r":0}]},{"i":176,"l":[{"t":"triangle","c":"brown","r":1},{"t":"triangle","c":"lemon","r":3}]},{"i":177,"l":[{"t":"square","c":"lemon","r":0}]},{"i":178,"l":[{"t":"triangle","c":"brown","r":0},{"t":"triangle","c":"lemon","r":2}]},{"i":179,"l":[{"t":"square","c":"lemon","r":0}]},{"i":180,"l":[{"t":"triangle","c":"lemon","r":2},{"t":"triangle","c":"brown","r":0}]},{"i":181,"l":[{"t":"square","c":"lemon","r":0}]},{"i":182,"l":[{"t":"square","c":"brown","r":0}]},{"i":183,"l":[{"t":"triangle","c":"green","r":2},{"t":"triangle","c":"black","r":0}]},{"i":184,"l":[{"t":"square","c":"green","r":0}]},{"i":185,"l":[{"t":"triangle","c":"green","r":0},{"t":"triangle","c":"black","r":2}]},{"i":186,"l":[{"t":"square","c":"black","r":0}]},{"i":187,"l":[{"t":"square","c":"black","r":0}]},{"i":188,"l":[{"t":"square","c":"brown","r":0}]},{"i":189,"l":[{"t":"square","c":"lemon","r":0}]},{"i":190,"l":[{"t":"triangle","c":"lemon","r":3},{"t":"triangle","c":"brown","r":1}]},{"i":191,"l":[{"t":"square","c":"lemon","r":0}]},{"i":192,"l":[{"t":"triangle","c":"lemon","r":3},{"t":"triangle","c":"brown","r":1}]},{"i":193,"l":[{"t":"square","c":"lemon","r":0}]},{"i":194,"l":[{"t":"triangle","c":"lemon","r":2},{"t":"triangle","c":"brown","r":0}]},{"i":195,"l":[{"t":"square","c":"lemon","r":0}]},{"i":196,"l":[{"t":"triangle","c":"lemon","r":2},{"t":"triangle","c":"brown","r":0}]},{"i":197,"l":[{"t":"square","c":"lemon","r":0}]},{"i":198,"l":[{"t":"square","c":"lemon","r":0}]},{"i":199,"l":[{"t":"square","c":"brown","r":0}]},{"i":200,"l":[{"t":"square","c":"green","r":0}]},{"i":201,"l":[{"t":"triangle","c":"green","r":0},{"t":"triangle","c":"black","r":2}]},{"i":202,"l":[{"t":"square","c":"black","r":0}]},{"i":203,"l":[{"t":"square","c":"black","r":0}]},{"i":204,"l":[{"t":"square","c":"black","r":0}]},{"i":205,"l":[{"t":"triangle","c":"brown","r":1},{"t":"triangle","c":"black","r":3}]},{"i":206,"l":[{"t":"triangle","c":"brown","r":3},{"t":"triangle","c":"lemon","r":1}]},{"i":207,"l":[{"t":"square","c":"lemon","r":0}]},{"i":208,"l":[{"t":"square","c":"lemon","r":0}]},{"i":209,"l":[{"t":"square","c":"yellow","r":0}]},{"i":210,"l":[{"t":"square","c":"lemon","r":0}]},{"i":211,"l":[{"t":"square","c":"lemon","r":0}]},{"i":212,"l":[{"t":"square","c":"yellow","r":0}]},{"i":213,"l":[{"t":"square","c":"lemon","r":0}]},{"i":214,"l":[{"t":"square","c":"lemon","r":0}]},{"i":215,"l":[{"t":"triangle","c":"brown","r":2},{"t":"triangle","c":"lemon","r":0}]},{"i":216,"l":[{"t":"square","c":"brown","r":0}]},{"i":217,"l":[{"t":"square","c":"brown","r":0}]},{"i":218,"l":[{"t":"square","c":"brown","r":0}]},{"i":219,"l":[{"t":"square","c":"brown","r":0}]},{"i":220,"l":[{"t":"square","c":"brown","r":0}]},{"i":221,"l":[{"t":"square","c":"black","r":0}]},{"i":222,"l":[{"t":"square","c":"black","r":0}]},{"i":223,"l":[{"t":"square","c":"brown","r":0}]},{"i":224,"l":[{"t":"square","c":"brown","r":0}]},{"i":225,"l":[{"t":"square","c":"brown","r":0}]},{"i":226,"l":[{"t":"square","c":"yellow","r":0}]},{"i":227,"l":[{"t":"square","c":"brown","r":0}]},{"i":228,"l":[{"t":"square","c":"brown","r":0}]},{"i":229,"l":[{"t":"square","c":"yellow","r":0}]},{"i":230,"l":[{"t":"square","c":"brown","r":0}]},{"i":231,"l":[{"t":"square","c":"brown","r":0}]},{"i":232,"l":[{"t":"square","c":"brown","r":0}]},{"i":233,"l":[{"t":"square","c":"brown","r":0}]},{"i":234,"l":[{"t":"triangle","c":"brown","r":0},{"t":"triangle","c":"black","r":2}]},{"i":235,"l":[{"t":"square","c":"black","r":0}]},{"i":236,"l":[{"t":"square","c":"black","r":0}]},{"i":237,"l":[{"t":"square","c":"black","r":0}]},{"i":238,"l":[{"t":"square","c":"brown","r":0}]},{"i":239,"l":[{"t":"square","c":"brown","r":0}]},{"i":240,"l":[{"t":"square","c":"brown","r":0}]},{"i":241,"l":[{"t":"square","c":"brown","r":0}]},{"i":242,"l":[{"t":"triangle","c":"brown","r":0},{"t":"triangle","c":"lemon","r":2}]},{"i":243,"l":[{"t":"triangle","c":"lemon","r":3},{"t":"triangle","c":"yellow","r":1}]},{"i":244,"l":[{"t":"square","c":"lemon","r":0}]},{"i":245,"l":[{"t":"square","c":"lemon","r":0}]},{"i":246,"l":[{"t":"triangle","c":"yellow","r":0},{"t":"triangle","c":"lemon","r":2}]},{"i":247,"l":[{"t":"triangle","c":"lemon","r":0},{"t":"triangle","c":"black","r":2}]},{"i":248,"l":[{"t":"square","c":"black","r":0}]},{"i":249,"l":[{"t":"square","c":"black","r":0}]},{"i":250,"l":[{"t":"triangle","c":"green","r":1},{"t":"triangle","c":"black","r":3}]},{"i":251,"l":[{"t":"square","c":"green","r":0}]},{"i":252,"l":[{"t":"triangle","c":"green","r":3},{"t":"triangle","c":"black","r":1}]},{"i":253,"l":[{"t":"square","c":"black","r":0}]},{"i":254,"l":[{"t":"square","c":"black","r":0}]},{"i":255,"l":[{"t":"square","c":"brown","r":0}]},{"i":256,"l":[{"t":"square","c":"brown","r":0}]},{"i":257,"l":[{"t":"triangle","c":"brown","r":0},{"t":"triangle","c":"black","r":2}]},{"i":258,"l":[{"t":"triangle","c":"brown","r":1},{"t":"triangle","c":"black","r":3}]},{"i":259,"l":[{"t":"square","c":"brown","r":0}]},{"i":260,"l":[{"t":"triangle","c":"brown","r":3},{"t":"triangle","c":"lemon","r":1}]},{"i":261,"l":[{"t":"square","c":"lemon","r":0}]},{"i":262,"l":[{"t":"triangle","c":"brown","r":2},{"t":"triangle","c":"lemon","r":0}]},{"i":263,"l":[{"t":"square","c":"brown","r":0}]},{"i":264,"l":[{"t":"triangle","c":"brown","r":0},{"t":"triangle","c":"black","r":2}]},{"i":265,"l":[{"t":"square","c":"black","r":0}]},{"i":266,"l":[{"t":"square","c":"black","r":0}]},{"i":267,"l":[{"t":"square","c":"black","r":0}]},{"i":268,"l":[{"t":"triangle","c":"green","r":1},{"t":"triangle","c":"black","r":3}]},{"i":269,"l":[{"t":"square","c":"green","r":0}]},{"i":270,"l":[{"t":"square","c":"black","r":0}]},{"i":271,"l":[{"t":"square","c":"black","r":0}]},{"i":272,"l":[{"t":"square","c":"brown","r":0}]},{"i":273,"l":[{"t":"triangle","c":"brown","r":0},{"t":"triangle","c":"black","r":2}]},{"i":274,"l":[{"t":"square","c":"black","r":0}]},{"i":275,"l":[{"t":"triangle","c":"brown","r":2},{"t":"triangle","c":"black","r":0}]},{"i":276,"l":[{"t":"square","c":"brown","r":0}]},{"i":277,"l":[{"t":"triangle","c":"brown","r":0},{"t":"triangle","c":"lemon","r":2}]},{"i":278,"l":[{"t":"triangle","c":"lemon","r":0},{"t":"triangle","c":"brown","r":2}]},{"i":279,"l":[{"t":"square","c":"brown","r":0}]},{"i":280,"l":[{"t":"triangle","c":"brown","r":0},{"t":"triangle","c":"black","r":2}]},{"i":281,"l":[{"t":"square","c":"black","r":0}]},{"i":282,"l":[{"t":"square","c":"black","r":0}]},{"i":283,"l":[{"t":"square","c":"black","r":0}]},{"i":284,"l":[{"t":"square","c":"black","r":0}]},{"i":285,"l":[{"t":"square","c":"black","r":0}]},{"i":286,"l":[{"t":"square","c":"black","r":0}]},{"i":287,"l":[{"t":"square","c":"black","r":0}]},{"i":288,"l":[{"t":"square","c":"black","r":0}]}]
+        }
+
+        // 你可以在這裡貼上新的範例數據
+    ];
+
     function toggleTheme() {
         const html = document.documentElement;
         const btn = document.getElementById('theme-btn');
@@ -338,6 +490,114 @@
             html.setAttribute('data-theme', 'dark');
             btn.innerHTML = '☀️';
         }
+    }
+
+    // --- 選單功能 ---
+    function toggleMenu() {
+        const menu = document.getElementById('example-menu-overlay');
+        const isOpen = menu.classList.contains('open');
+        if (isOpen) {
+            menu.classList.remove('open');
+            setTimeout(() => menu.style.display = 'none', 300);
+        } else {
+            menu.style.display = 'flex';
+            // 強制重繪以觸發 transition
+            requestAnimationFrame(() => menu.classList.add('open'));
+            renderExampleList();
+        }
+    }
+
+    function renderExampleList() {
+        const list = document.getElementById('example-list');
+        list.innerHTML = '';
+        EXAMPLES.forEach((ex, idx) => {
+            const item = document.createElement('div');
+            item.className = 'example-item';
+            item.innerHTML = `
+                <div class="example-icon">${ex.icon}</div>
+                <div>${ex.name}</div>
+            `;
+            item.onclick = () => loadExample(idx);
+            list.appendChild(item);
+        });
+        
+        // 加入清除按鈕
+        const clearBtn = document.createElement('div');
+        clearBtn.className = 'example-item';
+        clearBtn.style.borderColor = '#e74c3c';
+        clearBtn.style.color = '#e74c3c';
+        clearBtn.innerHTML = `<div class="example-icon">🗑️</div><div>清除畫布</div>`;
+        clearBtn.onclick = () => { clearGrid(); toggleMenu(); };
+        list.appendChild(clearBtn);
+    }
+
+    function clearGrid() {
+        const cells = document.querySelectorAll('.cell');
+        cells.forEach(cell => {
+            cell.innerHTML = '';
+            delete cell.dataset.type;
+            delete cell.dataset.layerCount;
+            delete cell.dataset.color;
+        });
+    }
+
+    function loadExample(index) {
+        if (!confirm('載入範例將會覆蓋目前的畫布，確定嗎？')) return;
+        
+        clearGrid();
+        const data = EXAMPLES[index].data;
+        const cells = document.querySelectorAll('.cell');
+
+        data.forEach(item => {
+            const cell = cells[item.i];
+            if (!cell) return;
+            
+            // 重建圖層
+            item.l.forEach(layer => {
+                const block = createBlock(layer.t, layer.c, layer.r);
+                cell.appendChild(block);
+                
+                // 設定 dataset 狀態以符合編輯邏輯
+                cell.dataset.type = layer.t;
+                cell.dataset.color = layer.c;
+            });
+            cell.dataset.layerCount = item.l.length;
+        });
+
+        toggleMenu();
+    }
+
+    // --- 匯出功能 (給開發者/你使用的) ---
+    // 在瀏覽器 Console 輸入 exportGrid() 即可取得 JSON
+    window.exportGrid = function() {
+        const cells = document.querySelectorAll('.cell');
+        const data = [];
+        cells.forEach((cell, index) => {
+            if (cell.children.length > 0) {
+                const layers = [];
+                Array.from(cell.children).forEach(block => {
+                    // 反向查找顏色
+                    const bg = block.style.backgroundColor; 
+                    // 這邊簡單處理，直接儲存顏色名稱會比較好，但DOM只有變數。
+                    // 為了簡化，我們依賴 createBlock 時的 dataset 狀態，
+                    // 如果是重新整理後，我們需要確保 dataset.color 是準確的。
+                    // 因此這裡建議：只在剛畫好的時候匯出，或者我們依賴 DOM 結構反推。
+                    
+                    // 更穩定的方式：我們在 createBlock 時並沒有把 color 寫在 dataset 裡 (只有 cell 有)
+                    // 但對於多圖層，cell.dataset.color 只有最後一個。
+                    // 解決方案：我們在 createBlock 裡偷偷塞入 dataset.color
+                    
+                    layers.push({
+                        t: block.dataset.type || (block.classList.contains('block') && !block.style.clipPath ? 'square' : 'triangle'),
+                        c: block.dataset.colorName || 'red', // 需修改 createBlock 支援此屬性
+                        r: parseInt(block.dataset.rotation || 0)
+                    });
+                });
+                data.push({ i: index, l: layers });
+            }
+        });
+        console.log(JSON.stringify(data));
+        alert("數據已輸出至 Console，請按 F12 複製！");
     }
 
     function initGrid(firstLoad = false) {
@@ -377,23 +637,21 @@
         }
     }
 
-    // --- 核心邏輯 (V1.1 雙層堆疊版) ---
+    // --- 核心邏輯 (V1.5 支援匯出/匯入版) ---
     function updateCell(cell, isDragging = false) {
         if (!cell) return;
 
         if (isEraserMode) {
             cell.innerHTML = '';
             delete cell.dataset.type;
-            delete cell.dataset.layerCount; // 清除圖層計數
+            delete cell.dataset.layerCount; 
             delete cell.dataset.color; 
             return;
         }
 
-        // 檢查目前格子有幾個積木
         const layerCount = parseInt(cell.dataset.layerCount || 0);
 
-        // --- 情況 1: 正方體工具 ---
-        // 強制覆蓋所有內容
+        // --- 情況 1: 正方體 ---
         if (currentShape === 'square') {
             cell.innerHTML = '';
             const block = createBlock('square', currentColor);
@@ -405,18 +663,15 @@
             return;
         }
 
-        // --- 情況 2: 三角形工具 ---
+        // --- 情況 2: 三角形 ---
         if (currentShape === 'triangle') {
-            
-            // A. 如果格子是正方形 -> 覆蓋成單一三角形
             if (cell.dataset.type === 'square') {
                 overwriteWithTriangle(cell);
                 return;
             }
 
-            // B. 如果格子已經有 1 個三角形
             if (layerCount === 1) {
-                // B-1: 同顏色 -> 旋轉 (和舊版一樣)
+                // 同色 -> 旋轉
                 if (!isDragging && cell.dataset.color === currentColor) {
                     const block = cell.firstChild;
                     let rot = parseInt(block.dataset.rotation || 0);
@@ -425,47 +680,43 @@
                     updateTriangleClass(block, rot);
                     return;
                 } 
-                // B-2: 不同顏色 -> 【填滿剩下的一半】
+                // 不同色 -> 填滿
                 else if (!isDragging) {
-                    // 取得目前那一個的旋轉角度
                     const existingBlock = cell.firstChild;
                     const existingRot = parseInt(existingBlock.dataset.rotation || 0);
-                    
-                    // 計算對角角度 (例如 左上(0) 的對角是 右下(2))
-                    // 數學公式：(角度 + 2) % 4
                     const newRot = (existingRot + 2) % 4;
 
-                    // 加入第二個積木
                     const newBlock = createBlock('triangle', currentColor, newRot);
                     cell.appendChild(newBlock);
                     
-                    cell.dataset.layerCount = 2; // 標記為滿了
+                    cell.dataset.layerCount = 2; 
                     return;
                 }
-                // B-3: 拖曳中 -> 覆蓋 (維持單一)
                 else {
                      overwriteWithTriangle(cell);
                      return;
                 }
             }
 
-            // C. 如果格子已經有 2 個三角形 (滿了) -> 覆蓋成單一新三角形
             if (layerCount === 2) {
                 overwriteWithTriangle(cell);
                 return;
             }
 
-            // D. 空格子 -> 放第一個三角形
             overwriteWithTriangle(cell);
         }
     }
 
-    // 輔助函式：建立積木 DOM
+    // 輔助函式：建立積木 DOM (修改版：支援匯出標記)
     function createBlock(type, color, rotation = 0) {
         const block = document.createElement('div');
         block.classList.add('block');
         block.style.backgroundColor = `var(--c-${color})`;
         
+        // 儲存原始數據以便匯出
+        block.dataset.colorName = color; 
+        block.dataset.type = type;
+
         if (type === 'triangle') {
             block.dataset.rotation = rotation;
             updateTriangleClass(block, rotation);
@@ -485,7 +736,6 @@
     }
 
     function updateTriangleClass(el, rotation) {
-        // 保留 block class，移除舊的方向 class
         el.className = 'block'; 
         const classes = ['triangle-tl', 'triangle-tr', 'triangle-br', 'triangle-bl'];
         el.classList.add(classes[rotation]);

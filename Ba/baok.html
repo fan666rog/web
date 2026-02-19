@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Block Art 豪華全色版</title>
+    <style>
+        /* --- 配色系統 (CSS Variables) --- */
+        :root {
+            /* 介面顏色 */
+            --bg-body: #f0f0f0;
+            --bg-header: #333;
+            --text-header: #fff;
+            --text-credit: #aaa;
+            --bg-container: #bbb;
+            --bg-grid-gap: #999;
+            --bg-grid-border: #fff;
+            --c-empty: #ddd;
+            --c-empty-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
+            
+            --bg-controls: #fff;
+            --text-controls: #333;
+            --bg-tool-btn: #eee;
+            --border-tool-btn: #ccc;
+            --shadow-controls: 0 -2px 10px rgba(0,0,0,0.1);
+
+            /* --- 完整 17 色定義 --- */
+            --c-red: #e74c3c;
+            --c-pink: #ff9ff3;
+            --c-black: #2d3436;
+            --c-blue: #0984e3;
+            --c-lemon: #f6e58d;
+            --c-grey: #636e72;
+            --c-green: #00b894;
+            --c-lightgreen: #badc58;
+            --c-white: #ffffff;
+            --c-yellow: #f1c40f;
+            --c-lightblue: #74b9ff;
+            --c-orange: #e67e22;
+            --c-violet: #a29bfe;
+            --c-brown: #8d6e63;
+            --c-beige: #dcdde1;
+            --c-flesh: #fab1a0;
+            --c-mint: #55efc4;
+
+            --cell-size: 20px;
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #121212;
+            --bg-header: #000;
+            --text-header: #ddd;
+            --text-credit: #666;
+            --bg-container: #2c3e50;
+            --bg-grid-gap: #000;
+            --bg-grid-border: #444;
+            --c-empty: #2a2a2a;
+            --c-empty-shadow: inset 1px 1px 2px rgba(0,0,0,0.5);
+
+            --bg-controls: #1e1e1e;
+            --text-controls: #eee;
+            --bg-tool-btn: #333;
+            --border-tool-btn: #555;
+            --shadow-controls: 0 -2px 10px rgba(255,255,255,0.05);
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            position: fixed;
+            inset: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-controls);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%; 
+            height: 100dvh; 
+            transition: background-color 0.3s;
+        }
+
+        header {
+            flex: 0 0 auto;
+            padding: 0 15px;
+            height: 44px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-header);
+            color: var(--text-header);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .header-title { font-weight: bold; font-size: 16px; }
+
+        .header-credit {
+            font-size: 12px;
+            color: var(--text-credit);
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        .header-credit a {
+            color: inherit;
+            text-decoration: none;
+            border-bottom: 1px dotted var(--text-credit);
+            transition: color 0.2s;
+        }
+        .header-credit a:hover {
+            color: #fff;
+            border-bottom-style: solid;
+        }
+
+        @media (max-width: 500px) { .header-credit { display: none; } }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: var(--text-header);
+            padding: 4px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        #game-container {
+            flex: 1 1 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            background: var(--bg-container);
+            overflow: hidden;
+            position: relative;
+        }
+
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(17, 1fr);
+            grid-template-rows: repeat(17, 1fr);
+            gap: 1px;
+            background-color: var(--bg-grid-gap);
+            border: 5px solid var(--bg-grid-border);
+            border-radius: 4px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            touch-action: none;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+
+        .cell {
+            background-color: var(--c-empty);
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            position: relative; /* 關鍵：讓內部的 block 可以絕對定位 */
+            box-shadow: var(--c-empty-shadow);
+        }
+
+        .block {
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            border: 1px solid rgba(0,0,0,0.1);
+            box-shadow: inset 2px 2px 0 rgba(255,255,255,0.3), inset -2px -2px 0 rgba(0,0,0,0.1);
+            pointer-events: none; 
+            position: absolute; /* 關鍵：允許重疊 */
+            top: 0;
+            left: 0;
+        }
+
+        .triangle-tl { clip-path: polygon(0 0, 100% 0, 0 100%); }
+        .triangle-tr { clip-path: polygon(0 0, 100% 0, 100% 100%); }
+        .triangle-br { clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+        .triangle-bl { clip-path: polygon(0 0, 100% 100%, 0 100%); }
+
+        #controls {
+            flex: 0 0 auto;
+            width: 100%;
+            background: var(--bg-controls);
+            color: var(--text-controls);
+            padding-top: 10px;
+            padding-bottom: max(15px, env(safe-area-inset-bottom));
+            box-shadow: var(--shadow-controls);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .palette-container {
+            width: 100%;
+            overflow-x: auto;
+            padding: 0;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .palette-container::-webkit-scrollbar { display: none; }
+
+        .palette {
+            display: flex;
+            padding: 0 10px;
+            gap: 12px;
+            width: max-content;
+            margin: 0 auto; 
+        }
+
+        .color-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.1s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+        .color-btn.active {
+            border-color: var(--text-controls);
+            transform: scale(1.15);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 2;
+        }
+        .color-btn[data-color="white"] { border: 1px solid #ccc; }
+        .color-btn.active[data-color="white"] { border: 2px solid var(--text-controls); }
+
+        .tools {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .tool-btn {
+            padding: 8px 20px;
+            border: 1px solid var(--border-tool-btn);
+            background: var(--bg-tool-btn);
+            color: var(--text-controls);
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .tool-btn.active {
+            background: #333;
+            color: white;
+            border-color: #333;
+        }
+        [data-theme="dark"] .tool-btn.active {
+            background: #eee;
+            color: #111;
+            border-color: #eee;
+        }
+        .eraser-btn.active {
+            background: #e74c3c !important;
+            color: white !important;
+            border-color: #c0392b !important;
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <span class="header-title">Block Art 17色版</span>
+    <span class="header-credit">
+        &copy; 2026 <a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer">fan666rog</a> & Gemini
+    </span>
+    <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
+</header>
+
+<div id="game-container">
+    <div id="grid"></div>
+</div>
+
+<div id="controls">
+    <div class="palette-container">
+        <div class="palette">
+            <div class="color-btn" style="background: var(--c-red);" onclick="selectColor('red')" data-color="red"></div>
+            <div class="color-btn" style="background: var(--c-orange);" onclick="selectColor('orange')" data-color="orange"></div>
+            <div class="color-btn" style="background: var(--c-yellow);" onclick="selectColor('yellow')" data-color="yellow"></div>
+            <div class="color-btn" style="background: var(--c-lemon);" onclick="selectColor('lemon')" data-color="lemon"></div>
+            <div class="color-btn" style="background: var(--c-green);" onclick="selectColor('green')" data-color="green"></div>
+            <div class="color-btn" style="background: var(--c-lightgreen);" onclick="selectColor('lightgreen')" data-color="lightgreen"></div>
+            <div class="color-btn" style="background: var(--c-mint);" onclick="selectColor('mint')" data-color="mint"></div>
+            <div class="color-btn" style="background: var(--c-blue);" onclick="selectColor('blue')" data-color="blue"></div>
+            <div class="color-btn" style="background: var(--c-lightblue);" onclick="selectColor('lightblue')" data-color="lightblue"></div>
+            <div class="color-btn" style="background: var(--c-violet);" onclick="selectColor('violet')" data-color="violet"></div>
+            <div class="color-btn" style="background: var(--c-pink);" onclick="selectColor('pink')" data-color="pink"></div>
+            <div class="color-btn" style="background: var(--c-flesh);" onclick="selectColor('flesh')" data-color="flesh"></div>
+            <div class="color-btn" style="background: var(--c-brown);" onclick="selectColor('brown')" data-color="brown"></div>
+            <div class="color-btn" style="background: var(--c-beige);" onclick="selectColor('beige')" data-color="beige"></div>
+            <div class="color-btn" style="background: var(--c-grey);" onclick="selectColor('grey')" data-color="grey"></div>
+            <div class="color-btn" style="background: var(--c-black);" onclick="selectColor('black')" data-color="black"></div>
+            <div class="color-btn" style="background: var(--c-white);" onclick="selectColor('white')" data-color="white"></div>
+        </div>
+    </div>
+
+    <div class="tools">
+        <button class="tool-btn active" id="btn-square" onclick="setShape('square')">⬜ 正方</button>
+        <button class="tool-btn" id="btn-triangle" onclick="setShape('triangle')">📐 三角</button>
+        <div style="width: 1px; background: #ccc; margin: 0 5px;"></div>
+        <button class="tool-btn eraser-btn" id="btn-eraser" onclick="toggleEraser()">🧽 拔除</button>
+    </div>
+</div>
+
+<script>
+    const GRID_SIZE = 17;
+    const TOTAL_CELLS = GRID_SIZE * GRID_SIZE;
+    
+    let currentColor = 'red';
+    let currentShape = 'square';
+    let isEraserMode = false;
+    let isDrawing = false; 
+
+    const gridEl = document.getElementById('grid');
+    const colorBtns = document.querySelectorAll('.color-btn');
+
+    function toggleTheme() {
+        const html = document.documentElement;
+        const btn = document.getElementById('theme-btn');
+        const currentTheme = html.getAttribute('data-theme');
+        if (currentTheme === 'dark') {
+            html.removeAttribute('data-theme');
+            btn.innerHTML = '🌙';
+        } else {
+            html.setAttribute('data-theme', 'dark');
+            btn.innerHTML = '☀️';
+        }
+    }
+
+    function initGrid(firstLoad = false) {
+        const container = document.getElementById('game-container');
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        const maxSize = Math.min(w, h) - 24; 
+        const cellSize = Math.floor(maxSize / GRID_SIZE);
+        
+        document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
+        
+        const totalSize = cellSize * GRID_SIZE + (GRID_SIZE); 
+        gridEl.style.width = totalSize + 'px';
+        gridEl.style.height = totalSize + 'px';
+
+        if (firstLoad) {
+            gridEl.innerHTML = '';
+            for (let i = 0; i < TOTAL_CELLS; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.index = i;
+                
+                cell.addEventListener('mousedown', (e) => {
+                    isDrawing = true;
+                    updateCell(e.target.closest('.cell')); 
+                });
+                
+                cell.addEventListener('mouseenter', (e) => {
+                    if (isDrawing) {
+                        updateCell(e.target.closest('.cell'), true);
+                    }
+                });
+                
+                gridEl.appendChild(cell);
+            }
+            selectColor('red');
+        }
+    }
+
+    // --- 核心邏輯 (V1.4 雙層堆疊版) ---
+    function updateCell(cell, isDragging = false) {
+        if (!cell) return;
+
+        if (isEraserMode) {
+            cell.innerHTML = '';
+            delete cell.dataset.type;
+            delete cell.dataset.layerCount; // 清除圖層計數
+            delete cell.dataset.color; 
+            return;
+        }
+
+        // 檢查目前格子有幾個積木
+        const layerCount = parseInt(cell.dataset.layerCount || 0);
+
+        // --- 情況 1: 正方體工具 ---
+        // 強制覆蓋所有內容
+        if (currentShape === 'square') {
+            cell.innerHTML = '';
+            const block = createBlock('square', currentColor);
+            cell.appendChild(block);
+            
+            cell.dataset.type = 'square';
+            cell.dataset.layerCount = 1;
+            cell.dataset.color = currentColor;
+            return;
+        }
+
+        // --- 情況 2: 三角形工具 ---
+        if (currentShape === 'triangle') {
+            
+            // A. 如果格子是正方形 -> 覆蓋成單一三角形
+            if (cell.dataset.type === 'square') {
+                overwriteWithTriangle(cell);
+                return;
+            }
+
+            // B. 如果格子已經有 1 個三角形
+            if (layerCount === 1) {
+                // B-1: 同顏色 -> 旋轉 (和舊版一樣)
+                if (!isDragging && cell.dataset.color === currentColor) {
+                    const block = cell.firstChild;
+                    let rot = parseInt(block.dataset.rotation || 0);
+                    rot = (rot + 1) % 4;
+                    block.dataset.rotation = rot;
+                    updateTriangleClass(block, rot);
+                    return;
+                } 
+                // B-2: 不同顏色 -> 【填滿剩下的一半】
+                else if (!isDragging) {
+                    // 取得目前那一個的旋轉角度
+                    const existingBlock = cell.firstChild;
+                    const existingRot = parseInt(existingBlock.dataset.rotation || 0);
+                    
+                    // 計算對角角度 (例如 左上(0) 的對角是 右下(2))
+                    // 數學公式：(角度 + 2) % 4
+                    const newRot = (existingRot + 2) % 4;
+
+                    // 加入第二個積木
+                    const newBlock = createBlock('triangle', currentColor, newRot);
+                    cell.appendChild(newBlock);
+                    
+                    cell.dataset.layerCount = 2; // 標記為滿了
+                    return;
+                }
+                // B-3: 拖曳中 -> 覆蓋 (維持單一)
+                else {
+                     overwriteWithTriangle(cell);
+                     return;
+                }
+            }
+
+            // C. 如果格子已經有 2 個三角形 (滿了) -> 覆蓋成單一新三角形
+            if (layerCount === 2) {
+                overwriteWithTriangle(cell);
+                return;
+            }
+
+            // D. 空格子 -> 放第一個三角形
+            overwriteWithTriangle(cell);
+        }
+    }
+
+    // 輔助函式：建立積木 DOM
+    function createBlock(type, color, rotation = 0) {
+        const block = document.createElement('div');
+        block.classList.add('block');
+        block.style.backgroundColor = `var(--c-${color})`;
+        
+        if (type === 'triangle') {
+            block.dataset.rotation = rotation;
+            updateTriangleClass(block, rotation);
+        }
+        return block;
+    }
+
+    // 輔助函式：用單一三角形覆蓋格子
+    function overwriteWithTriangle(cell) {
+        cell.innerHTML = '';
+        const block = createBlock('triangle', currentColor, 0);
+        cell.appendChild(block);
+        
+        cell.dataset.type = 'triangle';
+        cell.dataset.layerCount = 1;
+        cell.dataset.color = currentColor;
+    }
+
+    function updateTriangleClass(el, rotation) {
+        // 保留 block class，移除舊的方向 class
+        el.className = 'block'; 
+        const classes = ['triangle-tl', 'triangle-tr', 'triangle-br', 'triangle-bl'];
+        el.classList.add(classes[rotation]);
+    }
+
+    // --- 事件 ---
+    document.addEventListener('mouseup', () => isDrawing = false);
+    
+    gridEl.addEventListener('touchstart', (e) => {
+        isDrawing = true;
+        handleTouch(e);
+        e.preventDefault(); 
+    }, {passive: false});
+
+    gridEl.addEventListener('touchmove', (e) => {
+        if(isDrawing) handleTouch(e);
+        e.preventDefault(); 
+    }, {passive: false});
+
+    document.addEventListener('touchend', () => { 
+        isDrawing = false; 
+        window.lastTouchedCell = null; 
+    });
+
+    function handleTouch(e) {
+        const touch = e.touches[0];
+        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (target) {
+            const cell = target.closest('.cell');
+            if (cell && gridEl.contains(cell) && cell !== window.lastTouchedCell) {
+                updateCell(cell, e.type === 'touchmove'); 
+                window.lastTouchedCell = cell;
+            }
+        }
+    }
+
+    // --- 控制 ---
+    function selectColor(color) {
+        currentColor = color;
+        colorBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.color === color));
+        if(isEraserMode) toggleEraser(); 
+        
+        const container = document.querySelector('.palette-container');
+        if (container.scrollWidth > container.clientWidth) {
+            const activeBtn = document.querySelector('.color-btn.active');
+            if(activeBtn) {
+                activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+    }
+
+    function setShape(shape) {
+        currentShape = shape;
+        document.getElementById('btn-square').classList.toggle('active', shape === 'square');
+        document.getElementById('btn-triangle').classList.toggle('active', shape === 'triangle');
+        if(isEraserMode) toggleEraser();
+    }
+
+    function toggleEraser() {
+        isEraserMode = !isEraserMode;
+        document.getElementById('btn-eraser').classList.toggle('active', isEraserMode);
+    }
+
+    window.addEventListener('resize', () => initGrid(false));
+    setTimeout(() => initGrid(true), 50);
+
+</script>
+</body>
+</html>

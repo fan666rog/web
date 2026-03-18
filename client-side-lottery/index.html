@@ -444,9 +444,11 @@
   let currentPhase = 1;         
   let currentPrizeIndex = 0;    
 
-  // ================= 即時統計 =================
+// ================= 即時統計與排除號碼防呆 =================
   function updateLiveStats() {
     let tempSet = new Set();
+    
+    // 1. 建立目前的有效票池
     document.querySelectorAll("#ticketBooks tr:not(:first-child)").forEach(row => {
       let start = parseInt(row.querySelector('.ticket-start').value);
       let end = parseInt(row.querySelector('.ticket-end').value);
@@ -454,10 +456,52 @@
         for (let i = start; i <= end; i++) tempSet.add(i);
       }
     });
-    let excludeStr = document.getElementById("excludedNumbersInput").value;
+
+    // 2. 檢查排除號碼
+    let excludeInput = document.getElementById("excludedNumbersInput");
+    let excludeStr = excludeInput.value;
+    let invalidExcludes = []; // 用來收集不在票池內的無效號碼
+
     if (excludeStr.trim() !== "") {
-      excludeStr.split(',').map(n => parseInt(n.trim())).forEach(n => tempSet.delete(n));
+      excludeStr.split(',').forEach(nStr => {
+        let n = parseInt(nStr.trim());
+        if (!isNaN(n)) {
+          // 如果這個號碼根本不在池子裡，就把它抓出來警告
+          if (!tempSet.has(n)) {
+            invalidExcludes.push(n);
+          } else {
+            tempSet.delete(n); // 有在池子裡，正常排除
+          }
+        }
+      });
     }
+
+    // 3. 動態產生或更新警告提示 UI
+    let warningDiv = document.getElementById("exclude-warning");
+    if (!warningDiv) {
+      // 如果還沒有警告標籤，就動態生出一個並插在輸入框下面
+      warningDiv = document.createElement("div");
+      warningDiv.id = "exclude-warning";
+      warningDiv.style.color = "#dc3545"; // 警告紅
+      warningDiv.style.fontSize = "14px";
+      warningDiv.style.marginTop = "8px";
+      warningDiv.style.fontWeight = "bold";
+      // 插入到輸入框的正下方
+      excludeInput.parentNode.insertBefore(warningDiv, excludeInput.nextSibling); 
+    }
+
+    // 判斷是否要顯示警告
+    if (invalidExcludes.length > 0) {
+      warningDiv.innerText = `⚠️ 提示：號碼 [ ${invalidExcludes.join(", ")} ] 不在票池範圍內，將被忽略。`;
+      excludeInput.style.borderColor = "#dc3545"; // 讓輸入框外框變紅
+      excludeInput.style.boxShadow = "0 0 5px rgba(220, 53, 69, 0.5)";
+    } else {
+      warningDiv.innerText = ""; // 清空警告
+      excludeInput.style.borderColor = ""; // 恢復原本外框
+      excludeInput.style.boxShadow = "";
+    }
+
+    // 4. 更新儀表板數據
     document.getElementById("live-ticket-count").innerText = tempSet.size;
 
     let totalPrizes = 0;
@@ -942,19 +986,22 @@
 
   window.onload = updateLiveStats;
 
-// ================= 輸入防呆限制 (全域攔截 - 手機/電腦通用版) =================
-  // 監聽整個網頁的 input 事件 (無論怎麼輸入都會觸發)
+// ================= 輸入防呆限制 (全域攔截 - 升級版) =================
+  
   document.addEventListener('input', function(e) {
     
-    // 1. 處理所有 type="number" 的輸入框 (正取、備取、起始/結束序號)
+    // 1. 處理所有 type="number" 的輸入框 (阻擋小數點、負號等)
     if (e.target.type === 'number') {
-      // 瞬間將「非數字」的字元 (包含小數點、負號、英文字母 e) 替換為空字串
       e.target.value = e.target.value.replace(/[^0-9]/g, '');
     }
 
-    // 2. 處理「排除號碼」文字欄位 (只允許數字、逗號、空白)
+    // 2. 處理「排除號碼」文字欄位
     if (e.target.id === 'excludedNumbersInput') {
-      e.target.value = e.target.value.replace(/[^0-9,\s]/g, '');
+      // 💡 貼心優化：先把台灣常見的「全形逗號」自動轉換成「半形逗號」
+      let val = e.target.value.replace(/，/g, ',');
+      
+      // 然後再無情清除非法字元 (只允許數字、半形逗號、空白)
+      e.target.value = val.replace(/[^0-9,\s]/g, '');
     }
     
   });

@@ -380,7 +380,7 @@
   }
   document.getElementById("setup-section").addEventListener('input', updateLiveStats);
 
-  function deleteRow(btn) { btn.parentNode.parentNode.removeChild(btn.parentNode.parentNode); updateLiveStats(); }
+  function deleteRow(btn) { btn.closest('tr').remove(); updateLiveStats(); }
   function addTicketBook() {
     let table = document.getElementById("ticketBooks");
     let num = table.rows.length;

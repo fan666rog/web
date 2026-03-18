@@ -86,6 +86,97 @@
       background: linear-gradient(90deg, #4285f4, #9b72cb, #d96570);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800;
     }
+
+/* ================= 手機版專屬樣式 (卡片化排版 & 儀表板優化) ================= */
+    @media (max-width: 768px) {
+      /* 1. 儀表板上下疊加，並置中對齊 */
+      .live-dashboard {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        text-align: center;
+      }
+
+      /* 2. 將表格基礎元素轉為區塊 (Block) 顯示 */
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      
+      /* 隱藏原本的橫向表頭 */
+      thead tr {
+        display: none;
+      }
+      
+      /* 3. 將每一列 (tr) 變成獨立的卡片外觀 */
+      tr {
+        background: #fff;
+        border: 2px solid #17a2b8; /* 用主題藍色邊框區隔卡片 */
+        border-radius: 10px;
+        margin-bottom: 20px;
+        padding: 15px 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+      }
+      
+      /* 4. 儲存格 (td) 排版：左邊留白給標籤，內容靠右對齊 */
+      td {
+        border: none;
+        border-bottom: 1px dashed #ddd; /* 欄位之間的分隔線 */
+        position: relative;
+        padding: 12px 10px 12px 40%; /* 左側 40% 的空間用來放標籤 */
+        text-align: right;
+        min-height: 30px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+      }
+      
+      /* 最後一個儲存格 (刪除按鈕) 移除底線，並置中 */
+      td:last-child {
+        border-bottom: 0;
+        justify-content: center;
+        padding-left: 10px;
+        margin-top: 10px;
+      }
+
+      /* 5. 利用偽元素 (::before) 插入左側標籤名稱 */
+      td::before {
+        position: absolute;
+        top: 50%;
+        left: 10px;
+        transform: translateY(-50%);
+        width: 35%;
+        text-align: left;
+        font-weight: bold;
+        color: #495057;
+        white-space: nowrap;
+      }
+
+      /* 針對「摸彩券設定」寫入標籤 */
+      #ticketBooks td:nth-of-type(1)::before { content: "摸彩券本"; }
+      #ticketBooks td:nth-of-type(2)::before { content: "起始序號"; }
+      #ticketBooks td:nth-of-type(3)::before { content: "結束序號"; }
+
+      /* 針對「一般獎項設定」寫入標籤 */
+      #prizeTable td:nth-of-type(1)::before { content: "順位"; }
+      #prizeTable td:nth-of-type(2)::before { content: "獎項名稱"; }
+      #prizeTable td:nth-of-type(3)::before { content: "正取"; }
+      #prizeTable td:nth-of-type(4)::before { content: "備取"; }
+      #prizeTable td:nth-of-type(5)::before { content: "大獎特效"; }
+
+      /* 6. 覆蓋行內樣式，確保輸入框在手機上有足夠的觸控空間 */
+      #ticketBooks input, #prizeTable input[type="text"], #prizeTable input[type="number"] {
+        width: 65% !important; /* 強制覆蓋原本寫在 HTML 裡的 width: 60px */
+        max-width: 200px;
+        text-align: center;
+        font-size: 16px; /* 防止 iOS Safari 點擊輸入框時自動放大畫面 */
+      }
+      
+      /* 放大核取方塊，手指更好點 */
+      #prizeTable input[type="checkbox"] {
+        transform: scale(1.5);
+        margin-right: 15px;
+      }
+    }
   </style>
 </head>
 <body>

@@ -241,6 +241,32 @@
         height: 3px;
       }
     }
+
+/* ================= 狀態列手機版微調 (解決擁擠問題) ================= */
+    @media (max-width: 768px) {
+      /* 1. 將原本左右並排的狀態列，改為上下排列 */
+      .status-bar {
+        flex-direction: column; 
+        text-align: center;
+        gap: 15px; /* 增加上方文字與下方按鈕之間的呼吸空間 */
+        padding: 15px 10px; /* 稍微縮減左右內邊距 */
+      }
+      
+      /* 2. 針對包裝三個按鈕的容器做彈性排版 */
+      .status-bar div:nth-child(2) {
+        display: flex;
+        flex-wrap: wrap; /* 允許按鈕在寬度不夠時自動往下折行 */
+        justify-content: center; /* 按鈕整體置中 */
+        gap: 8px; /* 按鈕彼此之間的間距 */
+      }
+
+      /* 3. 微調手機版按鈕的大小，讓視覺更協調 */
+      .status-bar button {
+        margin: 0; /* 移除原本寫死的外距，改由上面的 gap 統一控管 */
+        font-size: 14px; /* 字體稍微縮小一點點 */
+        padding: 8px 12px;
+      }
+    }
   </style>
 </head>
 <body>

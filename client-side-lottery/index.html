@@ -54,12 +54,6 @@
     .ticket-lg { font-size: 48px; padding: 10px 25px; }
     .ticket-md { font-size: 28px; padding: 8px 18px; border-width: 2px; }
     .ticket-sm { font-size: 20px; padding: 5px 12px; border-width: 2px; border-radius: 6px;}
-    
-    .btn-void { background: #e74c3c; color: white; border: none; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background 0.2s;}
-    .btn-void:hover { background: #c0392b; }
-    .void-lg { width: 35px; height: 35px; font-size: 16px; }
-    .void-md { width: 25px; height: 25px; font-size: 12px; }
-    .void-sm { width: 20px; height: 20px; font-size: 10px; }
 
     .control-panel { background: #e9ecef; padding: 20px; border-radius: 8px; margin-top: 30px; }
     .btn-auto-next { background-color: #6f42c1; color: white; font-size: 24px; padding: 15px 40px; border-radius: 50px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); width: 80%; }
@@ -175,6 +169,76 @@
       #prizeTable input[type="checkbox"] {
         transform: scale(1.5);
         margin-right: 15px;
+      }
+    }
+
+/* ================= 新版作廢按鈕 (iOS 懸浮風格) ================= */
+    /* 1. 讓彩券框框成為定位的基準點 */
+    .winner-ticket { 
+      position: relative; /* 必須加上這行，按鈕才能黏在它的右上角 */
+    }
+
+    /* 2. 懸浮按鈕主體設定 */
+    .btn-void {
+      position: absolute;
+      top: -10px;     /* 往上浮出框框邊緣 */
+      right: -10px;   /* 往右浮出框框邊緣 */
+      
+      background-color: #555; /* 平常是低調的深灰色，不搶走號碼的風采 */
+      border: 2px solid white; /* 加上白邊，做出立體層次感 */
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      
+      /* 隱藏原本難看的 ❌ 文字 */
+      color: transparent;
+      font-size: 0; 
+      
+      /* 完美的圓形與置中 */
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+      
+      /* 統一大中小按鈕的尺寸 (覆蓋原本的設定) */
+      width: 26px !important;
+      height: 26px !important;
+      z-index: 10;
+      transition: all 0.2s ease;
+    }
+
+    /* 滑鼠游標移過去時，才變成紅色警告色 */
+    .btn-void:hover {
+      background-color: #dc3545;
+      transform: scale(1.15);
+    }
+
+    /* 3. 親手畫出銳利、乾淨的白色交叉 (X) */
+    .btn-void::before,
+    .btn-void::after {
+      content: '';
+      position: absolute;
+      background-color: white;
+      border-radius: 2px;
+      width: 12px;  /* 交叉線的長度 */
+      height: 2.5px; /* 交叉線的粗細 */
+    }
+
+    .btn-void::before { transform: rotate(45deg); }
+    .btn-void::after { transform: rotate(-45deg); }
+
+    /* ================= 手機版專屬微調 (按鈕放大防誤觸) ================= */
+    @media (max-width: 768px) {
+      .btn-void {
+        width: 32px !important;
+        height: 32px !important;
+        top: -12px;
+        right: -12px;
+      }
+      .btn-void::before,
+      .btn-void::after {
+        width: 15px;
+        height: 3px;
       }
     }
   </style>

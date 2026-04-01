@@ -8,276 +8,148 @@
     <style>
         /* --- 載入動畫 --- */
         #loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #0d0d0d;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #050505;
+            display: flex; justify-content: center; align-items: center;
             z-index: 9999;
             transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
         }
         .spinner {
-            width: 50px;
-            height: 50px;
+            width: 50px; height: 50px;
             border: 3px solid rgba(0, 191, 255, 0.1);
             border-top-color: #00bfff;
             border-radius: 50%;
             animation: spin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* --- 整體與深色主題 --- */
         :root {
-            --primary-glow-color: #00bfff; /* 主點綴色 (青色) */
-            --glass-bg: rgba(255, 255, 255, 0.03); /* 毛玻璃背景 */
-            --glass-border: rgba(255, 255, 255, 0.08); /* 毛玻璃邊框 */
+            --primary-glow-color: #00bfff; 
+            --glass-bg: rgba(20, 20, 22, 0.65); 
+            --glass-border: rgba(255, 255, 255, 0.08); 
         }
         body {
             font-family: '微軟正黑體', 'Microsoft JhengHei', sans-serif;
-            background-color: #050505; /* 更深的碳黑背景，凸顯發光 */
+            background-color: #030303; 
             color: #e0e0e0;
-            margin: 0;
-            padding: 2rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
+            margin: 0; padding: 2rem;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; overflow-x: hidden;
         }
         .container {
-            width: 100%;
-            max-width: 1100px;
-            position: relative; 
-            z-index: 2;
+            width: 100%; max-width: 1100px;
+            position: relative; z-index: 2;
         }
 
-        /* --- 背景動態粒子 --- */
-        #particles-js {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            pointer-events: none; /* 讓背景不阻擋滑鼠事件 */
+        /* --- 蜂巢動態背景 --- */
+        #hex-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none; 
         }
 
         /* --- 標題與特效 --- */
-        header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-        }
+        header { text-align: center; margin-bottom: 2.5rem; }
         header h1 {
-            font-size: clamp(2.5rem, 8vw, 4rem); 
-            font-weight: 800;
-            color: #fff;
-            text-shadow: 0 0 10px rgba(0, 191, 255, 0.5), 0 0 20px rgba(0, 191, 255, 0.3);
-            margin: 0;
-            cursor: pointer; 
-            min-height: 1.2em; 
-            letter-spacing: 2px;
+            font-size: clamp(2.5rem, 8vw, 4rem); font-weight: 800;
+            color: #fff; text-shadow: 0 0 10px rgba(0, 191, 255, 0.5), 0 0 20px rgba(0, 191, 255, 0.3);
+            margin: 0; cursor: pointer; min-height: 1.2em; letter-spacing: 2px;
         }
         .legend-area {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 1rem;
-            color: #888;
-            font-size: 0.9rem;
-            background: var(--glass-bg);
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            display: inline-flex;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
+            display: inline-flex; justify-content: center; align-items: center;
+            gap: 0.5rem; margin-top: 1rem; color: #888; font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.03); padding: 0.5rem 1rem; border-radius: 20px;
+            backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
             border: 1px solid var(--glass-border);
         }
 
-        /* --- 分類篩選器 (Filter) --- */
+        /* --- 分類篩選器 --- */
         .filter-container {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 2.5rem;
-            flex-wrap: wrap;
+            display: flex; justify-content: center; gap: 1rem; margin-bottom: 2.5rem; flex-wrap: wrap;
         }
         .filter-btn {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            color: #aaa;
-            padding: 0.6rem 1.5rem;
-            border-radius: 30px;
-            font-size: 1rem;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-            font-family: inherit;
+            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border);
+            color: #aaa; padding: 0.6rem 1.5rem; border-radius: 30px;
+            font-size: 1rem; cursor: pointer;
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease; font-family: inherit;
         }
         .filter-btn:hover {
-            color: #fff;
-            border-color: rgba(0, 191, 255, 0.5);
-            background: rgba(0, 191, 255, 0.05);
+            color: #fff; border-color: rgba(0, 191, 255, 0.5); background: rgba(0, 191, 255, 0.05);
         }
         .filter-btn.active {
-            color: #fff;
-            background: rgba(0, 191, 255, 0.15);
-            border-color: var(--primary-glow-color);
-            box-shadow: 0 0 15px rgba(0, 191, 255, 0.3);
-            text-shadow: 0 0 5px rgba(255,255,255,0.5);
+            color: #fff; background: rgba(0, 191, 255, 0.15); border-color: var(--primary-glow-color);
+            box-shadow: 0 0 15px rgba(0, 191, 255, 0.3); text-shadow: 0 0 5px rgba(255,255,255,0.5);
         }
 
-        /* --- 專案卡片 (毛玻璃霓虹風) --- */
+        /* --- 專案卡片 (保留游標探照燈) --- */
         .portfolio-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1.5rem;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;
         }
+        
         .project-card {
             background: var(--glass-bg);
-            backdrop-filter: blur(12px); /* 毛玻璃核心效果 */
-            -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
-            border-radius: 16px; /* 更圓滑的邊角 */
+            border-radius: 16px;
             padding: 1.8rem;
-            display: flex;
-            flex-direction: column;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Q彈動畫 */
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex; flex-direction: column; position: relative; overflow: hidden; 
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: pointer;
         }
 
-        /* 卡片上緣的高光反射 (增強玻璃質感) */
+        .project-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.6); }
+
         .project-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            opacity: 0.5;
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: inherit;
+            background: radial-gradient( 800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 191, 255, 0.06), transparent 40% );
+            z-index: 0; opacity: 0; transition: opacity 0.5s ease; pointer-events: none;
         }
 
-        .project-card:hover {
-            transform: translateY(-8px);
-            border-color: rgba(0, 191, 255, 0.6);
-            background: rgba(0, 191, 255, 0.03);
-            /* 霓虹發光效果取代原本的 RGB */
-            box-shadow: 0 10px 30px -10px rgba(0, 191, 255, 0.4), 
-                        inset 0 0 15px rgba(0, 191, 255, 0.1);
+        .project-card::after {
+            content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 2px; 
+            background: radial-gradient( 400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 191, 255, 0.8), transparent 40% );
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude;
+            z-index: 1; opacity: 0; transition: opacity 0.5s ease; pointer-events: none;
         }
 
+        .portfolio-grid:hover .project-card::before, .portfolio-grid:hover .project-card::after { opacity: 1; }
+        .project-card > * { position: relative; z-index: 2; }
+
+        /* --- 卡片內部文字排版 --- */
         .project-card .project-title {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            padding-bottom: 0.8rem;
+            display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.8rem;
         }
-        .project-card h2 {
-            font-size: 1.4rem;
-            margin: 0;
-            color: #fff; 
-            font-weight: 600;
-            letter-spacing: 1px;
-            transition: color 0.3s ease;
-        }
-        .project-card:hover h2 {
-            color: var(--primary-glow-color);
-            text-shadow: 0 0 8px rgba(0, 191, 255, 0.4);
-        }
-        
-        .mobile-icon {
-            width: 1.2rem;
-            height: 1.2rem;
-            fill: #00bfff; /* 圖示改為青色點綴 */
-            opacity: 0.7;
-            flex-shrink: 0;
-        }
-        
-        .project-card p {
-            font-size: 0.95rem;
-            color: #b0b0b0;
-            flex-grow: 1;
-            margin-bottom: 1.8rem;
-            line-height: 1.6; /* 增加行高讓閱讀更舒適 */
-        }
-        
+        .project-card h2 { font-size: 1.4rem; margin: 0; color: #fff; font-weight: 600; letter-spacing: 1px; transition: color 0.3s ease; }
+        .project-card:hover h2 { color: var(--primary-glow-color); text-shadow: 0 0 8px rgba(0, 191, 255, 0.4); }
+        .mobile-icon { width: 1.2rem; height: 1.2rem; fill: #00bfff; opacity: 0.7; flex-shrink: 0; }
+        .project-card p { font-size: 0.95rem; color: #b0b0b0; flex-grow: 1; margin-bottom: 1.8rem; line-height: 1.6; }
         .project-card a {
-            display: inline-block;
-            background: transparent;
-            color: var(--primary-glow-color);
-            padding: 0.8rem 1.5rem;
-            border-radius: 8px;
-            text-decoration: none;
-            text-align: center;
-            font-weight: bold;
-            letter-spacing: 1px;
-            border: 1px solid var(--primary-glow-color);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            z-index: 1;
+            display: inline-block; background: transparent; color: var(--primary-glow-color);
+            padding: 0.8rem 1.5rem; border-radius: 8px; text-decoration: none; text-align: center;
+            font-weight: bold; letter-spacing: 1px; border: 1px solid var(--primary-glow-color); transition: all 0.3s ease;
         }
-        
-        .project-card a:hover {
-            background-color: var(--primary-glow-color);
-            color: #000;
-            box-shadow: 0 0 15px rgba(0, 191, 255, 0.5);
-        }
-
-        /* 篩選動畫 */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95) translateY(10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
+        .project-card a:hover { background-color: var(--primary-glow-color); color: #000; box-shadow: 0 0 15px rgba(0, 191, 255, 0.5); }
 
         /* --- 頁尾 --- */
-        footer {
-            text-align: center;
-            margin-top: 4rem;
-            padding-top: 2rem;
-            border-top: 1px solid var(--glass-border);
-            color: #666;
-            font-size: 0.85rem;
-        }
-        footer a {
-            color: #888;
-            text-decoration: none;
-            transition: color 0.2s ease;
-            border-bottom: 1px dashed #555;
-        }
-        footer a:hover {
-            color: var(--primary-glow-color);
-            border-bottom-color: var(--primary-glow-color);
-        }
+        footer { text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--glass-border); color: #666; font-size: 0.85rem; }
+        footer a { color: #888; text-decoration: none; transition: color 0.2s ease; border-bottom: 1px dashed #555; }
+        footer a:hover { color: var(--primary-glow-color); border-bottom-color: var(--primary-glow-color); }
 
-        /* 手機排版微調 */
         @media (max-width: 768px) {
-            body { padding: 1.5rem 1rem; }
-            header h1 { font-size: 2.5rem; }
+            body { padding: 1.5rem 1rem; } header h1 { font-size: 2.5rem; }
             .portfolio-grid { grid-template-columns: 1fr; gap: 1rem; }
-            .filter-container { gap: 0.5rem; }
-            .filter-btn { padding: 0.5rem 1rem; font-size: 0.9rem; }
-            .project-card { padding: 1.5rem; }
-            /* 加大手機版按鈕觸控區域 */
-            .project-card a { padding: 1rem 1.5rem; } 
+            .project-card { padding: 1.5rem; } .project-card a { padding: 1rem 1.5rem; } 
+            .project-card::before, .project-card::after { --mouse-x: 50%; --mouse-y: 50%; }
+            .project-card:active::before, .project-card:active::after { opacity: 1; }
         }
     </style>
 </head>
 <body>
-    <div id="loader">
-        <div class="spinner"></div>
-    </div>
-
-    <div id="particles-js"></div>
+    <div id="loader"><div class="spinner"></div></div>
+    <canvas id="hex-canvas"></canvas>
 
     <div class="container">
         <header>
@@ -392,8 +264,6 @@
         </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             
@@ -404,24 +274,151 @@
                 setTimeout(() => { loader.style.display = 'none'; }, 500);
             });
 
-            // --- 粒子背景初始化 (降低亮度以免搶過毛玻璃風采) ---
-            particlesJS('particles-js', {
-                "particles": {
-                    "number": { "value": 60, "density": { "enable": true, "value_area": 800 } },
-                    "color": { "value": "#00bfff" },
-                    "shape": { "type": "circle" },
-                    "opacity": { "value": 0.3, "random": true },
-                    "size": { "value": 2, "random": true },
-                    "line_linked": { "enable": true, "distance": 150, "color": "#00bfff", "opacity": 0.2, "width": 1 },
-                    "move": { "enable": true, "speed": 1.5, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
-                },
-                "interactivity": {
-                    "detect_on": "canvas",
-                    "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": true, "mode": "push" }, "resize": true },
-                    "modes": { "repulse": { "distance": 80, "duration": 0.4 }, "push": { "particles_nb": 3 } }
-                },
-                "retina_detect": true
-            });
+            // ==========================================
+            // 高階 Canvas 蜂巢電流背景系統 (平頂優化版)
+            // ==========================================
+            const canvas = document.getElementById('hex-canvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            
+            // 蜂巢設定
+            const hexRadius = 45; // 六角形大小
+            const gridColor = 'rgba(75, 85, 105, 0.6)'; // ★ 加亮底網，並帶有一點點科技藍灰
+            const meteorColor = '#00bfff'; // 電流顏色
+
+            let lines = []; 
+            let meteors = []; 
+
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+                initHexGrid();
+            }
+
+            // 計算六角形的六個頂點座標 (修正為上下平頂 Flat-topped)
+            function getHexVertices(cx, cy, r) {
+                let vertices = [];
+                for (let i = 0; i < 6; i++) {
+                    let angle_deg = 60 * i; // ★ 0, 60, 120... 這樣左右是尖角，上下就是平頂
+                    let angle_rad = Math.PI / 180 * angle_deg;
+                    vertices.push({ x: cx + r * Math.cos(angle_rad), y: cy + r * Math.sin(angle_rad) });
+                }
+                return vertices;
+            }
+
+            // 初始化完美嵌合的平頂蜂巢網格
+            function initHexGrid() {
+                lines = [];
+                const linesSet = new Set(); // ★ 加入去重疊機制，讓網格乾淨銳利
+
+                const horizSpacing = hexRadius * 1.5;
+                const vertSpacing = hexRadius * Math.sqrt(3);
+
+                const cols = Math.ceil(width / horizSpacing) + 2;
+                const rows = Math.ceil(height / vertSpacing) + 2;
+
+                for (let q = -1; q <= cols; q++) {
+                    for (let r = -1; r <= rows; r++) {
+                        // 針對平頂的交錯排列公式
+                        let cx = q * horizSpacing;
+                        let cy = r * vertSpacing + (q % 2 !== 0 ? vertSpacing / 2 : 0);
+                        
+                        let pts = getHexVertices(cx, cy, hexRadius);
+                        for(let i=0; i<6; i++) {
+                            let p1 = pts[i];
+                            let p2 = pts[(i+1)%6];
+                            
+                            // 稍微濾掉太遠的線條提升效能
+                            if(p1.x > -50 && p1.x < width+50 && p1.y > -50 && p1.y < height+50) {
+                                // 將座標四捨五入產生唯一鍵值，去除相鄰六角形重複的線條
+                                let kX1 = Math.round(p1.x*10), kY1 = Math.round(p1.y*10);
+                                let kX2 = Math.round(p2.x*10), kY2 = Math.round(p2.y*10);
+                                // 確保方向不同也能配對成同一條線
+                                let key1 = `${kX1},${kY1}-${kX2},${kY2}`;
+                                let key2 = `${kX2},${kY2}-${kX1},${kY1}`;
+                                
+                                if(!linesSet.has(key1) && !linesSet.has(key2)) {
+                                    lines.push({x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, progress: 0});
+                                    linesSet.add(key1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            function drawGrid() {
+                ctx.clearRect(0, 0, width, height);
+                ctx.beginPath();
+                ctx.strokeStyle = gridColor;
+                ctx.lineWidth = 1;
+                lines.forEach(line => {
+                    ctx.moveTo(line.x1, line.y1);
+                    ctx.lineTo(line.x2, line.y2);
+                });
+                ctx.stroke();
+            }
+
+            function spawnMeteor() {
+                const randomLineIndex = Math.floor(Math.random() * lines.length);
+                const line = lines[randomLineIndex];
+                
+                meteors.push({
+                    x1: line.x1, y1: line.y1,
+                    x2: line.x2, y2: line.y2,
+                    progress: 0,           
+                    speed: 0.015 + Math.random() * 0.02, 
+                    length: 0.3 + Math.random() * 0.4,   
+                    opacity: 1
+                });
+            }
+
+            function animateCanvas() {
+                drawGrid();
+                
+                if(Math.random() < 0.08 && meteors.length < 25) { 
+                    spawnMeteor();
+                }
+
+                for (let i = meteors.length - 1; i >= 0; i--) {
+                    let m = meteors[i];
+                    m.progress += m.speed;
+
+                    let tailP = Math.max(0, m.progress - m.length);
+                    let headP = Math.min(1, m.progress);
+
+                    let hX = m.x1 + (m.x2 - m.x1) * headP;
+                    let hY = m.y1 + (m.y2 - m.y1) * headP;
+                    let tX = m.x1 + (m.x2 - m.x1) * tailP;
+                    let tY = m.y1 + (m.y2 - m.y1) * tailP;
+
+                    ctx.beginPath();
+                    let gradient = ctx.createLinearGradient(tX, tY, hX, hY);
+                    gradient.addColorStop(0, 'rgba(0, 191, 255, 0)'); 
+                    gradient.addColorStop(1, meteorColor); 
+                    
+                    ctx.strokeStyle = gradient;
+                    ctx.lineWidth = 2.5;
+                    ctx.shadowColor = meteorColor;
+                    ctx.shadowBlur = 10; 
+                    
+                    ctx.moveTo(tX, tY);
+                    ctx.lineTo(hX, hY);
+                    ctx.stroke();
+                    
+                    ctx.shadowBlur = 0;
+
+                    if (m.progress - m.length > 1) {
+                        meteors.splice(i, 1);
+                    }
+                }
+                requestAnimationFrame(animateCanvas);
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+            animateCanvas();
+
 
             // --- 標題亂碼特效 ---
             const titleElement = document.getElementById('predator-title');
@@ -451,22 +448,33 @@
                 scrambleEffect(titleElement, currentText === targetText ? initialText : targetText);
             });
 
+            // --- 游標探照燈追蹤邏輯 ---
+            const portfolioGrid = document.getElementById('portfolio-grid');
+            const cards = document.querySelectorAll('.project-card');
+
+            portfolioGrid.addEventListener('mousemove', e => {
+                for(const card of cards) {
+                    const rect = card.getBoundingClientRect(),
+                          x = e.clientX - rect.left,
+                          y = e.clientY - rect.top;
+                    card.style.setProperty('--mouse-x', `${x}px`);
+                    card.style.setProperty('--mouse-y', `${y}px`);
+                }
+            });
+
             // --- 分類篩選器邏輯 ---
             const filterBtns = document.querySelectorAll('.filter-btn');
-            const cards = document.querySelectorAll('.project-card');
 
             filterBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
-                    // 移除所有按鈕的 active 狀態，加上點擊目標的 active
                     filterBtns.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
 
                     const filterValue = btn.getAttribute('data-filter');
 
                     cards.forEach(card => {
-                        // 確保每次重新顯示都能觸發動畫
                         card.style.animation = 'none';
-                        card.offsetHeight; // 觸發重繪 (Reflow)
+                        card.offsetHeight; 
 
                         if (filterValue === 'all' || card.getAttribute('data-category') === filterValue) {
                             card.style.display = 'flex';

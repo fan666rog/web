@@ -77,23 +77,16 @@
             margin: 2rem 0 4rem 0;
             overflow: hidden; 
             user-select: none; 
-            /* 【核心修復】允許瀏覽器原生處理上下滾動，但保留水平觸控給 JS 處理 */
-            touch-action: pan-y; 
+            touch-action: pan-y; /* 允許原生上下滑動網頁，水平滑動交給 JS 處理 */
         }
         
         .carousel-container {
             width: 320px; height: 420px; 
             position: absolute;
             transform-style: preserve-3d; 
+            /* 設定過渡動畫，進場微動與放開手指時的彈性對齊都靠它 */
             transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
-
-        .drag-hint {
-            position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%);
-            color: var(--primary-glow-color); font-size: 0.9rem; letter-spacing: 2px;
-            opacity: 0.6; animation: pulse 2s infinite; pointer-events: none;
-        }
-        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
         /* 卡片本體 */
         .project-card {
@@ -102,25 +95,23 @@
             position: absolute; 
             top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box;
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            /* 注意：把 transform 加入過渡，讓大小與透明度的切換更平滑 */
             transition: box-shadow 0.4s ease, border-color 0.4s ease, opacity 0.4s ease, transform 0.4s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
             -webkit-backface-visibility: hidden; backface-visibility: hidden; 
         }
 
-        /* 【核心升級：正面卡片專屬的長亮特效】 */
+        /* 正面卡片專屬的長亮特效 (主角光環) */
         .project-card.active-front {
             box-shadow: 0 0 30px rgba(0, 191, 255, 0.4), inset 0 0 15px rgba(0, 191, 255, 0.1); 
             border-color: rgba(0, 191, 255, 0.6); 
         }
         
-        /* 針對 PC 端的懸停微調 (只有正面的卡片允許點擊，所以 hovered 時光暈可以再加強一點) */
         .project-card.active-front:hover {
             box-shadow: 0 0 40px rgba(0, 191, 255, 0.6), inset 0 0 20px rgba(0, 191, 255, 0.2); 
             border-color: var(--primary-glow-color);
         }
 
-        /* 游標探照燈 (原本是由 hover 觸發，現在改成 active-front 也會強制亮起微光) */
+        /* 游標探照燈 */
         .project-card::before {
             content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: inherit;
             background: radial-gradient( 800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 191, 255, 0.08), transparent 40% );
@@ -134,7 +125,6 @@
             z-index: 1; opacity: 0; transition: opacity 0.5s ease; pointer-events: none;
         }
         
-        /* 正面卡片預設開啟微弱的探照燈光暈，PC 滑鼠懸停時更亮 */
         .project-card.active-front::before, .project-card.active-front::after { opacity: 0.6; }
         .project-card.active-front:hover::before, .project-card.active-front:hover::after { opacity: 1; }
         
@@ -196,13 +186,15 @@
         @media (max-width: 768px) {
             header h1 { font-size: 2.5rem; }
             .carousel-scene { height: 460px; perspective: 900px; margin: 1rem 0 3rem 0; }
-            .carousel-container { width: 280px; height: 400px; }
+            
+            /* 【策略 1：微露邊緣】將卡片寬度稍微縮減至 260px，確保左右兩側會露出相鄰卡片的邊緣 */
+            .carousel-container { width: 260px; height: 400px; }
+            
             .project-card { padding: 1.5rem; } .project-card a { padding: 1rem 1.5rem; } 
             footer { padding: 2rem 1rem 1.5rem; margin-top: 2rem; }
             .env-recommendation { padding: 1.2rem; width: 100%; box-sizing: border-box; }
             .env-badges { flex-direction: column; width: 100%; gap: 0.6rem; }
             .env-badge { justify-content: center; }
-            /* 手機版探照燈位置固定在中央 */
             .project-card::before, .project-card::after { --mouse-x: 50%; --mouse-y: 50%; }
         }
     </style>
@@ -227,7 +219,6 @@
         </div>
 
         <div class="carousel-scene">
-            <div class="drag-hint">⟷ 滑動或拖曳旋轉 ⟷</div>
             <main class="carousel-container" id="portfolio-grid">
                 
                 <div class="project-card" data-category="tool">
@@ -442,7 +433,7 @@
             titleElement.addEventListener('click', () => { scrambleEffect(titleElement, titleElement.textContent === targetText ? initialText : targetText); });
 
             // ==========================================
-            // 升級版：3D 全息輪播引擎 (加入主角光環與智慧滑動判定)
+            // 3D 全息輪播引擎 (包含：微露邊緣運算 & 進場微動)
             // ==========================================
             const carouselScene = document.querySelector('.carousel-scene');
             const carousel = document.querySelector('.carousel-container');
@@ -452,20 +443,18 @@
             let radius = 0;
             let theta = 0;
             let visibleCards = allCards;
+            let isDragging = false; // 為了讓 nudge 函數能讀取到狀態
 
-            // 計算並更新卡片位置與「主角光環」
             function updateCarouselTransform() {
                 carousel.style.transform = `translateZ(${-radius}px) rotateY(${currentAngle}deg)`;
                 
                 if (visibleCards.length === 0) return;
 
-                // 尋找最接近 0 度 (正前方) 的卡片
                 let minDiff = Infinity;
                 let activeIndex = 0;
 
                 visibleCards.forEach((card, i) => {
                     const cardAngle = theta * i;
-                    // 計算正規化角度差 (確保在 -180 到 180 之間)
                     let diff = ((cardAngle + currentAngle) % 360 + 360) % 360;
                     if (diff > 180) diff -= 360;
                     
@@ -475,18 +464,15 @@
                     }
                 });
 
-                // 套用主角光環與景深縮放
                 visibleCards.forEach((card, i) => {
                     const cardAngle = theta * i;
                     if (i === activeIndex) {
                         card.classList.add('active-front');
-                        // 正面卡片：原比例、完全不透明、允許互動
                         card.style.opacity = 1;
                         card.style.transform = `rotateY(${cardAngle}deg) translateZ(${radius}px) scale(1)`;
                         card.style.pointerEvents = 'auto';
                     } else {
                         card.classList.remove('active-front');
-                        // 側面/背面卡片：稍微縮小、變暗、禁止點擊
                         card.style.opacity = 0.3;
                         card.style.transform = `rotateY(${cardAngle}deg) translateZ(${radius}px) scale(0.85)`;
                         card.style.pointerEvents = 'none';
@@ -510,43 +496,53 @@
                 updateCarouselTransform();
             }
 
+            // 【策略 3：進場微動 (Intro Nudge)】
+            function playIntroNudge() {
+                // 等待網頁載入後 0.8 秒觸發
+                setTimeout(() => {
+                    if(isDragging) return; // 如果使用者已經等不及自己滑了，就取消微動
+                    
+                    // 讓轉盤往左旋轉 22 度 (足以讓旁邊的卡片亮起主角光環)
+                    currentAngle = -22;
+                    updateCarouselTransform();
+                    
+                    // 停留一下後，彈回正中央 0 度
+                    setTimeout(() => {
+                        if(isDragging) return;
+                        currentAngle = 0;
+                        updateCarouselTransform();
+                    }, 600);
+                }, 800);
+            }
+
             // --- 觸控與拖曳控制 ---
-            let isDragging = false;
             let startX = 0;
             let startAngle = 0;
             
-            // 監聽滑鼠與觸控的按下事件
             carouselScene.addEventListener('pointerdown', (e) => {
                 isDragging = true;
                 startX = e.clientX;
                 startAngle = currentAngle;
                 carousel.style.transition = 'none'; 
-                
-                // 暫時關閉卡片的過渡，讓拖曳縮放沒有延遲
                 visibleCards.forEach(card => card.style.transition = 'none');
                 carouselScene.style.cursor = 'grabbing';
             });
 
-            // 監聽移動事件
             window.addEventListener('pointermove', (e) => {
                 if (!isDragging) return;
-                
                 const dx = e.clientX - startX;
                 currentAngle = startAngle + (dx * 0.4);
                 updateCarouselTransform();
             });
 
-            // 監聽放開事件
             window.addEventListener('pointerup', () => {
                 if (!isDragging) return;
                 isDragging = false;
                 carouselScene.style.cursor = 'default';
                 
-                // 恢復彈性動畫
                 carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
                 visibleCards.forEach(card => card.style.transition = 'box-shadow 0.4s ease, border-color 0.4s ease, opacity 0.4s ease, transform 0.4s ease');
                 
-                // 放開時，自動吸附 (Snap) 到最近的卡片
                 if(theta > 0) {
                     currentAngle = Math.round(currentAngle / theta) * theta;
                 }
@@ -572,6 +568,9 @@
             });
 
             setupCarousel();
+            // 執行進場微動教學
+            playIntroNudge();
+
             window.addEventListener('resize', () => {
                 carousel.style.transition = 'none';
                 setupCarousel();

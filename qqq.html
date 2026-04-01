@@ -82,17 +82,14 @@
             box-shadow: 0 0 15px rgba(0, 191, 255, 0.3); text-shadow: 0 0 5px rgba(255,255,255,0.5);
         }
 
-        /* --- 專案卡片 (保留游標探照燈) --- */
+        /* --- 專案卡片 --- */
         .portfolio-grid {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;
         }
         
         .project-card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 1.8rem;
-            display: flex; flex-direction: column; position: relative; overflow: hidden; 
+            background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px;
+            padding: 1.8rem; display: flex; flex-direction: column; position: relative; overflow: hidden; 
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: pointer;
@@ -117,7 +114,7 @@
         .portfolio-grid:hover .project-card::before, .portfolio-grid:hover .project-card::after { opacity: 1; }
         .project-card > * { position: relative; z-index: 2; }
 
-        /* --- 卡片內部文字排版 --- */
+        /* 卡片內部文字排版 */
         .project-card .project-title {
             display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;
             border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.8rem;
@@ -133,10 +130,60 @@
         }
         .project-card a:hover { background-color: var(--primary-glow-color); color: #000; box-shadow: 0 0 15px rgba(0, 191, 255, 0.5); }
 
-        /* --- 頁尾 --- */
-        footer { text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--glass-border); color: #666; font-size: 0.85rem; }
-        footer a { color: #888; text-decoration: none; transition: color 0.2s ease; border-bottom: 1px dashed #555; }
-        footer a:hover { color: var(--primary-glow-color); border-bottom-color: var(--primary-glow-color); }
+        /* --- 全新升級：美化頁尾 --- */
+        footer {
+            margin-top: 5rem;
+            padding: 3rem 1rem 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            background: linear-gradient(to top, rgba(0, 191, 255, 0.03) 0%, transparent 100%);
+            color: #888;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            position: relative;
+        }
+
+        /* 頂部發光飾條 */
+        footer::before {
+            content: ''; position: absolute; top: -1px; left: 15%; right: 15%; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary-glow-color), transparent); opacity: 0.4;
+        }
+
+        .footer-content { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+        
+        .copyright { font-size: 0.95rem; color: #bbb; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+
+        /* GitHub 按鈕化 */
+        .github-link {
+            color: #fff; text-decoration: none; font-weight: bold; padding: 0.4rem 0.9rem;
+            border-radius: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.4rem; backdrop-filter: blur(5px);
+        }
+        .github-link svg { width: 14px; height: 14px; fill: currentColor; }
+        .github-link:hover {
+            background: rgba(0, 191, 255, 0.1); border-color: var(--primary-glow-color);
+            color: var(--primary-glow-color); box-shadow: 0 0 15px rgba(0, 191, 255, 0.3); transform: translateY(-2px);
+        }
+
+        /* 系統環境標籤區 */
+        .env-recommendation {
+            display: flex; flex-direction: column; align-items: center; gap: 1rem;
+            background: rgba(10, 12, 15, 0.6); padding: 1.5rem 2.5rem; border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04); box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .env-title { font-size: 0.8rem; letter-spacing: 2px; color: #555; text-transform: uppercase; font-weight: bold; }
+
+        .env-badges { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+
+        .env-badge {
+            display: flex; align-items: center; gap: 0.5rem; font-family: monospace; font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 0.5rem 1rem; border-radius: 8px; color: #aaa;
+        }
+        .env-badge svg { width: 15px; height: 15px; fill: var(--primary-glow-color); opacity: 0.8; }
 
         @media (max-width: 768px) {
             body { padding: 1.5rem 1rem; } header h1 { font-size: 2.5rem; }
@@ -144,6 +191,12 @@
             .project-card { padding: 1.5rem; } .project-card a { padding: 1rem 1.5rem; } 
             .project-card::before, .project-card::after { --mouse-x: 50%; --mouse-y: 50%; }
             .project-card:active::before, .project-card:active::after { opacity: 1; }
+            
+            /* 手機版頁尾微調 */
+            footer { padding: 2rem 0.5rem 1.5rem; margin-top: 3rem; }
+            .env-recommendation { padding: 1.2rem; width: 100%; box-sizing: border-box; }
+            .env-badges { flex-direction: column; width: 100%; gap: 0.6rem; }
+            .env-badge { justify-content: center; }
         }
     </style>
 </head>
@@ -257,10 +310,30 @@
         </main>
         
         <footer>
-            <p>&copy; 2026/0318 <a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer">fan666rog</a> & Gemini</p>
-            <p style="margin-top: 1rem; margin-bottom: 0.2rem; color:#888;">本站建議最佳瀏覽環境</p>
-            <p style="margin: 0.2rem 0; font-family: monospace;">PC: Win + Chrome</p>
-            <p style="margin: 0.2rem 0; font-family: monospace;">Mobile: Android + Chrome</p>
+            <div class="footer-content">
+                <div class="copyright">
+                    &copy; 2026/0318 
+                    <a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer" class="github-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+                        fan666rog
+                    </a>
+                    &amp; Gemini
+                </div>
+            </div>
+            
+            <div class="env-recommendation">
+                <div class="env-title">RECOMMENDED ENVIRONMENT</div>
+                <div class="env-badges">
+                    <div class="env-badge">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M4 4h8v8H4V4z"/></svg>
+                        PC: Win + Chrome
+                    </div>
+                    <div class="env-badge">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                        Mobile: Android + Chrome
+                    </div>
+                </div>
+            </div>
         </footer>
     </div>
 
@@ -281,10 +354,9 @@
             const ctx = canvas.getContext('2d');
             let width, height;
             
-            // 蜂巢設定
-            const hexRadius = 45; // 六角形大小
-            const gridColor = 'rgba(75, 85, 105, 0.6)'; // ★ 加亮底網，並帶有一點點科技藍灰
-            const meteorColor = '#00bfff'; // 電流顏色
+            const hexRadius = 45; 
+            const gridColor = 'rgba(75, 85, 105, 0.6)'; 
+            const meteorColor = '#00bfff'; 
 
             let lines = []; 
             let meteors = []; 
@@ -295,21 +367,19 @@
                 initHexGrid();
             }
 
-            // 計算六角形的六個頂點座標 (修正為上下平頂 Flat-topped)
             function getHexVertices(cx, cy, r) {
                 let vertices = [];
                 for (let i = 0; i < 6; i++) {
-                    let angle_deg = 60 * i; // ★ 0, 60, 120... 這樣左右是尖角，上下就是平頂
+                    let angle_deg = 60 * i; 
                     let angle_rad = Math.PI / 180 * angle_deg;
                     vertices.push({ x: cx + r * Math.cos(angle_rad), y: cy + r * Math.sin(angle_rad) });
                 }
                 return vertices;
             }
 
-            // 初始化完美嵌合的平頂蜂巢網格
             function initHexGrid() {
                 lines = [];
-                const linesSet = new Set(); // ★ 加入去重疊機制，讓網格乾淨銳利
+                const linesSet = new Set(); 
 
                 const horizSpacing = hexRadius * 1.5;
                 const vertSpacing = hexRadius * Math.sqrt(3);
@@ -319,7 +389,6 @@
 
                 for (let q = -1; q <= cols; q++) {
                     for (let r = -1; r <= rows; r++) {
-                        // 針對平頂的交錯排列公式
                         let cx = q * horizSpacing;
                         let cy = r * vertSpacing + (q % 2 !== 0 ? vertSpacing / 2 : 0);
                         
@@ -328,12 +397,9 @@
                             let p1 = pts[i];
                             let p2 = pts[(i+1)%6];
                             
-                            // 稍微濾掉太遠的線條提升效能
                             if(p1.x > -50 && p1.x < width+50 && p1.y > -50 && p1.y < height+50) {
-                                // 將座標四捨五入產生唯一鍵值，去除相鄰六角形重複的線條
                                 let kX1 = Math.round(p1.x*10), kY1 = Math.round(p1.y*10);
                                 let kX2 = Math.round(p2.x*10), kY2 = Math.round(p2.y*10);
-                                // 確保方向不同也能配對成同一條線
                                 let key1 = `${kX1},${kY1}-${kX2},${kY2}`;
                                 let key2 = `${kX2},${kY2}-${kX1},${kY1}`;
                                 

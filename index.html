@@ -8,377 +8,586 @@
     <style>
         /* --- 載入動畫 --- */
         #loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #0d0d0d;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #050505; display: flex; justify-content: center; align-items: center;
+            z-index: 9999; transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
         }
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(0, 191, 255, 0.3);
-            border-top-color: #00bfff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+            width: 50px; height: 50px; border: 3px solid rgba(0, 191, 255, 0.1);
+            border-top-color: #00bfff; border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* --- 整體與深色主題 --- */
         :root {
-            --primary-glow-color: #00bfff; /* 主點綴色 (青色) */
+            --primary-glow-color: #00bfff; 
+            --glass-bg: rgba(20, 20, 22, 0.7); 
+            --glass-border: rgba(255, 255, 255, 0.08); 
         }
         body {
             font-family: '微軟正黑體', 'Microsoft JhengHei', sans-serif;
-            background-color: #0d0d0d; /* 碳黑背景 */
-            color: #e0e0e0;
-            margin: 0;
-            padding: 2rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden; /* 防止粒子特效產生水平滾動條 */
+            background-color: #030303; color: #e0e0e0; margin: 0; padding: 2rem 0; 
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; overflow-x: hidden;
         }
         .container {
-            width: 100%;
-            max-width: 1000px;
-            position: relative; /* 為了讓內容浮在粒子背景之上 */
-            z-index: 2;
+            width: 100%; max-width: 1200px; position: relative; z-index: 2;
+            padding: 0 1rem; box-sizing: border-box;
         }
 
-        /* --- 背景動態粒子 --- */
-        #particles-js {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
+        /* --- 蜂巢動態背景 --- */
+        #hex-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
 
         /* --- 標題與特效 --- */
-        header {
-            text-align: center;
-            margin-bottom: 3.5rem;
-        }
+        header { text-align: center; margin-bottom: 2rem; }
         header h1 {
-            font-size: clamp(2.5rem, 8vw, 4rem); /* RWD 字體大小 */
-            font-weight: 700;
-            color: var(--primary-glow-color);
-            text-shadow: 0 0 5px var(--primary-glow-color), 0 0 15px rgba(0, 191, 255, 0.7);
-            margin: 0;
-            cursor: pointer; /* 提示可點擊 */
-            min-height: 1.2em; /* 防止轉換時跳動 */
+            font-size: clamp(2.5rem, 8vw, 4rem); font-weight: 800; color: #fff;
+            text-shadow: 0 0 10px rgba(0, 191, 255, 0.5), 0 0 20px rgba(0, 191, 255, 0.3);
+            margin: 0; cursor: pointer; min-height: 1.2em; letter-spacing: 2px;
         }
         .legend-area {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 1rem;
-            color: #888;
-            font-size: 0.9rem;
+            display: inline-flex; justify-content: center; align-items: center;
+            gap: 0.5rem; margin-top: 1rem; color: #888; font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.03); padding: 0.5rem 1rem; border-radius: 20px;
+            backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); border: 1px solid var(--glass-border);
         }
 
-        /* --- 專案卡片與 RGB 呼吸燈特效 --- */
-        .portfolio-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
+        /* --- 分類篩選器 --- */
+        .filter-container { display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border);
+            color: #aaa; padding: 0.6rem 1.5rem; border-radius: 30px; font-size: 1rem; cursor: pointer;
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: all 0.3s ease; font-family: inherit;
         }
-        .project-card {
-            background-color: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.3s ease, box-shadow 0.4s ease;
+        .filter-btn:hover { color: #fff; border-color: rgba(0, 191, 255, 0.5); background: rgba(0, 191, 255, 0.05); }
+        .filter-btn.active {
+            color: #fff; background: rgba(0, 191, 255, 0.15); border-color: var(--primary-glow-color);
+            box-shadow: 0 0 15px rgba(0, 191, 255, 0.3); text-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
+
+        /* ==========================================
+           全新 3D 全息輪播展示區 (Holographic Carousel) 
+           ========================================== */
+        .carousel-scene {
+            width: 100%; height: 500px; 
+            perspective: 1200px; 
             position: relative;
-        }
-
-        .project-card:hover {
-            transform: translateY(-8px);
-            /* 最終修正：將動畫速度減慢一半 */
-            animation: rgb-breathing-glow 10s linear infinite;
+            display: flex; justify-content: center; align-items: center;
+            margin: 2rem 0 4rem 0;
+            overflow: hidden; 
+            user-select: none; 
+            touch-action: pan-y; /* 允許原生上下滑動網頁，水平滑動交給 JS 處理 */
         }
         
-        @keyframes rgb-breathing-glow {
-            0%   { box-shadow: 0 0 25px 5px hsla(0, 80%, 70%, 0.8); }
-            10%  { box-shadow: 0 0 10px 2px hsla(36, 80%, 70%, 0.4); }
-            20%  { box-shadow: 0 0 25px 5px hsla(72, 80%, 70%, 0.8); }
-            30%  { box-shadow: 0 0 10px 2px hsla(108, 80%, 70%, 0.4); }
-            40%  { box-shadow: 0 0 25px 5px hsla(144, 80%, 70%, 0.8); }
-            50%  { box-shadow: 0 0 10px 2px hsla(180, 80%, 70%, 0.4); }
-            60%  { box-shadow: 0 0 25px 5px hsla(216, 80%, 70%, 0.8); }
-            70%  { box-shadow: 0 0 10px 2px hsla(252, 80%, 70%, 0.4); }
-            80%  { box-shadow: 0 0 25px 5px hsla(288, 80%, 70%, 0.8); }
-            90%  { box-shadow: 0 0 10px 2px hsla(324, 80%, 70%, 0.4); }
-            100% { box-shadow: 0 0 25px 5px hsla(360, 80%, 70%, 0.8); }
+        .carousel-container {
+            width: 320px; height: 420px; 
+            position: absolute;
+            transform-style: preserve-3d; 
+            /* 設定過渡動畫，進場微動與放開手指時的彈性對齊都靠它 */
+            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
+        /* 卡片本體 */
+        .project-card {
+            background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px;
+            padding: 1.8rem; display: flex; flex-direction: column; 
+            position: absolute; 
+            top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box;
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            transition: box-shadow 0.4s ease, border-color 0.4s ease, opacity 0.4s ease, transform 0.4s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+            -webkit-backface-visibility: hidden; backface-visibility: hidden; 
+        }
+
+        /* 正面卡片專屬的長亮特效 (主角光環) */
+        .project-card.active-front {
+            box-shadow: 0 0 30px rgba(0, 191, 255, 0.4), inset 0 0 15px rgba(0, 191, 255, 0.1); 
+            border-color: rgba(0, 191, 255, 0.6); 
+        }
+        
+        .project-card.active-front:hover {
+            box-shadow: 0 0 40px rgba(0, 191, 255, 0.6), inset 0 0 20px rgba(0, 191, 255, 0.2); 
+            border-color: var(--primary-glow-color);
+        }
+
+        /* 游標探照燈 */
+        .project-card::before {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: inherit;
+            background: radial-gradient( 800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 191, 255, 0.08), transparent 40% );
+            z-index: 0; opacity: 0; transition: opacity 0.5s ease; pointer-events: none;
+        }
+        .project-card::after {
+            content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 2px; 
+            background: radial-gradient( 400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 191, 255, 0.8), transparent 40% );
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude;
+            z-index: 1; opacity: 0; transition: opacity 0.5s ease; pointer-events: none;
+        }
+        
+        .project-card.active-front::before, .project-card.active-front::after { opacity: 0.6; }
+        .project-card.active-front:hover::before, .project-card.active-front:hover::after { opacity: 1; }
+        
+        .project-card > * { position: relative; z-index: 2; }
+
+        /* --- 卡片內部文字排版 --- */
         .project-card .project-title {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.75rem;
+            display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.8rem;
         }
-        .project-card h2 {
-            font-size: 1.5rem;
-            margin: 0;
-            color: #00bfff; /* 標題使用點綴色 */
-        }
-        .mobile-icon {
-            width: 1.1rem;
-            height: 1.1rem;
-            fill: #888;
-            flex-shrink: 0;
-        }
-        .project-card p {
-            font-size: 1rem;
-            color: #ccc;
-            flex-grow: 1;
-            margin-bottom: 1.5rem;
-        }
+        .project-card h2 { font-size: 1.4rem; margin: 0; color: #fff; font-weight: 600; letter-spacing: 1px; transition: color 0.3s ease; }
+        .project-card.active-front:hover h2 { color: var(--primary-glow-color); text-shadow: 0 0 8px rgba(0, 191, 255, 0.4); }
+        .mobile-icon { width: 1.2rem; height: 1.2rem; fill: #00bfff; opacity: 0.7; flex-shrink: 0; }
+        .project-card p { font-size: 0.95rem; color: #b0b0b0; flex-grow: 1; margin-bottom: 1.8rem; line-height: 1.6; }
         .project-card a {
-            display: inline-block;
-            background-color: var(--primary-glow-color);
-            color: #0d0d0d;
-            padding: 0.75rem 1.5rem;
-            border-radius: 5px;
-            text-decoration: none;
-            text-align: center;
-            font-weight: bold;
-            transition: background-color 0.2s ease, transform 0.2s ease;
+            display: inline-block; background: transparent; color: var(--primary-glow-color);
+            padding: 0.8rem 1.5rem; border-radius: 8px; text-decoration: none; text-align: center;
+            font-weight: bold; letter-spacing: 1px; border: 1px solid var(--primary-glow-color); transition: all 0.3s ease; pointer-events: auto;
         }
-        .project-card a:hover {
-            background-color: #fff;
-            transform: scale(1.05);
-        }
+        .project-card a:hover { background-color: var(--primary-glow-color); color: #000; box-shadow: 0 0 15px rgba(0, 191, 255, 0.5); }
 
         /* --- 頁尾 --- */
         footer {
-            text-align: center;
-            margin-top: 3rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #333;
-            color: #888;
-            font-size: 0.9rem;
+            width: 100%; max-width: 1200px; padding: 3rem 1rem 2rem; box-sizing: border-box;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            background: linear-gradient(to top, rgba(0, 191, 255, 0.03) 0%, transparent 100%);
+            color: #888; font-size: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 2rem; position: relative; z-index: 2;
         }
-        footer a {
-            color: var(--primary-glow-color);
-            text-decoration: none;
-            transition: color 0.2s ease;
+        footer::before {
+            content: ''; position: absolute; top: -1px; left: 15%; right: 15%; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary-glow-color), transparent); opacity: 0.4;
         }
-        footer a:hover {
-            color: #fff;
+        .footer-content { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+        .copyright { font-size: 0.95rem; color: #bbb; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+        .github-link {
+            color: #fff; text-decoration: none; font-weight: bold; padding: 0.4rem 0.9rem;
+            border-radius: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.4rem; backdrop-filter: blur(5px);
         }
+        .github-link svg { width: 14px; height: 14px; fill: currentColor; }
+        .github-link:hover {
+            background: rgba(0, 191, 255, 0.1); border-color: var(--primary-glow-color);
+            color: var(--primary-glow-color); box-shadow: 0 0 15px rgba(0, 191, 255, 0.3); transform: translateY(-2px);
+        }
+        .env-recommendation {
+            display: flex; flex-direction: column; align-items: center; gap: 1rem;
+            background: rgba(10, 12, 15, 0.6); padding: 1.5rem 2.5rem; border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04); box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .env-title { font-size: 0.8rem; letter-spacing: 2px; color: #555; text-transform: uppercase; font-weight: bold; }
+        .env-badges { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+        .env-badge {
+            display: flex; align-items: center; gap: 0.5rem; font-family: monospace; font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 0.5rem 1rem; border-radius: 8px; color: #aaa;
+        }
+        .env-badge svg { width: 15px; height: 15px; fill: var(--primary-glow-color); opacity: 0.8; }
 
-        /* 手機排版微調 */
         @media (max-width: 768px) {
-            body {
-                padding: 1rem;
-            }
-            .portfolio-grid {
-                grid-template-columns: 1fr;
-            }
+            header h1 { font-size: 2.5rem; }
+            .carousel-scene { height: 460px; perspective: 900px; margin: 1rem 0 3rem 0; }
+            
+            /* 【策略 1：微露邊緣】將卡片寬度稍微縮減至 260px，確保左右兩側會露出相鄰卡片的邊緣 */
+            .carousel-container { width: 260px; height: 400px; }
+            
+            .project-card { padding: 1.5rem; } .project-card a { padding: 1rem 1.5rem; } 
+            footer { padding: 2rem 1rem 1.5rem; margin-top: 2rem; }
+            .env-recommendation { padding: 1.2rem; width: 100%; box-sizing: border-box; }
+            .env-badges { flex-direction: column; width: 100%; gap: 0.6rem; }
+            .env-badge { justify-content: center; }
+            .project-card::before, .project-card::after { --mouse-x: 50%; --mouse-y: 50%; }
         }
     </style>
 </head>
 <body>
-    <div id="loader">
-        <div class="spinner"></div>
-    </div>
-
-    <div id="particles-js"></div>
+    <div id="loader"><div class="spinner"></div></div>
+    <canvas id="hex-canvas"></canvas>
 
     <div class="container">
         <header>
             <h1 id="predator-title"></h1>
             <div class="legend-area">
                 <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-                <span>圖示代表此專案支援手機瀏覽</span>
+                <span>標示支援手機瀏覽</span>
             </div>
         </header>
 
-        <main class="portfolio-grid">
-            <div class="project-card">
-                <div class="project-title">
-                    <h2>彩券-摸彩箱抽獎程式</h2>
-                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-                </div>
-                <p>一個本地端執行的網頁抽獎程式，可設定標題主題、多個彩券本、獎項與排除號碼，確保抽獎公開透明。</p>
-                <a href="./client-side-lottery/index.html" target="_blank">V3.0</a>
-            </div>
+        <div class="filter-container">
+            <button class="filter-btn active" data-filter="all">全部作品</button>
+            <button class="filter-btn" data-filter="tool">🛠️ 實用工具</button>
+            <button class="filter-btn" data-filter="game">🎮 趣味遊戲</button>
+        </div>
 
-            <div class="project-card">
-                <div class="project-title">
-                    <h2>生辰命評雙系統查詢</h2>
-                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+        <div class="carousel-scene">
+            <main class="carousel-container" id="portfolio-grid">
+                
+                <div class="project-card" data-category="tool">
+                    <div class="project-title">
+                        <h2>彩券-摸彩箱抽獎程式</h2>
+                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                    </div>
+                    <p>一個本地端執行的網頁抽獎程式，可設定標題主題、多個彩券本、獎項與排除號碼，確保抽獎公開透明。</p>
+                    <a href="./client-side-lottery/index.html" target="_blank">V3.0 開啟</a>
                 </div>
-                <p>整合兩種民俗命理系統，可依據農曆年月日時辰查詢，並包含袁天罡秤骨命評。</p>
-                <a href="./bazi-data-query-viewer/index.html" target="_blank">展示觀看</a>
-            </div>
-            
-            <div class="project-card">
-                <div class="project-title">
-                    <h2>輪盤抽獎 (權重版)</h2>
-                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-                </div>
-                <p>可自訂獎項、權重、數量、顏色，權重越高，中獎機率越大。支援更改主題標籤與中獎紀錄功能。</p>
-                <a href="./wheel-prize-picker/V26_Special_Edition/index.html" target="_blank">V2.6 Special Edition</a>
-            </div>
 
-            <div class="project-card">
-                <div class="project-title">
-                    <h2>生命靈數計算機</h2>
-                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                <div class="project-card" data-category="tool">
+                    <div class="project-title">
+                        <h2>生辰命評雙系統查詢</h2>
+                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                    </div>
+                    <p>整合兩種民俗命理系統，可依據農曆年月日時辰查詢，並包含袁天罡秤骨命評。</p>
+                    <a href="./bazi-data-query-viewer/index.html" target="_blank">展示觀看</a>
                 </div>
-                <p>生命靈數計算和觀看，計算完畢後可以觀看總覽資料和計算方式。</p>
-                <a href="./Numerology/index.html" target="_blank">展示觀看</a>
-            </div>
+                
+                <div class="project-card" data-category="tool">
+                    <div class="project-title">
+                        <h2>輪盤抽獎 (權重版)</h2>
+                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                    </div>
+                    <p>可自訂獎項、權重、數量、顏色，權重越高中獎機率越大。支援更改主題與中獎紀錄功能。</p>
+                    <a href="./wheel-prize-picker/V26_Special_Edition/index.html" target="_blank">V2.6 開啟</a>
+                </div>
 
-            <div class="project-card">
-                <div class="project-title">
-                    <h2>Block ART</h2>
-                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                <div class="project-card" data-category="tool">
+                    <div class="project-title">
+                        <h2>生命靈數計算機</h2>
+                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                    </div>
+                    <p>生命靈數計算和觀看，計算完畢後可以觀看總覽資料和詳細的計算方式解析。</p>
+                    <a href="./Numerology/index.html" target="_blank">展示觀看</a>
                 </div>
-                <p>這是一個約1990年的積木拼圖遊戲，賦予新生命程式化。</p>
-                <a href="./Ba/index.html" target="_blank">V1.5</a>
-            </div>
-            
-            <div class="project-card">
-                <h2>復古小瑪莉：零用錢殺手</h2>
-                <p>經典的跑燈遊戲，透過押分贏得彩金，並挑戰刺激的「比大小」讓彩金翻倍！</p>
-                <a href="./RetroMary/index.html" target="_blank">PC版</a>
-            </div>
 
-            <div class="project-card">
-                <div class="project-title">
-                    <h2>貪食蛇小遊戲</h2>
-                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                <div class="project-card" data-category="game">
+                    <div class="project-title">
+                        <h2>Block ART</h2>
+                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                    </div>
+                    <p>這是一個約 1990 年的經典積木拼圖遊戲，賦予新生命程式化，挑戰你的空間邏輯。</p>
+                    <a href="./Ba/index.html" target="_blank">V1.5 遊玩</a>
                 </div>
-                <p>懷舊的貪食蛇遊戲，加入障礙物與可消除障礙物的特殊道具，增加挑戰性。</p>
-                <a href="./game-snake/snakeV151.html" target="_blank">V1.5.1</a>
-            </div>
+                
+                <div class="project-card" data-category="game">
+                    <div class="project-title">
+                        <h2>復古小瑪莉：零用錢殺手</h2>
+                    </div>
+                    <p>經典的跑燈遊戲，透過押分贏得彩金，並挑戰刺激的「比大小」讓彩金翻倍！</p>
+                    <a href="./RetroMary/index.html" target="_blank">PC版 專用</a>
+                </div>
 
-            <div class="project-card">
-                <div class="project-title">
-                    <h2>3D Rubik's Cube</h2>
-                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                <div class="project-card" data-category="game">
+                    <div class="project-title">
+                        <h2>貪食蛇小遊戲</h2>
+                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                    </div>
+                    <p>懷舊的貪食蛇遊戲，加入了隨機障礙物與可消除障礙物的特殊道具，增加挑戰性與變化。</p>
+                    <a href="./game-snake/snakeV151.html" target="_blank">V1.5.1 遊玩</a>
                 </div>
-                <p>這是一個使用Three.js函式庫建立的網頁版 3D魔術方塊模擬器，具備完整的互動遊玩功能。</p>
-                <a href="./rubiks-cube/index.html" target="_blank">V2.3Final 連線版</a>
-            </div>
 
-            <div class="project-card">
-                <div class="project-title">
-                    <h2>打磚塊遊戲</h2>
-                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                <div class="project-card" data-category="game">
+                    <div class="project-title">
+                        <h2>3D Rubik's Cube</h2>
+                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                    </div>
+                    <p>這是一個使用 Three.js 函式庫建立的網頁版 3D 魔術方塊模擬器，具備完整的互動遊玩與視角旋轉功能。</p>
+                    <a href="./rubiks-cube/index.html" target="_blank">V2.3 啟動</a>
                 </div>
-                <p>一個經典的復古打磚塊遊戲，使用鍵盤或觸控來控制球拍，挑戰你的反應速度！(共3關)</p>
-                <a href="./brick-breaker/index.html" target="_blank">V2.6Final</a>
-            </div>
-            
-            <div class="project-card">
-                <h2>104/87鍵 鍵盤測試</h2>
-                <p>一個用於測試鍵盤按鍵是否正常的工具，可切換 104 鍵與 87 鍵佈局。</p>
-                <a href="./104_87key_test/index.html" target="_blank">PC版專用</a>
-            </div>
-        </main>
-        
-        <footer>
-            <p>&copy; 2026/0318 <a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer">fan666rog</a> & Gemini</p>
-            <p style="margin-top: 1rem; margin-bottom: 0.2rem;">本站建議最佳瀏覽環境</p>
-            <p style="margin: 0.2rem 0;">PC: Win+Chrome</p>
-            <p style="margin: 0.2rem 0;">手機: Android+Chrome</p>
-        </footer>
+
+                <div class="project-card" data-category="game">
+                    <div class="project-title">
+                        <h2>打磚塊遊戲</h2>
+                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                    </div>
+                    <p>一個經典的復古打磚塊遊戲，支援使用鍵盤或觸控來控制球拍，挑戰你的反應速度！(共3關)</p>
+                    <a href="./brick-breaker/index.html" target="_blank">V2.6 挑戰</a>
+                </div>
+                
+                <div class="project-card" data-category="tool">
+                    <div class="project-title">
+                        <h2>104/87鍵 鍵盤測試</h2>
+                    </div>
+                    <p>一個用於測試實體鍵盤按鍵是否正常的除錯工具，可即時切換 104 鍵與 87 鍵配置佈局。</p>
+                    <a href="./104_87key_test/index.html" target="_blank">PC版 專用</a>
+                </div>
+            </main>
+        </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <footer>
+        <div class="footer-content">
+            <div class="copyright">
+                &copy; 2026/0402 
+                <a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer" class="github-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+                    fan666rog
+                </a>
+                &amp; Gemini
+            </div>
+        </div>
+        
+        <div class="env-recommendation">
+            <div class="env-title">RECOMMENDED ENVIRONMENT</div>
+            <div class="env-badges">
+                <div class="env-badge">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M4 4h8v8H4V4z"/></svg>
+                    PC: Win + Chrome
+                </div>
+                <div class="env-badge">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                    Mobile: Android + Chrome
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            
             // --- 載入動畫 ---
             const loader = document.getElementById('loader');
             window.addEventListener('load', () => {
                 loader.style.opacity = '0';
-                loader.style.visibility = 'hidden';
+                setTimeout(() => { loader.style.display = 'none'; }, 500);
             });
 
-            // --- 粒子背景初始化 ---
-            particlesJS('particles-js', {
-                "particles": {
-                    "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
-                    "color": { "value": "#00bfff" },
-                    "shape": { "type": "circle" },
-                    "opacity": { "value": 0.5, "random": true },
-                    "size": { "value": 3, "random": true },
-                    "line_linked": { "enable": true, "distance": 150, "color": "#00bfff", "opacity": 0.4, "width": 1 },
-                    "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
-                },
-                "interactivity": {
-                    "detect_on": "canvas",
-                    "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": true, "mode": "push" }, "resize": true },
-                    "modes": { "repulse": { "distance": 100, "duration": 0.4 }, "push": { "particles_nb": 4 } }
-                },
-                "retina_detect": true
-            });
+            // ==========================================
+            // Canvas 蜂巢電流背景系統
+            // ==========================================
+            const canvas = document.getElementById('hex-canvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            const hexRadius = 45; 
+            const gridColor = 'rgba(75, 85, 105, 0.6)'; 
+            const meteorColor = '#00bfff'; 
+            let lines = []; let meteors = []; 
 
-
-            // --- 標題特效 ---
-            const titleElement = document.getElementById('predator-title');
-            const initialText = 'fan666rog';
-            const targetText = 'WELCOME';
-            const chars = '!<>-_\\/[]{}—=+*^?#________';
-            
-            const scrambleEffect = (element, newText) => {
-                let iteration = 0;
-                // 清除可能存在的上一個動畫計時器
-                if (element.intervalId) {
-                    clearInterval(element.intervalId);
+            function resize() {
+                width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight;
+                initHexGrid();
+            }
+            function getHexVertices(cx, cy, r) {
+                let vertices = [];
+                for (let i = 0; i < 6; i++) {
+                    let angle_rad = Math.PI / 180 * (60 * i);
+                    vertices.push({ x: cx + r * Math.cos(angle_rad), y: cy + r * Math.sin(angle_rad) });
                 }
-                element.intervalId = setInterval(() => {
-                    element.textContent = newText.split('')
-                        .map((letter, index) => {
-                            if(index < iteration) {
-                                return newText[index];
+                return vertices;
+            }
+            function initHexGrid() {
+                lines = []; const linesSet = new Set(); 
+                const horizSpacing = hexRadius * 1.5; const vertSpacing = hexRadius * Math.sqrt(3);
+                const cols = Math.ceil(width / horizSpacing) + 2; const rows = Math.ceil(height / vertSpacing) + 2;
+                for (let q = -1; q <= cols; q++) {
+                    for (let r = -1; r <= rows; r++) {
+                        let cx = q * horizSpacing; let cy = r * vertSpacing + (q % 2 !== 0 ? vertSpacing / 2 : 0);
+                        let pts = getHexVertices(cx, cy, hexRadius);
+                        for(let i=0; i<6; i++) {
+                            let p1 = pts[i]; let p2 = pts[(i+1)%6];
+                            if(p1.x > -50 && p1.x < width+50 && p1.y > -50 && p1.y < height+50) {
+                                let kX1 = Math.round(p1.x*10), kY1 = Math.round(p1.y*10), kX2 = Math.round(p2.x*10), kY2 = Math.round(p2.y*10);
+                                let key1 = `${kX1},${kY1}-${kX2},${kY2}`, key2 = `${kX2},${kY2}-${kX1},${kY1}`;
+                                if(!linesSet.has(key1) && !linesSet.has(key2)) { lines.push({x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, progress: 0}); linesSet.add(key1); }
                             }
-                            return chars[Math.floor(Math.random() * chars.length)];
-                        })
-                        .join('');
-                    
-                    if(iteration >= newText.length) {
-                        clearInterval(element.intervalId);
+                        }
                     }
-                    iteration += 1 / 3;
-                }, 50);
+                }
+            }
+            function drawGrid() {
+                ctx.clearRect(0, 0, width, height); ctx.beginPath(); ctx.strokeStyle = gridColor; ctx.lineWidth = 1;
+                lines.forEach(line => { ctx.moveTo(line.x1, line.y1); ctx.lineTo(line.x2, line.y2); }); ctx.stroke();
+            }
+            function spawnMeteor() {
+                const line = lines[Math.floor(Math.random() * lines.length)];
+                meteors.push({ x1: line.x1, y1: line.y1, x2: line.x2, y2: line.y2, progress: 0, speed: 0.015 + Math.random() * 0.02, length: 0.3 + Math.random() * 0.4, opacity: 1 });
+            }
+            function animateCanvas() {
+                drawGrid();
+                if(Math.random() < 0.08 && meteors.length < 25) spawnMeteor();
+                for (let i = meteors.length - 1; i >= 0; i--) {
+                    let m = meteors[i]; m.progress += m.speed;
+                    let tailP = Math.max(0, m.progress - m.length), headP = Math.min(1, m.progress);
+                    let hX = m.x1 + (m.x2 - m.x1) * headP, hY = m.y1 + (m.y2 - m.y1) * headP;
+                    let tX = m.x1 + (m.x2 - m.x1) * tailP, tY = m.y1 + (m.y2 - m.y1) * tailP;
+                    ctx.beginPath();
+                    let gradient = ctx.createLinearGradient(tX, tY, hX, hY);
+                    gradient.addColorStop(0, 'rgba(0, 191, 255, 0)'); gradient.addColorStop(1, meteorColor); 
+                    ctx.strokeStyle = gradient; ctx.lineWidth = 2.5; ctx.shadowColor = meteorColor; ctx.shadowBlur = 10; 
+                    ctx.moveTo(tX, tY); ctx.lineTo(hX, hY); ctx.stroke(); ctx.shadowBlur = 0;
+                    if (m.progress - m.length > 1) meteors.splice(i, 1);
+                }
+                requestAnimationFrame(animateCanvas);
+            }
+            window.addEventListener('resize', resize); resize(); animateCanvas();
+
+            // --- 標題亂碼特效 ---
+            const titleElement = document.getElementById('predator-title');
+            const initialText = 'fan666rog'; const targetText = 'WELCOME'; const chars = '!<>-_\\/[]{}—=+*^?#________';
+            const scrambleEffect = (element, newText) => {
+                let iteration = 0; if (element.intervalId) clearInterval(element.intervalId);
+                element.intervalId = setInterval(() => {
+                    element.textContent = newText.split('').map((letter, index) => {
+                        if(index < iteration) return newText[index]; return chars[Math.floor(Math.random() * chars.length)];
+                    }).join('');
+                    if(iteration >= newText.length) clearInterval(element.intervalId); iteration += 1 / 3;
+                }, 40);
             };
+            titleElement.textContent = initialText; setTimeout(() => scrambleEffect(titleElement, targetText), 1500); 
+            titleElement.addEventListener('click', () => { scrambleEffect(titleElement, titleElement.textContent === targetText ? initialText : targetText); });
 
-            // 初始顯示邏輯
-            // 1. 立刻靜態顯示初始文字
-            titleElement.textContent = initialText; 
+            // ==========================================
+            // 3D 全息輪播引擎 (包含：微露邊緣運算 & 進場微動)
+            // ==========================================
+            const carouselScene = document.querySelector('.carousel-scene');
+            const carousel = document.querySelector('.carousel-container');
+            const allCards = Array.from(document.querySelectorAll('.project-card'));
+            
+            let currentAngle = 0;
+            let radius = 0;
+            let theta = 0;
+            let visibleCards = allCards;
+            let isDragging = false; // 為了讓 nudge 函數能讀取到狀態
 
-            // 2. 延遲一段時間後，自動轉換成目標文字
-            setTimeout(() => {
-                scrambleEffect(titleElement, targetText);
-            }, 1500); // 延遲 1.5 秒後開始轉換
+            function updateCarouselTransform() {
+                carousel.style.transform = `translateZ(${-radius}px) rotateY(${currentAngle}deg)`;
+                
+                if (visibleCards.length === 0) return;
 
-            // 3. 點擊行為，用於在兩者之間切換
-            titleElement.addEventListener('click', () => {
-                const currentText = titleElement.textContent;
-                const nextText = currentText === targetText ? initialText : targetText;
-                scrambleEffect(titleElement, nextText);
+                let minDiff = Infinity;
+                let activeIndex = 0;
+
+                visibleCards.forEach((card, i) => {
+                    const cardAngle = theta * i;
+                    let diff = ((cardAngle + currentAngle) % 360 + 360) % 360;
+                    if (diff > 180) diff -= 360;
+                    
+                    if (Math.abs(diff) < minDiff) {
+                        minDiff = Math.abs(diff);
+                        activeIndex = i;
+                    }
+                });
+
+                visibleCards.forEach((card, i) => {
+                    const cardAngle = theta * i;
+                    if (i === activeIndex) {
+                        card.classList.add('active-front');
+                        card.style.opacity = 1;
+                        card.style.transform = `rotateY(${cardAngle}deg) translateZ(${radius}px) scale(1)`;
+                        card.style.pointerEvents = 'auto';
+                    } else {
+                        card.classList.remove('active-front');
+                        card.style.opacity = 0.3;
+                        card.style.transform = `rotateY(${cardAngle}deg) translateZ(${radius}px) scale(0.85)`;
+                        card.style.pointerEvents = 'none';
+                    }
+                });
+            }
+
+            function setupCarousel() {
+                if (visibleCards.length === 0) return;
+                theta = 360 / visibleCards.length;
+                const cardWidth = carousel.offsetWidth;
+                radius = Math.max(Math.round((cardWidth / 2) / Math.tan(Math.PI / visibleCards.length)) + 40, 200);
+
+                allCards.forEach(card => {
+                    if (!visibleCards.includes(card)) {
+                        card.style.transform = `rotateY(0deg) translateZ(0px) scale(0)`;
+                        card.style.opacity = 0;
+                        card.style.pointerEvents = 'none'; 
+                    }
+                });
+                updateCarouselTransform();
+            }
+
+            // 【策略 3：進場微動 (Intro Nudge)】
+            function playIntroNudge() {
+                // 等待網頁載入後 0.8 秒觸發
+                setTimeout(() => {
+                    if(isDragging) return; // 如果使用者已經等不及自己滑了，就取消微動
+                    
+                    // 讓轉盤往左旋轉 22 度 (足以讓旁邊的卡片亮起主角光環)
+                    currentAngle = -22;
+                    updateCarouselTransform();
+                    
+                    // 停留一下後，彈回正中央 0 度
+                    setTimeout(() => {
+                        if(isDragging) return;
+                        currentAngle = 0;
+                        updateCarouselTransform();
+                    }, 600);
+                }, 800);
+            }
+
+            // --- 觸控與拖曳控制 ---
+            let startX = 0;
+            let startAngle = 0;
+            
+            carouselScene.addEventListener('pointerdown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startAngle = currentAngle;
+                carousel.style.transition = 'none'; 
+                visibleCards.forEach(card => card.style.transition = 'none');
+                carouselScene.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('pointermove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                currentAngle = startAngle + (dx * 0.4);
+                updateCarouselTransform();
+            });
+
+            window.addEventListener('pointerup', () => {
+                if (!isDragging) return;
+                isDragging = false;
+                carouselScene.style.cursor = 'default';
+                
+                carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                visibleCards.forEach(card => card.style.transition = 'box-shadow 0.4s ease, border-color 0.4s ease, opacity 0.4s ease, transform 0.4s ease');
+                
+                if(theta > 0) {
+                    currentAngle = Math.round(currentAngle / theta) * theta;
+                }
+                updateCarouselTransform();
+            });
+
+            // --- 分類篩選器 ---
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const filterValue = btn.getAttribute('data-filter');
+
+                    if (filterValue === 'all') {
+                        visibleCards = allCards;
+                    } else {
+                        visibleCards = allCards.filter(card => card.getAttribute('data-category') === filterValue);
+                    }
+                    currentAngle = 0;
+                    setupCarousel();
+                });
+            });
+
+            setupCarousel();
+            // 執行進場微動教學
+            playIntroNudge();
+
+            window.addEventListener('resize', () => {
+                carousel.style.transition = 'none';
+                setupCarousel();
+                setTimeout(() => {
+                    carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                }, 50);
+            });
+
+            // --- 游標探照燈 ---
+            allCards.forEach(card => {
+                card.addEventListener('mousemove', e => {
+                    const rect = card.getBoundingClientRect(),
+                          x = e.clientX - rect.left,
+                          y = e.clientY - rect.top;
+                    card.style.setProperty('--mouse-x', `${x}px`);
+                    card.style.setProperty('--mouse-y', `${y}px`);
+                });
             });
         });
     </script>

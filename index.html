@@ -371,7 +371,7 @@
             // --- 圖片載入邏輯 ---
             let loadedImages = [];
             let imageHexes = []; 
-            const totalImages = 10;
+            const totalImages = 12;
             let imagesLoadedCount = 0;
 
             for(let i = 0; i < totalImages; i++) {
@@ -380,11 +380,11 @@
                 img.onload = () => {
                     loadedImages.push(img);
                     imagesLoadedCount++;
-                    if(imagesLoadedCount >= 9) assignImagesToHexes(); 
+                    if(imagesLoadedCount >= 11) assignImagesToHexes(); 
                 };
                 img.onerror = () => {
                     imagesLoadedCount++;
-                    if(imagesLoadedCount >= 9) assignImagesToHexes();
+                    if(imagesLoadedCount >= 11) assignImagesToHexes();
                 };
             }
 

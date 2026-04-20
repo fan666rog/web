@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>fan666rog 的展示區</title>
-    <meta name="description" content="fan666rog 的網頁應用程式與遊戲展示區，包含多種實用工具與趣味小遊戲。">
+    <title>fan666rog的展示區</title>
+    <meta name="description" content="fan666rog的網頁應用程式與遊戲展示區，包含多種實用工具與趣味小遊戲。">
     <style>
         /* --- 載入動畫 --- */
         #loader {
@@ -77,18 +77,16 @@
             margin: 2rem 0 4rem 0;
             overflow: hidden; 
             user-select: none; 
-            touch-action: pan-y; /* 允許原生上下滑動網頁，水平滑動交給 JS 處理 */
+            touch-action: pan-y; 
         }
         
         .carousel-container {
             width: 320px; height: 420px; 
             position: absolute;
             transform-style: preserve-3d; 
-            /* 設定過渡動畫，進場微動與放開手指時的彈性對齊都靠它 */
             transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        /* 卡片本體 */
         .project-card {
             background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px;
             padding: 1.8rem; display: flex; flex-direction: column; 
@@ -100,7 +98,6 @@
             -webkit-backface-visibility: hidden; backface-visibility: hidden; 
         }
 
-        /* 正面卡片專屬的長亮特效 (主角光環) */
         .project-card.active-front {
             box-shadow: 0 0 30px rgba(0, 191, 255, 0.4), inset 0 0 15px rgba(0, 191, 255, 0.1); 
             border-color: rgba(0, 191, 255, 0.6); 
@@ -111,7 +108,6 @@
             border-color: var(--primary-glow-color);
         }
 
-        /* 游標探照燈 */
         .project-card::before {
             content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: inherit;
             background: radial-gradient( 800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 191, 255, 0.08), transparent 40% );
@@ -130,7 +126,6 @@
         
         .project-card > * { position: relative; z-index: 2; }
 
-        /* --- 卡片內部文字排版 --- */
         .project-card .project-title {
             display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;
             border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.8rem;
@@ -147,23 +142,15 @@
         .project-card a:hover { background-color: var(--primary-glow-color); color: #000; box-shadow: 0 0 15px rgba(0, 191, 255, 0.5); }
 
         /* --- 頁尾 --- */
-        /* --- Gemini 專屬 AI 漸層文字特效 --- */
         .gemini-text {
-            font-weight: 800;
-            font-style: italic;
-            background: linear-gradient(90deg, #00bfff, #a200ff, #ff007f); /* 青色 -> 紫色 -> 粉紅 */
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-weight: 800; font-style: italic;
+            background: linear-gradient(90deg, #00bfff, #a200ff, #ff007f); 
+            background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 0 5px rgba(162, 0, 255, 0.4));
-            animation: gradientFlow 3s linear infinite;
-            padding-left: 0.2rem;
+            animation: gradientFlow 3s linear infinite; padding-left: 0.2rem;
         }
-
-        @keyframes gradientFlow {
-            0% { background-position: 0% center; }
-            100% { background-position: 200% center; }
-        }
+        @keyframes gradientFlow { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
+        
         footer {
             width: 100%; max-width: 1200px; padding: 3rem 1rem 2rem; box-sizing: border-box;
             border-top: 1px solid rgba(255, 255, 255, 0.03);
@@ -203,10 +190,7 @@
         @media (max-width: 768px) {
             header h1 { font-size: 2.5rem; }
             .carousel-scene { height: 460px; perspective: 900px; margin: 1rem 0 3rem 0; }
-            
-            /* 【策略 1：微露邊緣】將卡片寬度稍微縮減至 260px，確保左右兩側會露出相鄰卡片的邊緣 */
             .carousel-container { width: 260px; height: 400px; }
-            
             .project-card { padding: 1.5rem; } .project-card a { padding: 1rem 1.5rem; } 
             footer { padding: 2rem 1rem 1.5rem; margin-top: 2rem; }
             .env-recommendation { padding: 1.2rem; width: 100%; box-sizing: border-box; }
@@ -221,7 +205,7 @@
     <canvas id="hex-canvas"></canvas>
 
     <div class="container">
-        <header>
+        <header id="main-header">
             <h1 id="predator-title"></h1>
             <div class="legend-area">
                 <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
@@ -237,13 +221,12 @@
 
         <div class="carousel-scene">
             <main class="carousel-container" id="portfolio-grid">
-                
                 <div class="project-card" data-category="tool">
                     <div class="project-title">
                         <h2>彩券-摸彩箱抽獎程式</h2>
                         <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
                     </div>
-                    <p>一個本地端執行的網頁抽獎程式，可設定標題主題、多個彩券本、獎項與排除號碼，確保抽獎公開透明。</p>
+                    <p>一個本地端執行的網頁抽獎程式，可設定標題主題、多個彩券本、獎項與排除號碼，確保抽獎公開透明。有兩種模式可供使用。</p>
                     <a href="./client-side-lottery/index.html" target="_blank">V3.0 開啟</a>
                 </div>
 
@@ -270,7 +253,7 @@
                         <h2>生命靈數計算機</h2>
                         <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
                     </div>
-                    <p>生命靈數計算和觀看，計算完畢後可以觀看總覽資料和詳細的計算方式解析。</p>
+                    <p>生命靈數計算和觀看，計算完畢後可以觀看總覽資料和詳細的計算方式解析。判斷邏輯為參考網路靈數解說資料。</p>
                     <a href="./Numerology/index.html" target="_blank">展示觀看</a>
                 </div>
 
@@ -279,7 +262,7 @@
                         <h2>Block ART</h2>
                         <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
                     </div>
-                    <p>這是一個約 1990 年的經典積木拼圖遊戲，賦予新生命程式化，挑戰你的空間邏輯。</p>
+                    <p>這是一個約 1990 年的經典積木拼圖遊戲，賦予新生命程式化，挑戰你的空間創意邏輯。</p>
                     <a href="./Ba/index.html" target="_blank">V1.5 遊玩</a>
                 </div>
                 
@@ -329,10 +312,10 @@
         </div>
     </div>
 
-    <footer>
+    <footer id="main-footer">
         <div class="footer-content">
             <div class="copyright">
-                &copy; 2026/0402 
+                &copy; 2026/0420 
                 <a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer" class="github-link">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
                     fan666rog
@@ -366,7 +349,7 @@
             });
 
             // ==========================================
-            // Canvas 蜂巢電流背景系統
+            // Canvas 蜂巢圖庫與電流背景系統
             // ==========================================
             const canvas = document.getElementById('hex-canvas');
             const ctx = canvas.getContext('2d');
@@ -375,11 +358,42 @@
             const gridColor = 'rgba(75, 85, 105, 0.6)'; 
             const meteorColor = '#00bfff'; 
             let lines = []; let meteors = []; 
+            let hexCenters = []; 
+            
+            // --- 滑鼠游標追蹤 ---
+            let mouseX = -1000;
+            let mouseY = -1000;
+            window.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            // --- 圖片載入邏輯 ---
+            let loadedImages = [];
+            let imageHexes = []; 
+            const totalImages = 10;
+            let imagesLoadedCount = 0;
+
+            for(let i = 0; i < totalImages; i++) {
+                const img = new Image();
+                img.src = `./hex-gallery/i${i}.jpg`;
+                img.onload = () => {
+                    loadedImages.push(img);
+                    imagesLoadedCount++;
+                    if(imagesLoadedCount >= 9) assignImagesToHexes(); 
+                };
+                img.onerror = () => {
+                    imagesLoadedCount++;
+                    if(imagesLoadedCount >= 9) assignImagesToHexes();
+                };
+            }
 
             function resize() {
                 width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight;
                 initHexGrid();
+                assignImagesToHexes(); 
             }
+
             function getHexVertices(cx, cy, r) {
                 let vertices = [];
                 for (let i = 0; i < 6; i++) {
@@ -388,13 +402,23 @@
                 }
                 return vertices;
             }
+
             function initHexGrid() {
-                lines = []; const linesSet = new Set(); 
+                lines = []; 
+                hexCenters = [];
+                const linesSet = new Set(); 
                 const horizSpacing = hexRadius * 1.5; const vertSpacing = hexRadius * Math.sqrt(3);
                 const cols = Math.ceil(width / horizSpacing) + 2; const rows = Math.ceil(height / vertSpacing) + 2;
+                
                 for (let q = -1; q <= cols; q++) {
                     for (let r = -1; r <= rows; r++) {
                         let cx = q * horizSpacing; let cy = r * vertSpacing + (q % 2 !== 0 ? vertSpacing / 2 : 0);
+                        
+                        let margin = hexRadius * 1.5;
+                        if(cx > margin && cx < width - margin && cy > margin && cy < height - margin) {
+                            hexCenters.push({x: cx, y: cy});
+                        }
+
                         let pts = getHexVertices(cx, cy, hexRadius);
                         for(let i=0; i<6; i++) {
                             let p1 = pts[i]; let p2 = pts[(i+1)%6];
@@ -407,14 +431,130 @@
                     }
                 }
             }
+
+            function assignImagesToHexes() {
+                imageHexes = [];
+                if(loadedImages.length === 0 || hexCenters.length === 0) return;
+
+                // 取得各個需要避開的區塊範圍
+                const carouselScene = document.querySelector('.carousel-scene');
+                let carouselRect = { left: 0, right: 0, top: 0, bottom: 0 };
+                if (carouselScene) {
+                    const bounds = carouselScene.getBoundingClientRect();
+                    carouselRect = { left: bounds.left - 50, right: bounds.right + 50, top: bounds.top - 50, bottom: bounds.bottom + 50 };
+                }
+
+                const header = document.getElementById('main-header');
+                let headerRect = { left: 0, right: 0, top: 0, bottom: 0 };
+                if (header) {
+                    const bounds = header.getBoundingClientRect();
+                    headerRect = { left: bounds.left - 30, right: bounds.right + 30, top: bounds.top - 30, bottom: bounds.bottom + 30 };
+                }
+
+                const footer = document.getElementById('main-footer');
+                let footerRect = { left: 0, right: 0, top: height, bottom: height };
+                if (footer) {
+                    const bounds = footer.getBoundingClientRect();
+                    footerRect = { left: bounds.left - 30, right: bounds.right + 30, top: bounds.top - 30, bottom: bounds.bottom + 50 };
+                }
+
+                // 過濾掉所有重疊區域
+                let validCenters = hexCenters.filter(c => {
+                    let inCarousel = c.x > carouselRect.left && c.x < carouselRect.right && c.y > carouselRect.top && c.y < carouselRect.bottom;
+                    let inHeader = c.x > headerRect.left && c.x < headerRect.right && c.y > headerRect.top && c.y < headerRect.bottom;
+                    let inFooter = c.x > footerRect.left && c.x < footerRect.right && c.y > footerRect.top && c.y < footerRect.bottom;
+                    return !(inCarousel || inHeader || inFooter);
+                });
+
+                // 將畫面分左右，強制平衡分佈
+                let leftCenters = validCenters.filter(c => c.x < width / 2).sort(() => 0.5 - Math.random());
+                let rightCenters = validCenters.filter(c => c.x >= width / 2).sort(() => 0.5 - Math.random());
+                let selectedCenters = [];
+                const minDistanceSq = (hexRadius * 3.5) ** 2;
+
+                // 輔助函式：挑選符合安全距離的點
+                function pickValidCenter(pool) {
+                    for (let i = 0; i < pool.length; i++) {
+                        let candidate = pool[i];
+                        if (candidate.used) continue;
+                        let tooClose = false;
+                        for (let existing of selectedCenters) {
+                            let dx = candidate.x - existing.x;
+                            let dy = candidate.y - existing.y;
+                            if (dx * dx + dy * dy < minDistanceSq) {
+                                tooClose = true; break;
+                            }
+                        }
+                        if (!tooClose) {
+                            candidate.used = true;
+                            return candidate;
+                        }
+                    }
+                    return null;
+                }
+
+                // 目標：左邊一半，右邊一半
+                let targetLeft = Math.ceil(loadedImages.length / 2);
+                let targetRight = loadedImages.length - targetLeft;
+
+                for(let i=0; i<targetLeft; i++) { let c = pickValidCenter(leftCenters); if(c) selectedCenters.push(c); }
+                for(let i=0; i<targetRight; i++) { let c = pickValidCenter(rightCenters); if(c) selectedCenters.push(c); }
+
+                // 【修改重點】：溫和的防呆機制。如果左右分不滿，把剩下的空間混在一起再找一次，
+                // 但「絕對堅持安全距離」。如果還是找不到足夠的位置，就放棄剩下的圖片，寧缺勿濫。
+                if (selectedCenters.length < loadedImages.length) {
+                    let remainingPool = [...leftCenters, ...rightCenters].sort(() => 0.5 - Math.random());
+                    let needed = loadedImages.length - selectedCenters.length;
+                    for (let i = 0; i < needed; i++) {
+                        let c = pickValidCenter(remainingPool);
+                        if (c) selectedCenters.push(c);
+                    }
+                }
+
+                for(let i=0; i < selectedCenters.length && i < loadedImages.length; i++) {
+                    imageHexes.push({ img: loadedImages[i], x: selectedCenters[i].x, y: selectedCenters[i].y });
+                }
+            }
+
             function drawGrid() {
-                ctx.clearRect(0, 0, width, height); ctx.beginPath(); ctx.strokeStyle = gridColor; ctx.lineWidth = 1;
+                ctx.clearRect(0, 0, width, height); 
+
+                if (window.innerWidth > 768 && imageHexes.length > 0) {
+                    imageHexes.forEach(item => {
+                        ctx.save();
+                        ctx.beginPath();
+                        let pts = getHexVertices(item.x, item.y, hexRadius - 2); 
+                        ctx.moveTo(pts[0].x, pts[0].y);
+                        for(let i=1; i<6; i++) ctx.lineTo(pts[i].x, pts[i].y);
+                        ctx.closePath();
+                        ctx.clip(); 
+                        
+                        // 滑鼠 Hover 距離判斷
+                        let dx = mouseX - item.x;
+                        let dy = mouseY - item.y;
+                        let distance = Math.sqrt(dx*dx + dy*dy);
+                        
+                        if (distance < hexRadius) {
+                            ctx.globalAlpha = 0.9; // 滑鼠移入時亮度提高
+                        } else {
+                            ctx.globalAlpha = 0.35; // 預設微透明科技感
+                        }
+                        
+                        let imgSize = hexRadius * 2; 
+                        ctx.drawImage(item.img, item.x - hexRadius, item.y - hexRadius, imgSize, imgSize);
+                        ctx.restore();
+                    });
+                }
+
+                ctx.beginPath(); ctx.strokeStyle = gridColor; ctx.lineWidth = 1;
                 lines.forEach(line => { ctx.moveTo(line.x1, line.y1); ctx.lineTo(line.x2, line.y2); }); ctx.stroke();
             }
+
             function spawnMeteor() {
                 const line = lines[Math.floor(Math.random() * lines.length)];
                 meteors.push({ x1: line.x1, y1: line.y1, x2: line.x2, y2: line.y2, progress: 0, speed: 0.015 + Math.random() * 0.02, length: 0.3 + Math.random() * 0.4, opacity: 1 });
             }
+
             function animateCanvas() {
                 drawGrid();
                 if(Math.random() < 0.08 && meteors.length < 25) spawnMeteor();
@@ -450,7 +590,7 @@
             titleElement.addEventListener('click', () => { scrambleEffect(titleElement, titleElement.textContent === targetText ? initialText : targetText); });
 
             // ==========================================
-            // 3D 全息輪播引擎 (包含：微露邊緣運算 & 進場微動)
+            // 3D 全息輪播引擎
             // ==========================================
             const carouselScene = document.querySelector('.carousel-scene');
             const carousel = document.querySelector('.carousel-container');
@@ -460,7 +600,7 @@
             let radius = 0;
             let theta = 0;
             let visibleCards = allCards;
-            let isDragging = false; // 為了讓 nudge 函數能讀取到狀態
+            let isDragging = false; 
 
             function updateCarouselTransform() {
                 carousel.style.transform = `translateZ(${-radius}px) rotateY(${currentAngle}deg)`;
@@ -513,17 +653,11 @@
                 updateCarouselTransform();
             }
 
-            // 【策略 3：進場微動 (Intro Nudge)】
             function playIntroNudge() {
-                // 等待網頁載入後 0.8 秒觸發
                 setTimeout(() => {
-                    if(isDragging) return; // 如果使用者已經等不及自己滑了，就取消微動
-                    
-                    // 讓轉盤往左旋轉 22 度 (足以讓旁邊的卡片亮起主角光環)
+                    if(isDragging) return; 
                     currentAngle = -22;
                     updateCarouselTransform();
-                    
-                    // 停留一下後，彈回正中央 0 度
                     setTimeout(() => {
                         if(isDragging) return;
                         currentAngle = 0;
@@ -585,7 +719,6 @@
             });
 
             setupCarousel();
-            // 執行進場微動教學
             playIntroNudge();
 
             window.addEventListener('resize', () => {

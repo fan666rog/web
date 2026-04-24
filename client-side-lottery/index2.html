@@ -74,6 +74,55 @@
     
     .fade-in { animation: fadeIn 0.5s ease-in; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ================= V4.0 手機版專屬樣式 (卡片化排版 & UI優化) ================= */
+    @media (max-width: 768px) {
+      /* 1. 儀表板與頂部工具列優化 */
+      .live-dashboard { flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+      .status-bar { flex-direction: column; text-align: center; gap: 15px; padding: 15px 10px; }
+      .status-bar div:nth-child(2) { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+      .status-bar button { margin: 0; font-size: 14px; padding: 8px 12px; }
+
+      /* 2. 表格卡片化排版 */
+      table, thead, tbody, th, td, tr { display: block; }
+      table tr:first-child { display: none; } /* 隱藏原本的橫向表頭 */
+      tr { 
+        background: #fff; border: 2px solid #17a2b8; border-radius: 10px; 
+        margin-bottom: 20px; padding: 15px 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.08); 
+      }
+      td { 
+        border: none; border-bottom: 1px dashed #ddd; position: relative; 
+        padding: 12px 10px 12px 40%; text-align: right; min-height: 30px; 
+        display: flex; justify-content: flex-end; align-items: center; 
+      }
+      td:last-child { border-bottom: 0; justify-content: center; padding-left: 10px; margin-top: 10px; }
+      
+      /* 3. 利用偽元素插入左側標籤 */
+      td::before { 
+        position: absolute; top: 50%; left: 10px; transform: translateY(-50%); 
+        width: 35%; text-align: left; font-weight: bold; color: #495057; white-space: nowrap; 
+      }
+
+      /* 對應 V4.0 實體券設定 (移除了原本的摸彩券本名稱) */
+      #ticketBooks td:nth-of-type(1)::before { content: "起始序號"; }
+      #ticketBooks td:nth-of-type(2)::before { content: "結束序號"; }
+
+      /* 對應 V4.0 獎項設定 */
+      #prizeTable td:nth-of-type(1)::before { content: "順位"; }
+      #prizeTable td:nth-of-type(2)::before { content: "獎項名稱"; }
+      #prizeTable td:nth-of-type(3)::before { content: "正取"; }
+      #prizeTable td:nth-of-type(4)::before { content: "備取"; }
+      #prizeTable td:nth-of-type(5)::before { content: "特效"; }
+
+      /* 4. 輸入框與按鈕尺寸放大防誤觸 */
+      #ticketBooks input, #prizeTable input[type="text"], #prizeTable input[type="number"] { 
+        width: 65% !important; max-width: 200px; text-align: center; font-size: 16px; 
+      }
+      #prizeTable input[type="checkbox"] { transform: scale(1.5); margin-right: 15px; }
+      
+      .btn-void { width: 32px !important; height: 32px !important; top: -12px; right: -12px; }
+      .btn-void::before, .btn-void::after { width: 15px; height: 3px; }
+    }
   </style>
 </head>
 <body>
@@ -445,17 +494,13 @@
     if (obj.sourceType === 'digital') {
       let parts = obj.displayText.split(/\s+/).filter(Boolean);
       
-      // 策略一：人數超過 10 人啟動「普獎精簡模式」
       if (totalCount > 10) {
-        // 判斷最後一個部分是否為電話號碼 (有隱碼****，或 09 開頭)
         let lastPart = parts[parts.length - 1];
         if (parts.length > 1 && (lastPart.includes('****') || (/^09/.test(lastPart) && lastPart.length >= 8))) {
-          parts.pop(); // 捨棄電話號碼，保護版面
+          parts.pop(); 
         }
-        // 精簡為單行顯示
         formattedText = `<span style="font-weight:bold; white-space:nowrap;">${parts.join(' ')}</span>`;
       } 
-      // 人數 10 人以內啟動「豪華三層排版」
       else {
         if (parts.length === 2) {
           formattedText = `<div style="display:flex; flex-direction:column; align-items:center; line-height:1.2; gap:4px; padding: 5px 0;">
@@ -480,14 +525,12 @@
     globalPrizes.forEach(p => { 
       for(let i=0; i<p.count; i++) if(globalTicketsPool.length > 0) drawResults[p.name].main.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]); 
     });
-    // 備取強制反向從大獎開始抽
     [...globalPrizes].reverse().forEach(p => { 
       for(let i=0; i<p.backupCount; i++) if(globalTicketsPool.length > 0) drawResults[p.name].backup.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]); 
     });
     
     let html = "<h2>✨ 抽獎結果總覽 ✨</h2>";
     globalPrizes.forEach(p => {
-      // 在 Quick Draw 中移除所有背景變灰的設定，保留全彩
       html += `<h3>🎁 ${p.name} (正取 ${p.count} 名)</h3><div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;">${drawResults[p.name].main.map(t=>generateTicketHTML(t,'ticket-sm',false,p.name,p.count)).join('')}</div>`;
       if(p.backupCount > 0) {
         html += `<p style="color:#6c757d; font-weight:bold; margin-bottom:5px;">備取名單：</p><div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:15px;">${drawResults[p.name].backup.map(t=>generateTicketHTML(t,'ticket-sm',false,p.name,p.backupCount)).join('')}</div>`;

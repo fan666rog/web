@@ -24,7 +24,7 @@
 
     /* ================= 名單輸入區樣式 ================= */
     .input-section { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
-    .input-card { flex: 1; min-width: 300px; background: #f8f9fa; border: 1px solid #dee2e6; padding: 20px; border-radius: 8px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+    .input-card { flex: 1; min-width: 300px; background: #f8f9fa; border: 1px solid #dee2e6; padding: 20px; border-radius: 8px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); box-sizing: border-box; }
     .input-card h4 { margin-top: 0; color: #0056b3; border-bottom: 2px solid #0056b3; padding-bottom: 10px; display: flex; align-items: center; gap: 8px;}
     textarea.digital-list { width: 100%; height: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; font-family: monospace; box-sizing: border-box; }
     .toolbar-btn { font-size: 14px; padding: 6px 10px; background: #6c757d; color: white; margin: 2px; }
@@ -75,16 +75,24 @@
     .fade-in { animation: fadeIn 0.5s ease-in; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* ================= V4.0 手機版專屬樣式 (卡片化排版 & UI優化) ================= */
+    /* ================= V4.0 手機版專屬樣式 (修復破版 & UI優化) ================= */
     @media (max-width: 768px) {
+      /* 基礎容器優化：減少 padding，避免撐破螢幕 */
+      body { padding: 10px; }
+      .container { padding: 15px; overflow-x: hidden; }
+      
+      /* 名單輸入區塊改成垂直排列，避免右側超出 */
+      .input-section { flex-direction: column; gap: 15px; }
+      .input-card { min-width: 100%; padding: 15px; box-sizing: border-box; }
+
       /* 1. 儀表板與頂部工具列優化 */
       .live-dashboard { flex-direction: column; align-items: center; gap: 12px; text-align: center; }
       .status-bar { flex-direction: column; text-align: center; gap: 15px; padding: 15px 10px; }
       .status-bar div:nth-child(2) { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
       .status-bar button { margin: 0; font-size: 14px; padding: 8px 12px; }
 
-      /* 2. 表格卡片化排版 */
-      table, thead, tbody, th, td, tr { display: block; }
+      /* 2. 表格卡片化排版 (防溢出) */
+      table, thead, tbody, th, td, tr { display: block; width: 100%; box-sizing: border-box; }
       table tr:first-child { display: none; } /* 隱藏原本的橫向表頭 */
       tr { 
         background: #fff; border: 2px solid #17a2b8; border-radius: 10px; 
@@ -103,7 +111,7 @@
         width: 35%; text-align: left; font-weight: bold; color: #495057; white-space: nowrap; 
       }
 
-      /* 對應 V4.0 實體券設定 (移除了原本的摸彩券本名稱) */
+      /* 對應 V4.0 實體券設定 */
       #ticketBooks td:nth-of-type(1)::before { content: "起始序號"; }
       #ticketBooks td:nth-of-type(2)::before { content: "結束序號"; }
 
@@ -114,9 +122,9 @@
       #prizeTable td:nth-of-type(4)::before { content: "備取"; }
       #prizeTable td:nth-of-type(5)::before { content: "特效"; }
 
-      /* 4. 輸入框與按鈕尺寸放大防誤觸 */
+      /* 4. 輸入框與按鈕尺寸放大防誤觸，並限縮最大寬度 */
       #ticketBooks input, #prizeTable input[type="text"], #prizeTable input[type="number"] { 
-        width: 65% !important; max-width: 200px; text-align: center; font-size: 16px; 
+        width: 60% !important; max-width: 180px; text-align: center; font-size: 16px; 
       }
       #prizeTable input[type="checkbox"] { transform: scale(1.5); margin-right: 15px; }
       
@@ -196,7 +204,7 @@
     <div id="errorMessage" class="error-box hidden"></div>
 
     <div style="text-align: center; margin-top: 40px; border-top: 2px dashed #ccc; padding-top: 30px;">
-      <button onclick="initLottery('quick')" class="btn-primary">⚡ 一鍵快速開獎</button>
+      <button onclick="initLottery('quick')" class="btn-primary">⚡ 一鍵快速開獎 (全彩)</button>
       <button onclick="initLottery('showcase')" class="btn-warning">🎉 進入展演模式</button>
     </div>
   </div>
@@ -483,7 +491,7 @@
     }
   }
 
-  // ================= 票券產生器 (包含智慧排版) =================
+  // ================= 票券產生器 (智慧排版，確保全彩呈現) =================
   function generateTicketHTML(obj, size, showVoid, prize, totalCount) {
     let theme = obj.sourceType === 'paper' ? 'ticket-paper' : 'ticket-digital';
     let icon = obj.sourceType === 'paper' ? '🎫' : '👤';
@@ -517,10 +525,11 @@
       }
     }
 
+    // 將所有 dimStyle 拔除，保證任何模式下呼叫此函式皆顯示全彩主題色
     return `<span class="winner-ticket ${size} ${theme}">${formattedText}${voidBtn}<div class="source-icon">${icon}</div></span>`;
   }
 
-  // ================= 錄影快速模式 =================
+  // ================= 錄影快速模式 (同步全彩呈現) =================
   function executeQuickDraw() {
     globalPrizes.forEach(p => { 
       for(let i=0; i<p.count; i++) if(globalTicketsPool.length > 0) drawResults[p.name].main.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]); 
@@ -531,6 +540,7 @@
     
     let html = "<h2>✨ 抽獎結果總覽 ✨</h2>";
     globalPrizes.forEach(p => {
+      // 錄影模式呼叫 generateTicketHTML 時，因為全彩保護已經寫入底層，所以直接產出即可
       html += `<h3>🎁 ${p.name} (正取 ${p.count} 名)</h3><div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;">${drawResults[p.name].main.map(t=>generateTicketHTML(t,'ticket-sm',false,p.name,p.count)).join('')}</div>`;
       if(p.backupCount > 0) {
         html += `<p style="color:#6c757d; font-weight:bold; margin-bottom:5px;">備取名單：</p><div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:15px;">${drawResults[p.name].backup.map(t=>generateTicketHTML(t,'ticket-sm',false,p.name,p.backupCount)).join('')}</div>`;

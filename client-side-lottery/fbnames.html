@@ -85,7 +85,7 @@
         <div class="row">
             <div class="manual-input-group">
                 <span style="font-weight: bold; color: #444;">🚫 加強排除名單：</span>
-                <input type="text" id="manualExclusions" placeholder="輸入要排除的人名，多人請用逗號隔開 (例如: 王小明, Jason)">
+                <input type="text" id="manualExclusions" placeholder="輸入要排除的人名，多人請用「逗號」隔開 (例如: 王小明, Jason Chen)">
             </div>
         </div>
     </div>
@@ -133,8 +133,9 @@
             const statsPanel = document.getElementById('statsPanel');
             const excludeAuthorCheck = document.getElementById('excludeAuthorCheck').checked;
             
+            // 修正點：移除 \s (空白切分)，只保留逗號與分號，保護包含空白的英文名字
             const manualRaw = document.getElementById('manualExclusions').value;
-            const manualList = manualRaw.split(/[，,；;\s]+/).map(n => n.trim()).filter(n => n !== "");
+            const manualList = manualRaw.split(/[，,；;]+/).map(n => n.trim()).filter(n => n !== "");
 
             let detectedAuthors = new Set();
             const lines = inputArea.innerText.split('\n').map(line => line.trim());

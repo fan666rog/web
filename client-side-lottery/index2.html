@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券抽獎系統 V4.0 beta (社群旗艦版)</title>
+  <title>彩券抽獎系統 V4.0 (社群旗艦版)</title>
   <style>
     /* ================= 基礎樣式 ================= */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
@@ -46,7 +46,7 @@
     .ticket-md { font-size: 24px; padding: 10px 20px; border-width: 3px; }
     .ticket-sm { font-size: 18px; padding: 8px 14px; border-width: 2px; border-radius: 6px; }
 
-    /* 三大主題設定 (實體黃、數位藍、FB專屬藍) */
+    /* 三大主題設定 */
     .ticket-paper { background: #f1c40f; border: solid #f39c12; color: #2c3e50; }
     .ticket-digital { background: #dff9fb; border: solid #0984e3; color: #2c3e50; }
     .ticket-fb { background: #e7f3ff; border: solid #1877f2; color: #1c1e21; }
@@ -246,11 +246,11 @@
     </div>
 
     <div id="fb-statsPanel" class="fb-stats-panel">
-        <div>📌 抓取到有效留言： <span id="statParsed" class="success">0</span> 次</div>
-        <div>✅ 乾淨名單產出： <span id="statOutput" class="success">0</span> 位</div>
+        <div>📌 抓取到主留言人次： <span id="statParsed" class="success">0</span> 次</div>
+        <div>✅ 最終乾淨名單產出： <span id="statOutput" class="success">0</span> 位</div>
         <hr style="border: 0; border-top: 1px dashed #ccc; margin: 10px 0;">
-        <div>🗑️ 排除同人重複： <span id="statDuplicates">無</span></div>
-        <div>⚠️ 偵測同名不同人： <span id="statSameName">無</span></div>
+        <div>🗑️ 排除同人重複留言： <span id="statDuplicates">無</span></div>
+        <div>⚠️ 偵測同名不同人 (已標記)： <span id="statSameName">無</span></div>
     </div>
 
     <div style="display:flex; gap:15px; flex-wrap:wrap;">
@@ -307,7 +307,7 @@
   let originalTicketsPool = [], extraTicketsPool = [], globalTicketsPool = [];   
   let globalPrizes = [], drawResults = {}, extraResults = {};        
   let currentPhase = 1, currentPrizeIndex = 0, isMaskedMode = false;
-  let extractedFBNames = []; // 暫存 FB 萃取結果
+  let extractedFBNames = []; 
 
   function generateUUID() { return Math.random().toString(36).substring(2, 10) + Date.now().toString(36); }
 
@@ -316,7 +316,6 @@
       let words = line.split(/(\s+)/);
       return words.map(word => {
         if (word.trim() === "") return word;
-        // F- 或 M- 開頭的編號不遮蔽
         if (/^(F-|M-)\d+$/.test(word)) return word; 
         if (/^09\d{8}$/.test(word)) return word.substring(0, 4) + "****" + word.substring(8);
         if (/^[\u4e00-\u9fa5]{2,4}$/.test(word)) {
@@ -342,7 +341,6 @@
     }
   }
 
-  // 取得特定前綴的最高序號
   function getMaxSequence(lines, prefix) {
     let max = 0;
     let regex = new RegExp('^' + prefix + '(\\d+)');
@@ -356,14 +354,13 @@
     return max;
   }
 
-  // 工具：智慧加編號 (只處理沒有 F- 或 M- 的名單)
   function toolAutoSerial() {
     let raw = document.getElementById("digitalListInput");
     let lines = raw.value.split('\n').filter(l => l.trim() !== "");
     let currentMaxM = getMaxSequence(lines, 'M-');
 
     let newLines = lines.map(line => {
-      if (/^(F-|M-)\d+\s/.test(line)) return line; // 若已有前綴則跳過
+      if (/^(F-|M-)\d+\s/.test(line)) return line; 
       currentMaxM++;
       return `M-${String(currentMaxM).padStart(3, '0')} ${line}`;
     });
@@ -378,7 +375,7 @@
     updateLiveStats();
   }
 
-  // ================= FB 萃取器邏輯 =================
+  // ================= FB 萃取器邏輯 (視覺防樓中樓升級版) =================
   function openFBModal() {
     document.getElementById('fb-inputArea').innerHTML = '';
     document.getElementById('fb-outputArea').value = '';
@@ -413,7 +410,18 @@
       }
     }
 
-    const links = inputArea.querySelectorAll('a');
+    const links = Array.from(inputArea.querySelectorAll('a'));
+    
+    // --- 新增：測量主留言的「X 座標基準線」 ---
+    let minLeftX = Infinity;
+    links.forEach(link => {
+        let rect = link.getBoundingClientRect();
+        if (rect.width > 0 && rect.left < minLeftX) {
+            minLeftX = rect.left;
+        }
+    });
+    const indentThreshold = minLeftX + 20;
+
     let userMap = new Map(); 
     let totalParsedCount = 0;
     let duplicateExclusions = new Set(), sameNameDifferentPeople = new Set();
@@ -421,6 +429,12 @@
     const blacklist = ["讚", "回覆", "分享", "檢舉", "隱藏", "查看更多", "追蹤", "發送訊息", "頭號粉絲", "編輯記錄", "作者", "已編輯"];
 
     links.forEach(link => {
+      // --- 新增：視覺縮排過濾法 (過濾樓中樓) ---
+      let rect = link.getBoundingClientRect();
+      if (rect.left > indentThreshold) {
+          return; 
+      }
+
       let text = link.innerText.trim();
       let href = link.getAttribute('href') || ""; 
       const isTimeFormat = /^\d+\s*(天|小時|分鐘|秒|週|年)(前)?$/.test(text) || text === "剛剛" || text === "昨天" || /^\d+月\d+日$/.test(text) || /^\d{4}年\d+月\d+日$/.test(text) || /^\d+ 週$/.test(text);
@@ -466,8 +480,6 @@
     }
     let raw = document.getElementById("digitalListInput");
     let lines = raw.value.split('\n').filter(l => l.trim() !== "");
-    
-    // 接續找出現有的最高 F- 號碼
     let currentMaxF = getMaxSequence(lines, 'F-');
     
     let newFBLines = extractedFBNames.map(name => {
@@ -570,7 +582,6 @@
 
   // ================= 三色票券產生器 (包含智慧排版) =================
   function generateTicketHTML(obj, size, showVoid, prize, totalCount) {
-    // 智慧判斷來源，賦予專屬主題與圖示
     let theme = 'ticket-digital', icon = '👤'; 
     if (obj.sourceType === 'paper') { theme = 'ticket-paper'; icon = '🎫'; }
     else if (obj.sourceType === 'digital' && obj.rawText.startsWith('F-')) { theme = 'ticket-fb'; icon = '📘'; }

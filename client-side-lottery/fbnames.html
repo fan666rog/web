@@ -2,20 +2,15 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>FB 留言萃取器 V1.6 (視覺防樓中樓版)</title>
+    <title>FB 留言萃取器 V1.7 (終極穩定版)</title>
     <style>
         body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; }
         h2 { margin-bottom: 20px; }
         
         .control-panel {
-            background-color: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
+            background-color: #fff; padding: 15px; border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px;
+            display: flex; align-items: center; gap: 20px;
         }
 
         .option-group { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: bold; color: #444; cursor: pointer; }
@@ -44,7 +39,7 @@
 </head>
 <body>
 
-    <h2>FB 留言名單萃取器 (視覺防樓中樓版)</h2>
+    <h2>FB 留言名單萃取器 (終極穩定版)</h2>
 
     <div class="control-panel">
         <button class="run-btn" onclick="extractNames()">⚡ 整理名單</button>
@@ -74,13 +69,32 @@
     </div>
 
     <script>
+        // 強化版：精準擷取各種類型的 FB 使用者 ID
         function extractUserId(href) {
             if (!href) return "unknown";
             try {
                 let urlObj = new URL(href);
-                if (urlObj.pathname.includes('/profile.php')) return urlObj.searchParams.get('id') || "unknown";
+                
+                // 類型 1: 傳統 profile.php?id=12345678
+                if (urlObj.pathname.includes('/profile.php')) {
+                    return urlObj.searchParams.get('id') || "unknown";
+                }
+                
+                // 類型 2: 社團成員網址 /groups/社團ID/user/個人ID/
+                if (urlObj.pathname.includes('/groups/') && urlObj.pathname.includes('/user/')) {
+                    let segments = urlObj.pathname.split('/').filter(p => p !== "");
+                    let userIdx = segments.indexOf('user');
+                    if (userIdx !== -1 && segments.length > userIdx + 1) {
+                        return segments[userIdx + 1]; // 精準抓出 user 緊接著的 ID
+                    }
+                }
+
+                // 類型 3: 一般自訂帳號 facebook.com/username
                 let pathSegments = urlObj.pathname.split('/').filter(p => p !== "");
-                if (pathSegments.length > 0) return pathSegments[0];
+                if (pathSegments.length > 0 && !pathSegments[0].includes("groups")) {
+                    return pathSegments[0];
+                }
+                
                 return "unknown";
             } catch (e) { return "unknown"; }
         }
@@ -105,19 +119,16 @@
 
             const links = Array.from(inputArea.querySelectorAll('a'));
             
-            // --- 新增：測量主留言的「X 座標基準線」 ---
+            // --- 視覺座標：測量主留言的基準線 (強化容錯) ---
             let minLeftX = Infinity;
-            // 先掃描一次，找出最靠左的座標
             links.forEach(link => {
                 let rect = link.getBoundingClientRect();
-                // 排除一些隱藏的空連結
-                if (rect.width > 0 && rect.left < minLeftX) {
+                // 排除隱藏元素或無效座標
+                if (rect.width > 0 && rect.left > 0 && rect.left < minLeftX) {
                     minLeftX = rect.left;
                 }
             });
-            // 設定一個容錯值 (大於基準線 20px 以上的就視為縮排/樓中樓)
             const indentThreshold = minLeftX + 20;
-
 
             let userMap = new Map(); 
             let totalParsedCount = 0;
@@ -128,9 +139,8 @@
             const blacklist = ["讚", "回覆", "分享", "檢舉", "隱藏", "查看更多", "追蹤", "發送訊息", "頭號粉絲", "編輯記錄", "作者", "已編輯"];
 
             links.forEach(link => {
-                // --- 新增：視覺縮排過濾法 ---
                 let rect = link.getBoundingClientRect();
-                // 如果這個元素的 X 座標明顯偏右，代表它是樓中樓，直接略過不處理！
+                // 座標防護：判定為樓中樓縮排，直接略過
                 if (rect.left > indentThreshold) {
                     return; 
                 }
@@ -146,7 +156,12 @@
                 }
 
                 const isURLText = text.startsWith("http") || text.startsWith("www.");
-                const isPostOrExternalLink = href.includes('/share/p/') || href.includes('/posts/') || href.includes('/groups/') || (href.startsWith('http') && !href.includes('facebook.com'));
+                
+                // 修改處：移除 href.includes('/groups/')，避免誤殺社團留言
+                const isPostOrExternalLink = href.includes('/share/p/') || 
+                                             href.includes('/posts/') || 
+                                             (href.startsWith('http') && !href.includes('facebook.com'));
+                                             
                 const isAuthor = excludeAuthorCheck && (text === authorName);
 
                 if (text === "" || blacklist.includes(text) || !isNaN(text) || isURLText || isPostOrExternalLink) {

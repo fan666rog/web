@@ -256,7 +256,7 @@
     <div style="display:flex; gap:15px; flex-wrap:wrap;">
         <div style="flex:1; min-width:250px;">
             <h4 style="margin-top:0;">2. 點擊下方並貼上 FB 留言 (Ctrl+V)</h4>
-            <div id="fb-inputArea" contenteditable="true" style="height:250px; border:2px dashed #aaa; padding:10px; overflow-y:auto; border-radius:6px; background:#fff;"></div>
+            <div id="fb-inputArea" contenteditable="true" style="height:250px; border:2px dashed #aaa; padding:10px; overflow-y:auto; border-radius:6px; background:#fff; position:relative; text-align:left;"></div>
         </div>
         <div style="flex:1; min-width:250px;">
             <h4 style="margin-top:0;">3. 預覽乾淨名單</h4>
@@ -311,7 +311,6 @@
 
   function generateUUID() { return Math.random().toString(36).substring(2, 10) + Date.now().toString(36); }
 
-  // 升級 2：泛用型電話隱碼 (大於等於8碼數字即視為電話)
   function generateMaskedText(text) {
     return text.split('\n').map(line => {
       let words = line.split(/(\s+)/);
@@ -419,26 +418,34 @@
     }
 
     const links = Array.from(inputArea.querySelectorAll('a'));
-    
+    const blacklist = ["讚", "回覆", "分享", "檢舉", "隱藏", "查看更多", "追蹤", "發送訊息", "頭號粉絲", "編輯記錄", "作者", "已編輯"];
+
+    // 關鍵修復：升級 minLeftX 測量演算法 (只抓真正的名字來當基準)
     let minLeftX = Infinity;
     links.forEach(link => {
+        let text = link.innerText.trim();
         let rect = link.getBoundingClientRect();
-        if (rect.width > 0 && rect.left < minLeftX) {
-            minLeftX = rect.left;
+        const isTimeFormat = /^\d+\s*(天|小時|分鐘|秒|週|年)(前)?$/.test(text) || text === "剛剛" || text === "昨天" || /^\d+月\d+日$/.test(text) || /^\d{4}年\d+月\d+日$/.test(text) || /^\d+ 週$/.test(text);
+        
+        if (rect.width > 0 && text !== "" && !blacklist.includes(text) && !isTimeFormat) {
+            if (rect.left < minLeftX) {
+                minLeftX = rect.left;
+            }
         }
     });
+    // 防呆：如果完全沒抓到有效名字，給個預設值避免報錯
+    if (minLeftX === Infinity) minLeftX = 0; 
     const indentThreshold = minLeftX + 20;
 
     let userMap = new Map(); 
     let totalParsedCount = 0;
     let duplicateExclusions = new Set(), sameNameDifferentPeople = new Set();
     let isLookingForCommenter = true; 
-    const blacklist = ["讚", "回覆", "分享", "檢舉", "隱藏", "查看更多", "追蹤", "發送訊息", "頭號粉絲", "編輯記錄", "作者", "已編輯"];
 
     links.forEach(link => {
       let rect = link.getBoundingClientRect();
       if (rect.left > indentThreshold) {
-          return; 
+          return; // 樓中樓略過
       }
 
       let text = link.innerText.trim();
@@ -554,7 +561,6 @@
       }
     });
 
-    // 升級 1：開獎前強制補齊 M- (Auto-Patch 防呆機制)
     let rawLines = document.getElementById("digitalListInput").value.split('\n').filter(l => l.trim() !== "");
     let currentMaxM = getMaxSequence(rawLines, 'M-');
     rawLines = rawLines.map(line => {
@@ -594,7 +600,7 @@
     else { document.getElementById("showcase-area").classList.remove("hidden"); document.getElementById("btn-extra-prize").classList.remove("hidden"); preparePhase1(); }
   }
 
-  // ================= 三色票券產生器 (升級 3：三明治智慧排版) =================
+  // ================= 三色票券產生器 =================
   function generateTicketHTML(obj, size, showVoid, prize, totalCount) {
     let theme = 'ticket-digital', icon = '👤'; 
     if (obj.sourceType === 'paper') { theme = 'ticket-paper'; icon = '🎫'; }
@@ -606,13 +612,11 @@
     if (obj.sourceType === 'digital') {
       let parts = obj.displayText.split(/\s+/).filter(Boolean);
       
-      // 精簡模式：人多時只保留頂層編號與中間姓名
       if (totalCount > 10) {
         let lastPart = parts[parts.length - 1];
         if (lastPart && (lastPart.includes('****') || lastPart.startsWith('(@'))) parts.pop();
         formattedText = `<span style="font-weight:bold; white-space:nowrap;">${parts.join(' ')}</span>`;
       } 
-      // 三明治排版模式：人少時，分離頂部編號、底部電話/FB標籤，其餘字串無條件融合為姓名
       else {
         let topText = "", middleText = "", bottomText = "";
         

@@ -102,8 +102,10 @@
     }
     .tooltip:hover .tooltip-text, .tooltip:focus .tooltip-text { visibility: visible; opacity: 1; }
 
+    /* 電腦版：強迫文字不換行且不縮小 */
     .manual-input-group { display: flex; align-items: center; gap: 10px; flex-grow: 1; width: 100%; margin-top: 10px;}
-    .manual-input-group input { flex-grow: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .manual-input-group span { flex-shrink: 0; white-space: nowrap; font-weight: bold; color: #444; }
+    .manual-input-group input { flex-grow: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: 100%; box-sizing: border-box; }
 
     /* ================= 手機版專屬樣式 (RWD) ================= */
     @media (max-width: 768px) {
@@ -151,6 +153,10 @@
       td:last-child { border-bottom: 0; justify-content: center; padding: 15px 0 5px 0; display: flex; width: 100%; }
       .btn-void { width: 32px !important; height: 32px !important; top: -12px; right: -12px; }
       .btn-void::before, .btn-void::after { width: 15px; height: 3px; }
+
+      /* 手機版：排除名單分上下兩行排列，避免過擠 */
+      .manual-input-group { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .manual-input-group input { width: 100%; }
     }
   </style>
 </head>
@@ -274,7 +280,7 @@
             </span>
         </label>
         <div class="manual-input-group">
-            <span style="font-weight: bold; color: #444;">🚫 加強排除名單：</span>
+            <span>🚫 加強排除名單：</span>
             <input type="text" id="manualExclusions" placeholder="輸入要排除的人名，多人請用「逗號」隔開 (例如: 王小明, Jason Chen)">
         </div>
     </div>

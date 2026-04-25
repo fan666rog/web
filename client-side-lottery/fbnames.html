@@ -2,12 +2,11 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>FB 留言萃取器 V1.5 (智慧辨識版)</title>
+    <title>FB 留言萃取器 V1.6 (視覺防樓中樓版)</title>
     <style>
         body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; }
         h2 { margin-bottom: 20px; }
         
-        /* 控制面板區塊 */
         .control-panel {
             background-color: #fff;
             padding: 15px;
@@ -19,72 +18,33 @@
             gap: 20px;
         }
 
-        .option-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #444;
-            cursor: pointer;
-        }
+        .option-group { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: bold; color: #444; cursor: pointer; }
+        input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
 
         button.run-btn {
-            padding: 12px 24px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            background-color: #008CBA;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            transition: background-color 0.2s;
+            padding: 12px 24px; font-size: 18px; font-weight: bold; cursor: pointer;
+            background-color: #008CBA; color: white; border: none; border-radius: 5px; transition: background-color 0.2s;
         }
         button.run-btn:hover { background-color: #007399; }
 
-        /* 處理結果顯示區 (儀表板) */
         .stats-panel {
-            background-color: #eef7e8;
-            border-left: 5px solid #4CAF50;
-            padding: 15px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            font-size: 15px;
-            line-height: 1.6;
-            display: none; /* 初始隱藏，執行後顯示 */
+            background-color: #eef7e8; border-left: 5px solid #4CAF50; padding: 15px;
+            border-radius: 4px; margin-bottom: 20px; font-size: 15px; line-height: 1.6; display: none;
         }
         .stats-panel span.highlight { font-weight: bold; color: #d9534f; }
         .stats-panel span.success { font-weight: bold; color: #2b542c; }
 
-        /* 左右輸入輸出區塊 */
         .container { display: flex; gap: 20px; }
         .box { flex: 1; display: flex; flex-direction: column; }
         .title { font-weight: bold; margin-bottom: 10px; font-size: 16px; color: #444; }
         
-        #inputArea {
-            height: 500px;
-            border: 2px dashed #aaa;
-            padding: 15px;
-            overflow-y: auto;
-            background-color: #fff;
-            border-radius: 8px;
-        }
-        
-        #outputArea {
-            height: 500px;
-            border: 2px solid #555;
-            padding: 15px;
-            resize: none;
-            font-size: 16px;
-            line-height: 1.5;
-            border-radius: 8px;
-            background-color: #fff;
-        }
+        #inputArea { height: 500px; border: 2px dashed #aaa; padding: 15px; overflow-y: auto; background-color: #fff; border-radius: 8px; position: relative; }
+        #outputArea { height: 500px; border: 2px solid #555; padding: 15px; resize: none; font-size: 16px; line-height: 1.5; border-radius: 8px; background-color: #fff; }
     </style>
 </head>
 <body>
 
-    <h2>FB 留言名單萃取器 (智慧辨識版)</h2>
+    <h2>FB 留言名單萃取器 (視覺防樓中樓版)</h2>
 
     <div class="control-panel">
         <button class="run-btn" onclick="extractNames()">⚡ 整理名單</button>
@@ -95,7 +55,7 @@
     </div>
 
     <div id="statsPanel" class="stats-panel">
-        <div>📌 抓取到有效留言人次： <span id="statParsed" class="success">0</span> 次</div>
+        <div>📌 抓取到主留言人次： <span id="statParsed" class="success">0</span> 次</div>
         <div>✅ 最終乾淨名單產出： <span id="statOutput" class="success">0</span> 位</div>
         <hr style="border: 0; border-top: 1px dashed #ccc; margin: 10px 0;">
         <div>🗑️ 排除同人重複留言： <span id="statDuplicates">無</span></div>
@@ -114,24 +74,15 @@
     </div>
 
     <script>
-        // 輔助函數：從網址中萃取出乾淨的 ID 或帳號名稱
         function extractUserId(href) {
             if (!href) return "unknown";
             try {
                 let urlObj = new URL(href);
-                // 處理 profile.php?id=12345678 格式
-                if (urlObj.pathname.includes('/profile.php')) {
-                    return urlObj.searchParams.get('id') || "unknown";
-                }
-                // 處理 facebook.com/username 格式
+                if (urlObj.pathname.includes('/profile.php')) return urlObj.searchParams.get('id') || "unknown";
                 let pathSegments = urlObj.pathname.split('/').filter(p => p !== "");
-                if (pathSegments.length > 0) {
-                    return pathSegments[0]; // 第一個路徑通常就是帳號名稱
-                }
+                if (pathSegments.length > 0) return pathSegments[0];
                 return "unknown";
-            } catch (e) {
-                return "unknown"; // 容錯處理
-            }
+            } catch (e) { return "unknown"; }
         }
 
         function extractNames() {
@@ -146,116 +97,95 @@
             for (let i = 0; i < lines.length; i++) {
                 if (lines[i] === "作者") {
                     for (let j = i + 1; j < lines.length; j++) {
-                        if (lines[j] !== "") {
-                            authorName = lines[j];
-                            break;
-                        }
+                        if (lines[j] !== "") { authorName = lines[j]; break; }
                     }
                     break; 
                 }
             }
 
-            const links = inputArea.querySelectorAll('a');
+            const links = Array.from(inputArea.querySelectorAll('a'));
             
-            // --- 資料結構大升級：改用 Map 來記錄 [人名 -> Set(網址ID)] ---
+            // --- 新增：測量主留言的「X 座標基準線」 ---
+            let minLeftX = Infinity;
+            // 先掃描一次，找出最靠左的座標
+            links.forEach(link => {
+                let rect = link.getBoundingClientRect();
+                // 排除一些隱藏的空連結
+                if (rect.width > 0 && rect.left < minLeftX) {
+                    minLeftX = rect.left;
+                }
+            });
+            // 設定一個容錯值 (大於基準線 20px 以上的就視為縮排/樓中樓)
+            const indentThreshold = minLeftX + 20;
+
+
             let userMap = new Map(); 
-            
-            // 統計用變數
             let totalParsedCount = 0;
             let duplicateExclusions = new Set();
             let sameNameDifferentPeople = new Set();
-
             let isLookingForCommenter = true; 
 
-            const blacklist = [
-                "讚", "回覆", "分享", "檢舉", "隱藏", "查看更多", 
-                "追蹤", "發送訊息", "頭號粉絲", "編輯記錄", "作者", "已編輯"
-            ];
+            const blacklist = ["讚", "回覆", "分享", "檢舉", "隱藏", "查看更多", "追蹤", "發送訊息", "頭號粉絲", "編輯記錄", "作者", "已編輯"];
 
-            // --- 開始掃描 DOM ---
             links.forEach(link => {
+                // --- 新增：視覺縮排過濾法 ---
+                let rect = link.getBoundingClientRect();
+                // 如果這個元素的 X 座標明顯偏右，代表它是樓中樓，直接略過不處理！
+                if (rect.left > indentThreshold) {
+                    return; 
+                }
+
                 let text = link.innerText.trim();
                 let href = link.getAttribute('href') || ""; 
                 
-                const isTimeFormat = /^\d+\s*(天|小時|分鐘|秒|週|年)(前)?$/.test(text) || 
-                                     text === "剛剛" || text === "昨天" ||
-                                     /^\d+月\d+日$/.test(text) || /^\d{4}年\d+月\d+日$/.test(text) || /^\d+ 週$/.test(text);
+                const isTimeFormat = /^\d+\s*(天|小時|分鐘|秒|週|年)(前)?$/.test(text) || text === "剛剛" || text === "昨天" || /^\d+月\d+日$/.test(text) || /^\d{4}年\d+月\d+日$/.test(text) || /^\d+ 週$/.test(text);
 
-                // 遇到時間或回覆按鈕，重啟開關
                 if (isTimeFormat || text === "回覆" || text === "讚") {
                     isLookingForCommenter = true; 
                     return; 
                 }
 
                 const isURLText = text.startsWith("http") || text.startsWith("www.");
-                const isPostOrExternalLink = href.includes('/share/p/') || 
-                                             href.includes('/posts/') || 
-                                             href.includes('/groups/') ||
-                                             (href.startsWith('http') && !href.includes('facebook.com'));
+                const isPostOrExternalLink = href.includes('/share/p/') || href.includes('/posts/') || href.includes('/groups/') || (href.startsWith('http') && !href.includes('facebook.com'));
                 const isAuthor = excludeAuthorCheck && (text === authorName);
 
-                // 雜訊過濾
                 if (text === "" || blacklist.includes(text) || !isNaN(text) || isURLText || isPostOrExternalLink) {
                     return; 
                 }
 
-                // 判定為留言者
                 if (isLookingForCommenter) {
                     if (!isAuthor) {
                         let userId = extractUserId(href);
                         totalParsedCount++;
 
-                        // --- 核心邏輯：同名與同人判斷 ---
                         if (userMap.has(text)) {
                             let existingIds = userMap.get(text);
                             if (existingIds.has(userId)) {
-                                // 狀況 A：同名且同 ID -> 同一個人重複留言，排除！
                                 duplicateExclusions.add(text);
                             } else {
-                                // 狀況 B：同名但不同 ID -> 發現同名不同人！
                                 existingIds.add(userId);
                                 sameNameDifferentPeople.add(text);
                             }
                         } else {
-                            // 第一次遇到的名字
                             userMap.set(text, new Set([userId]));
                         }
                     }
-                    isLookingForCommenter = false; // 關閉開關，無視留言內的 tag
+                    isLookingForCommenter = false; 
                 }
             });
 
-            // --- 產生最終輸出名單 ---
             let finalNamesArray = [];
-            
             userMap.forEach((idsSet, name) => {
-                if (idsSet.size === 1) {
-                    // 只有一個 ID，代表沒有同名不同人的狀況，乾淨印出名字
-                    finalNamesArray.push(name);
-                } else {
-                    // 有多個 ID，代表發生同名狀況，幫他們各自加上專屬帳號後綴
-                    idsSet.forEach(id => {
-                        finalNamesArray.push(`${name} (@${id})`);
-                    });
-                }
+                if (idsSet.size === 1) finalNamesArray.push(name);
+                else idsSet.forEach(id => finalNamesArray.push(`${name} (@${id})`));
             });
 
-            // 輸出至畫面
             outputArea.value = finalNamesArray.join('\n');
-
-            // --- 更新儀表板資料 ---
             document.getElementById('statParsed').innerText = totalParsedCount;
             document.getElementById('statOutput').innerText = finalNamesArray.length;
-            
-            document.getElementById('statDuplicates').innerHTML = duplicateExclusions.size > 0 
-                ? `<span class="highlight">${Array.from(duplicateExclusions).join(', ')}</span>` 
-                : "無";
-                
-            document.getElementById('statSameName').innerHTML = sameNameDifferentPeople.size > 0 
-                ? `<span class="highlight">${Array.from(sameNameDifferentPeople).join(', ')}</span>` 
-                : "無";
-
-            statsPanel.style.display = "block"; // 顯示儀表板
+            document.getElementById('statDuplicates').innerHTML = duplicateExclusions.size > 0 ? `<span class="highlight">${Array.from(duplicateExclusions).join(', ')}</span>` : "無";
+            document.getElementById('statSameName').innerHTML = sameNameDifferentPeople.size > 0 ? `<span class="highlight">${Array.from(sameNameDifferentPeople).join(', ')}</span>` : "無";
+            statsPanel.style.display = "block"; 
         }
     </script>
 </body>

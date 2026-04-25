@@ -42,7 +42,7 @@
     .showcase-winner-area { min-height: 120px; max-height: 45vh; overflow-y: auto; margin: 20px 0; padding: 15px; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 20px; border-radius: 8px; background: #fdfdfd; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
     
     .winner-ticket { position: relative; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; }
-    .ticket-lg { font-size: 40px; padding: 15px 30px; border-width: 4px; min-width: 150px; }
+    .ticket-lg { font-size: 40px; padding: 15px 30px; border-width: 4px; min-width: 150px; min-height: 110px; }
     .ticket-md { font-size: 24px; padding: 10px 20px; border-width: 3px; }
     .ticket-sm { font-size: 18px; padding: 8px 14px; border-width: 2px; border-radius: 6px; }
 
@@ -311,13 +311,21 @@
 
   function generateUUID() { return Math.random().toString(36).substring(2, 10) + Date.now().toString(36); }
 
+  // 升級 2：泛用型電話隱碼 (大於等於8碼數字即視為電話)
   function generateMaskedText(text) {
     return text.split('\n').map(line => {
       let words = line.split(/(\s+)/);
       return words.map(word => {
         if (word.trim() === "") return word;
         if (/^(F-|M-)\d+$/.test(word)) return word; 
-        if (/^09\d{8}$/.test(word)) return word.substring(0, 4) + "****" + word.substring(8);
+        
+        let digitsOnly = word.replace(/\D/g, '');
+        if (digitsOnly.length >= 8) {
+          let len = word.length;
+          let start = Math.floor((len - 4) / 2);
+          return word.substring(0, start) + "****" + word.substring(start + 4);
+        }
+        
         if (/^[\u4e00-\u9fa5]{2,4}$/.test(word)) {
           if (word.length === 2) return word.charAt(0) + "Ｏ";
           if (word.length === 3) return word.charAt(0) + "Ｏ" + word.charAt(2);
@@ -375,7 +383,7 @@
     updateLiveStats();
   }
 
-  // ================= FB 萃取器邏輯 (視覺防樓中樓升級版) =================
+  // ================= FB 萃取器邏輯 =================
   function openFBModal() {
     document.getElementById('fb-inputArea').innerHTML = '';
     document.getElementById('fb-outputArea').value = '';
@@ -412,7 +420,6 @@
 
     const links = Array.from(inputArea.querySelectorAll('a'));
     
-    // --- 新增：測量主留言的「X 座標基準線」 ---
     let minLeftX = Infinity;
     links.forEach(link => {
         let rect = link.getBoundingClientRect();
@@ -429,7 +436,6 @@
     const blacklist = ["讚", "回覆", "分享", "檢舉", "隱藏", "查看更多", "追蹤", "發送訊息", "頭號粉絲", "編輯記錄", "作者", "已編輯"];
 
     links.forEach(link => {
-      // --- 新增：視覺縮排過濾法 (過濾樓中樓) ---
       let rect = link.getBoundingClientRect();
       if (rect.left > indentThreshold) {
           return; 
@@ -475,9 +481,7 @@
   }
 
   function importFBToList() {
-    if(extractedFBNames.length === 0) {
-      alert("請先整理名單！"); return;
-    }
+    if(extractedFBNames.length === 0) { alert("請先整理名單！"); return; }
     let raw = document.getElementById("digitalListInput");
     let lines = raw.value.split('\n').filter(l => l.trim() !== "");
     let currentMaxF = getMaxSequence(lines, 'F-');
@@ -489,7 +493,6 @@
 
     lines = lines.concat(newFBLines);
     raw.value = lines.join('\n');
-    
     document.getElementById('modal-fb-extract').classList.add('hidden');
     updateLiveStats();
   }
@@ -551,7 +554,18 @@
       }
     });
 
-    document.getElementById("digitalListInput").value.split('\n').filter(l => l.trim() !== "").forEach(line => {
+    // 升級 1：開獎前強制補齊 M- (Auto-Patch 防呆機制)
+    let rawLines = document.getElementById("digitalListInput").value.split('\n').filter(l => l.trim() !== "");
+    let currentMaxM = getMaxSequence(rawLines, 'M-');
+    rawLines = rawLines.map(line => {
+      if (!/^(F-|M-)\d+/.test(line)) {
+        currentMaxM++;
+        return `M-${String(currentMaxM).padStart(3, '0')} ${line}`;
+      }
+      return line;
+    });
+
+    rawLines.forEach(line => {
       tempPool.push({ sysId: "tk_" + generateUUID(), rawText: line, displayText: generateMaskedText(line), sourceType: "digital" });
     });
 
@@ -580,7 +594,7 @@
     else { document.getElementById("showcase-area").classList.remove("hidden"); document.getElementById("btn-extra-prize").classList.remove("hidden"); preparePhase1(); }
   }
 
-  // ================= 三色票券產生器 (包含智慧排版) =================
+  // ================= 三色票券產生器 (升級 3：三明治智慧排版) =================
   function generateTicketHTML(obj, size, showVoid, prize, totalCount) {
     let theme = 'ticket-digital', icon = '👤'; 
     if (obj.sourceType === 'paper') { theme = 'ticket-paper'; icon = '🎫'; }
@@ -592,25 +606,32 @@
     if (obj.sourceType === 'digital') {
       let parts = obj.displayText.split(/\s+/).filter(Boolean);
       
+      // 精簡模式：人多時只保留頂層編號與中間姓名
       if (totalCount > 10) {
         let lastPart = parts[parts.length - 1];
-        if (parts.length > 1 && (lastPart.includes('****') || (/^09/.test(lastPart) && lastPart.length >= 8) || lastPart.startsWith('(@'))) {
-          parts.pop(); 
-        }
+        if (lastPart && (lastPart.includes('****') || lastPart.startsWith('(@'))) parts.pop();
         formattedText = `<span style="font-weight:bold; white-space:nowrap;">${parts.join(' ')}</span>`;
-      } else {
-        if (parts.length === 2) {
-          formattedText = `<div style="display:flex; flex-direction:column; align-items:center; line-height:1.2; gap:4px; padding: 5px 0;">
-            <span style="font-size:1.1em; font-weight:900;">${parts[0]}</span>
-            <span style="font-size:0.65em; opacity:0.8;">${parts[1]}</span>
-          </div>`;
-        } else if (parts.length >= 3) {
-          formattedText = `<div style="display:flex; flex-direction:column; align-items:center; line-height:1.1; gap:2px; padding: 5px 0;">
-            <span style="font-size:0.55em; opacity:0.7;">${parts[0]}</span>
-            <span style="font-size:1.1em; font-weight:900;">${parts[1]}</span>
-            <span style="font-size:0.65em; opacity:0.8;">${parts.slice(2).join(' ')}</span>
-          </div>`;
+      } 
+      // 三明治排版模式：人少時，分離頂部編號、底部電話/FB標籤，其餘字串無條件融合為姓名
+      else {
+        let topText = "", middleText = "", bottomText = "";
+        
+        if (/^(F-|M-)\d+/.test(parts[0])) {
+            topText = parts.shift();
         }
+        
+        let lastPart = parts[parts.length - 1];
+        if (lastPart && (lastPart.includes('****') || lastPart.startsWith('(@'))) {
+            bottomText = parts.pop();
+        }
+        
+        middleText = parts.join(' '); 
+
+        formattedText = `<div style="display:flex; flex-direction:column; align-items:center; line-height:1.2; gap:4px; padding: 5px 0;">`;
+        if(topText) formattedText += `<span style="font-size:0.55em; opacity:0.7; letter-spacing:1px;">${topText}</span>`;
+        formattedText += `<span style="font-size:1.1em; font-weight:900;">${middleText}</span>`;
+        if(bottomText) formattedText += `<span style="font-size:0.65em; opacity:0.8;">${bottomText}</span>`;
+        formattedText += `</div>`;
       }
     }
     return `<span class="winner-ticket ${size} ${theme}">${formattedText}${voidBtn}<div class="source-icon">${icon}</div></span>`;

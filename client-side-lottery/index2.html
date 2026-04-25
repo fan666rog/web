@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券抽獎系統 V4.0</title>
+  <title>彩券抽獎系統 V4.0 beta (社群旗艦版)</title>
   <style>
     /* ================= 基礎樣式 ================= */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
@@ -36,7 +36,7 @@
     .highlight-red { color: #c82333; font-size: 22px; }
     .status-bar { background: #343a40; color: white; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 18px; margin-bottom: 30px; }
     
-    /* ================= 展演區樣式 & 雙色票券 ================= */
+    /* ================= 展演區樣式 & 三色票券 ================= */
     #presentation-section { text-align: center; padding: 20px 0; }
     .showcase-prize-title { font-size: 48px; color: #e74c3c; margin-bottom: 10px; }
     .showcase-winner-area { min-height: 120px; max-height: 45vh; overflow-y: auto; margin: 20px 0; padding: 15px; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 20px; border-radius: 8px; background: #fdfdfd; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
@@ -46,9 +46,10 @@
     .ticket-md { font-size: 24px; padding: 10px 20px; border-width: 3px; }
     .ticket-sm { font-size: 18px; padding: 8px 14px; border-width: 2px; border-radius: 6px; }
 
-    /* 雙色主題設定 (全彩呈現) */
+    /* 三大主題設定 (實體黃、數位藍、FB專屬藍) */
     .ticket-paper { background: #f1c40f; border: solid #f39c12; color: #2c3e50; }
     .ticket-digital { background: #dff9fb; border: solid #0984e3; color: #2c3e50; }
+    .ticket-fb { background: #e7f3ff; border: solid #1877f2; color: #1c1e21; }
 
     /* 懸浮微型徽章 */
     .source-icon { position: absolute; bottom: -12px; right: -12px; width: 28px; height: 28px; background: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); border: 1px solid #eee; z-index: 5; }
@@ -69,87 +70,61 @@
     .btn-keep-backup { background-color: #17a2b8; color: white; font-size: 18px; padding: 10px 20px; border-radius: 8px; }
     
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-    .modal-content { background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; text-align: left; }
+    .modal-content { background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 800px; max-height: 85vh; overflow-y: auto; text-align: left; }
     .extra-prize-btn { background-color: #e84393; color: white; position: fixed; bottom: 20px; right: 20px; font-size: 18px; border-radius: 50px; padding: 15px 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 900;}
     
     .fade-in { animation: fadeIn 0.5s ease-in; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* ================= V4.0 手機版專屬樣式 (修復破版 & UI優化) ================= */
+    /* ================= FB 萃取器專屬樣式 ================= */
+    .fb-stats-panel { background-color: #eef7e8; border-left: 5px solid #4CAF50; padding: 15px; border-radius: 4px; margin-bottom: 15px; font-size: 15px; line-height: 1.6; display: none; }
+    .fb-stats-panel span.highlight { font-weight: bold; color: #d9534f; }
+    .fb-stats-panel span.success { font-weight: bold; color: #2b542c; }
+
+    /* ================= 手機版專屬樣式 (RWD) ================= */
     @media (max-width: 768px) {
-      /* 基礎容器優化：減少 padding，避免撐破螢幕 */
       body { padding: 10px; }
       .container { padding: 15px; overflow-x: hidden; }
-      
-      /* 名單輸入區塊改成垂直排列，避免右側超出 */
       .input-section { flex-direction: column; gap: 15px; }
       .input-card { min-width: 100%; padding: 15px; box-sizing: border-box; }
-
-      /* 1. 儀表板與頂部工具列優化 */
       .live-dashboard { flex-direction: column; align-items: center; gap: 12px; text-align: center; }
       .status-bar { flex-direction: column; text-align: center; gap: 15px; padding: 15px 10px; }
       .status-bar div:nth-child(2) { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
       .status-bar button { margin: 0; font-size: 14px; padding: 8px 12px; }
 
-      /* 2. 表格卡片化排版 (防溢出) */
       table, thead, tbody, th, td, tr { display: block; width: 100%; box-sizing: border-box; }
-      table tr:first-child { display: none; } /* 隱藏原本的橫向表頭 */
-      tr { 
-        background: #fff; border: 2px solid #17a2b8; border-radius: 10px; 
-        margin-bottom: 20px; padding: 15px 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.08); 
-      }
+      table tr:first-child { display: none; }
+      tr { background: #fff; border: 2px solid #17a2b8; border-radius: 10px; margin-bottom: 20px; padding: 15px 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.08); }
       
-      /* =========== 實體摸彩券專屬優化 (超長序號 100% 滿版設計) =========== */
-      #ticketBooks td:nth-of-type(1),
-      #ticketBooks td:nth-of-type(2) {
-        border: none; border-bottom: 1px dashed #ddd; 
-        padding: 10px 5px 15px 5px; /* 移除左側留白，改為上下留白 */
-        display: flex; flex-direction: column; align-items: flex-start; text-align: left;
-        min-height: auto;
+      #ticketBooks td:nth-of-type(1), #ticketBooks td:nth-of-type(2) {
+        border: none; border-bottom: 1px dashed #ddd; padding: 10px 5px 15px 5px;
+        display: flex; flex-direction: column; align-items: flex-start; text-align: left; min-height: auto;
       }
-      #ticketBooks td:nth-of-type(1)::before,
-      #ticketBooks td:nth-of-type(2)::before {
-        position: static; transform: none; width: 100%;
-        margin-bottom: 8px; color: #0056b3; font-size: 14px;
+      #ticketBooks td:nth-of-type(1)::before, #ticketBooks td:nth-of-type(2)::before {
+        position: static; transform: none; width: 100%; margin-bottom: 8px; color: #0056b3; font-size: 14px;
       }
       #ticketBooks td:nth-of-type(1)::before { content: "起始序號"; }
       #ticketBooks td:nth-of-type(2)::before { content: "結束序號"; }
       
       #ticketBooks input {
-        width: 100% !important; max-width: none !important; 
-        text-align: left !important; font-size: 18px !important; 
-        padding: 12px 10px !important; letter-spacing: 2px; /* 增加字距，長號碼更好讀 */
-        background: #f8f9fa; border: 1px solid #ced4da; border-radius: 6px;
+        width: 100% !important; max-width: none !important; text-align: left !important; font-size: 18px !important; 
+        padding: 12px 10px !important; letter-spacing: 2px; background: #f8f9fa; border: 1px solid #ced4da; border-radius: 6px;
       }
-      /* ================================================================ */
 
-      /* 一般獎項設定維持左右排版 (因為數字通常很小) */
       #prizeTable td { 
-        border: none; border-bottom: 1px dashed #ddd; position: relative; 
-        padding: 12px 10px 12px 40%; text-align: right; min-height: 30px; 
+        border: none; border-bottom: 1px dashed #ddd; position: relative; padding: 12px 10px 12px 40%; text-align: right; min-height: 30px; 
         display: flex; justify-content: flex-end; align-items: center; 
       }
-      #prizeTable td::before { 
-        position: absolute; top: 50%; left: 10px; transform: translateY(-50%); 
-        width: 35%; text-align: left; font-weight: bold; color: #495057; white-space: nowrap; 
-      }
+      #prizeTable td::before { position: absolute; top: 50%; left: 10px; transform: translateY(-50%); width: 35%; text-align: left; font-weight: bold; color: #495057; white-space: nowrap; }
       #prizeTable td:nth-of-type(1)::before { content: "順位"; }
       #prizeTable td:nth-of-type(2)::before { content: "獎項名稱"; }
       #prizeTable td:nth-of-type(3)::before { content: "正取"; }
       #prizeTable td:nth-of-type(4)::before { content: "備取"; }
       #prizeTable td:nth-of-type(5)::before { content: "特效"; }
 
-      #prizeTable input[type="text"], #prizeTable input[type="number"] { 
-        width: 60% !important; max-width: 180px; text-align: center; font-size: 16px; 
-      }
+      #prizeTable input[type="text"], #prizeTable input[type="number"] { width: 60% !important; max-width: 180px; text-align: center; font-size: 16px; }
       #prizeTable input[type="checkbox"] { transform: scale(1.5); margin-right: 15px; }
-
-      /* 刪除按鈕置中 */
-      td:last-child { 
-        border-bottom: 0; justify-content: center; padding: 15px 0 5px 0; 
-        display: flex; width: 100%;
-      }
-      
+      td:last-child { border-bottom: 0; justify-content: center; padding: 15px 0 5px 0; display: flex; width: 100%; }
       .btn-void { width: 32px !important; height: 32px !important; top: -12px; right: -12px; }
       .btn-void::before, .btn-void::after { width: 15px; height: 3px; }
     }
@@ -171,7 +146,7 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.0 (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.0 (社群旗艦版)</h1>
     
     <div class="live-dashboard">
       <div>📊 預估有效名額： <span id="live-ticket-count" class="highlight-blue">0</span> 人</div>
@@ -200,11 +175,12 @@
       <div class="input-card">
         <h4>👤 數位線上名單</h4>
         <div style="margin-bottom: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-          <button class="toolbar-btn" onclick="toolAutoSerial()">✨ 加流水號</button>
+          <button class="toolbar-btn" onclick="openFBModal()" style="background: #1877f2; font-weight: bold;">📥 FB 留言一鍵匯入</button>
+          <button class="toolbar-btn" onclick="toolAutoSerial()">✨ 加編號 (M-)</button>
           <button class="toolbar-btn" onclick="toolDeduplicate()">❌ 清除重複</button>
-          <button id="btn-toggle-mask" class="toolbar-btn" onclick="toggleMaskMode()" style="background: #e67e22; font-weight: bold;">🔒 切換隱碼保護畫面</button>
+          <button id="btn-toggle-mask" class="toolbar-btn" onclick="toggleMaskMode()" style="background: #e67e22; font-weight: bold;">🔒 切換隱碼保護</button>
         </div>
-        <textarea id="digitalListInput" class="digital-list" placeholder="請將真實名單貼在此處...&#10;一行代表一個抽獎機會。&#10;例：&#10;林宥嘉 0917123456"></textarea>
+        <textarea id="digitalListInput" class="digital-list" placeholder="請將真實名單貼在此處...&#10;FB名單會自動帶有 F- 前綴&#10;手動名單可點擊上方按鈕加上 M- 前綴"></textarea>
         <textarea id="digitalListMasked" class="digital-list hidden" readonly style="background: #f1f2f6; color: #7f8c8d; border-color: #e67e22; outline: none;" placeholder="隱碼預覽畫面..."></textarea>
       </div>
     </div>
@@ -260,13 +236,46 @@
 
 <button id="btn-extra-prize" class="extra-prize-btn hidden" onclick="showExtraPrizeModal()">➕ 臨時加碼</button>
 
+<div id="modal-fb-extract" class="modal-overlay hidden">
+  <div class="modal-content">
+    <h2 style="margin-top:0; color:#1877f2;">📥 FB 留言智慧萃取工作站</h2>
+    
+    <div style="background:#f4f4f9; padding:15px; border-radius:8px; margin-bottom:15px; display:flex; flex-wrap:wrap; gap:15px; align-items:center;">
+        <button onclick="runFBExtraction()" style="background:#008CBA; color:white; font-weight:bold; padding:10px 20px; border-radius:5px; border:none; cursor:pointer;">⚡ 1. 整理名單</button>
+        <label style="font-weight:bold; cursor:pointer;"><input type="checkbox" id="excludeAuthorCheck" checked> 自動排除作者留言</label>
+    </div>
+
+    <div id="fb-statsPanel" class="fb-stats-panel">
+        <div>📌 抓取到有效留言： <span id="statParsed" class="success">0</span> 次</div>
+        <div>✅ 乾淨名單產出： <span id="statOutput" class="success">0</span> 位</div>
+        <hr style="border: 0; border-top: 1px dashed #ccc; margin: 10px 0;">
+        <div>🗑️ 排除同人重複： <span id="statDuplicates">無</span></div>
+        <div>⚠️ 偵測同名不同人： <span id="statSameName">無</span></div>
+    </div>
+
+    <div style="display:flex; gap:15px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:250px;">
+            <h4 style="margin-top:0;">2. 點擊下方並貼上 FB 留言 (Ctrl+V)</h4>
+            <div id="fb-inputArea" contenteditable="true" style="height:250px; border:2px dashed #aaa; padding:10px; overflow-y:auto; border-radius:6px; background:#fff;"></div>
+        </div>
+        <div style="flex:1; min-width:250px;">
+            <h4 style="margin-top:0;">3. 預覽乾淨名單</h4>
+            <textarea id="fb-outputArea" readonly style="width:100%; height:250px; border:1px solid #ccc; border-radius:6px; padding:10px; box-sizing:border-box; background:#f9f9f9;"></textarea>
+        </div>
+    </div>
+
+    <div style="text-align:right; margin-top:20px;">
+        <button onclick="document.getElementById('modal-fb-extract').classList.add('hidden')" style="background:#6c757d; color:white; padding:10px 20px; border-radius:5px; border:none; cursor:pointer;">取消</button>
+        <button onclick="importFBToList()" style="background:#28a745; color:white; font-weight:bold; font-size:18px; padding:10px 20px; border-radius:5px; border:none; cursor:pointer; margin-left:10px;">✅ 4. 將名單加入抽獎池</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-settings" class="modal-overlay hidden">
   <div class="modal-content">
     <h2 style="margin-top:0;">📋 活動設定檢視</h2>
     <div id="settings-modal-body" style="font-size: 16px; line-height: 1.6;"></div>
-    <div style="text-align: right; margin-top: 20px;">
-      <button onclick="document.getElementById('modal-settings').classList.add('hidden')" style="background:#6c757d; color:white; padding:10px 20px; border-radius:5px; border:none; cursor:pointer;">關閉視窗</button>
-    </div>
+    <div style="text-align: right; margin-top: 20px;"><button onclick="document.getElementById('modal-settings').classList.add('hidden')" style="background:#6c757d; color:white; padding:10px 20px; border-radius:5px; border:none; cursor:pointer;">關閉視窗</button></div>
   </div>
 </div>
 
@@ -295,26 +304,20 @@
 
 <script>
   // ================= 全局變數 =================
-  let originalTicketsPool = []; 
-  let extraTicketsPool = [];    
-  let globalTicketsPool = [];   
-  let globalPrizes = [];        
-  let drawResults = {};         
-  let extraResults = {};        
-  let currentPhase = 1;         
-  let currentPrizeIndex = 0;    
-  let isMaskedMode = false;
+  let originalTicketsPool = [], extraTicketsPool = [], globalTicketsPool = [];   
+  let globalPrizes = [], drawResults = {}, extraResults = {};        
+  let currentPhase = 1, currentPrizeIndex = 0, isMaskedMode = false;
+  let extractedFBNames = []; // 暫存 FB 萃取結果
 
-  function generateUUID() { 
-    return Math.random().toString(36).substring(2, 10) + Date.now().toString(36); 
-  }
+  function generateUUID() { return Math.random().toString(36).substring(2, 10) + Date.now().toString(36); }
 
-  // 共用隱碼處理邏輯
   function generateMaskedText(text) {
     return text.split('\n').map(line => {
       let words = line.split(/(\s+)/);
       return words.map(word => {
         if (word.trim() === "") return word;
+        // F- 或 M- 開頭的編號不遮蔽
+        if (/^(F-|M-)\d+$/.test(word)) return word; 
         if (/^09\d{8}$/.test(word)) return word.substring(0, 4) + "****" + word.substring(8);
         if (/^[\u4e00-\u9fa5]{2,4}$/.test(word)) {
           if (word.length === 2) return word.charAt(0) + "Ｏ";
@@ -326,37 +329,48 @@
     }).join('\n');
   }
 
-  // 保護模式切換
   function toggleMaskMode() {
-    const raw = document.getElementById("digitalListInput");
-    const masked = document.getElementById("digitalListMasked");
-    const btn = document.getElementById("btn-toggle-mask");
-    
+    const raw = document.getElementById("digitalListInput"), masked = document.getElementById("digitalListMasked"), btn = document.getElementById("btn-toggle-mask");
     isMaskedMode = !isMaskedMode;
     if (isMaskedMode) {
       masked.value = generateMaskedText(raw.value);
-      raw.classList.add("hidden"); 
-      masked.classList.remove("hidden");
-      btn.innerHTML = "👁️ 解除保護 (編輯模式)"; 
-      btn.style.background = "#27ae60";
+      raw.classList.add("hidden"); masked.classList.remove("hidden");
+      btn.innerHTML = "👁️ 解除保護 (編輯模式)"; btn.style.background = "#27ae60";
     } else {
-      masked.classList.add("hidden"); 
-      raw.classList.remove("hidden");
-      btn.innerHTML = "🔒 切換隱碼保護畫面"; 
-      btn.style.background = "#e67e22";
+      masked.classList.add("hidden"); raw.classList.remove("hidden");
+      btn.innerHTML = "🔒 切換隱碼保護"; btn.style.background = "#e67e22";
     }
   }
 
-  // 工具：自動加流水號
+  // 取得特定前綴的最高序號
+  function getMaxSequence(lines, prefix) {
+    let max = 0;
+    let regex = new RegExp('^' + prefix + '(\\d+)');
+    lines.forEach(l => {
+      let match = l.match(regex);
+      if(match) {
+        let num = parseInt(match[1], 10);
+        if(num > max) max = num;
+      }
+    });
+    return max;
+  }
+
+  // 工具：智慧加編號 (只處理沒有 F- 或 M- 的名單)
   function toolAutoSerial() {
-    let lines = document.getElementById("digitalListInput").value.split('\n').filter(l => l.trim() !== "");
-    let pad = Math.max(3, String(lines.length).length);
-    let newLines = lines.map((l, i) => /^\d{3,}\s/.test(l) ? l : `${String(i + 1).padStart(pad, '0')} ${l}`);
-    document.getElementById("digitalListInput").value = newLines.join('\n');
+    let raw = document.getElementById("digitalListInput");
+    let lines = raw.value.split('\n').filter(l => l.trim() !== "");
+    let currentMaxM = getMaxSequence(lines, 'M-');
+
+    let newLines = lines.map(line => {
+      if (/^(F-|M-)\d+\s/.test(line)) return line; // 若已有前綴則跳過
+      currentMaxM++;
+      return `M-${String(currentMaxM).padStart(3, '0')} ${line}`;
+    });
+    raw.value = newLines.join('\n');
     updateLiveStats();
   }
 
-  // 工具：清除重複
   function toolDeduplicate() {
     let raw = document.getElementById("digitalListInput");
     let lines = raw.value.split('\n').filter(l => l.trim() !== "");
@@ -364,100 +378,163 @@
     updateLiveStats();
   }
 
-  // ================= 儀表板：即時精準統計與防抖機制 =================
-  let statsTimeout;
-  
-  function debouncedUpdateStats() {
-    clearTimeout(statsTimeout);
-    statsTimeout = setTimeout(updateLiveStats, 300); 
+  // ================= FB 萃取器邏輯 =================
+  function openFBModal() {
+    document.getElementById('fb-inputArea').innerHTML = '';
+    document.getElementById('fb-outputArea').value = '';
+    document.getElementById('fb-statsPanel').style.display = 'none';
+    extractedFBNames = [];
+    document.getElementById('modal-fb-extract').classList.remove('hidden');
   }
 
-  function updateLiveStats() {
-    let validPaperCount = 0;
-    let paperRanges = [];
+  function extractUserId(href) {
+    if (!href) return "unknown";
+    try {
+      let urlObj = new URL(href);
+      if (urlObj.pathname.includes('/profile.php')) return urlObj.searchParams.get('id') || "unknown";
+      let pathSegments = urlObj.pathname.split('/').filter(p => p !== "");
+      if (pathSegments.length > 0) return pathSegments[0];
+      return "unknown";
+    } catch (e) { return "unknown"; }
+  }
+
+  function runFBExtraction() {
+    const inputArea = document.getElementById('fb-inputArea');
+    const excludeAuthorCheck = document.getElementById('excludeAuthorCheck').checked;
     
-    document.querySelectorAll("#ticketBooks tr:not(:first-child)").forEach(row => {
-      let s = parseInt(row.querySelector('.ticket-start').value);
-      let e = parseInt(row.querySelector('.ticket-end').value);
-      if (!isNaN(s) && !isNaN(e) && s <= e) {
-        validPaperCount += (e - s + 1);
-        paperRanges.push({start: s, end: e});
+    let authorName = "";
+    const lines = inputArea.innerText.split('\n').map(line => line.trim());
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i] === "作者") {
+        for (let j = i + 1; j < lines.length; j++) {
+          if (lines[j] !== "") { authorName = lines[j]; break; }
+        }
+        break; 
       }
+    }
+
+    const links = inputArea.querySelectorAll('a');
+    let userMap = new Map(); 
+    let totalParsedCount = 0;
+    let duplicateExclusions = new Set(), sameNameDifferentPeople = new Set();
+    let isLookingForCommenter = true; 
+    const blacklist = ["讚", "回覆", "分享", "檢舉", "隱藏", "查看更多", "追蹤", "發送訊息", "頭號粉絲", "編輯記錄", "作者", "已編輯"];
+
+    links.forEach(link => {
+      let text = link.innerText.trim();
+      let href = link.getAttribute('href') || ""; 
+      const isTimeFormat = /^\d+\s*(天|小時|分鐘|秒|週|年)(前)?$/.test(text) || text === "剛剛" || text === "昨天" || /^\d+月\d+日$/.test(text) || /^\d{4}年\d+月\d+日$/.test(text) || /^\d+ 週$/.test(text);
+
+      if (isTimeFormat || text === "回覆" || text === "讚") { isLookingForCommenter = true; return; }
+      const isURLText = text.startsWith("http") || text.startsWith("www.");
+      const isPostOrExternalLink = href.includes('/share/p/') || href.includes('/posts/') || href.includes('/groups/') || (href.startsWith('http') && !href.includes('facebook.com'));
+      const isAuthor = excludeAuthorCheck && (text === authorName);
+
+      if (text === "" || blacklist.includes(text) || !isNaN(text) || isURLText || isPostOrExternalLink) return; 
+
+      if (isLookingForCommenter) {
+        if (!isAuthor) {
+          let userId = extractUserId(href);
+          totalParsedCount++;
+          if (userMap.has(text)) {
+            let existingIds = userMap.get(text);
+            if (existingIds.has(userId)) duplicateExclusions.add(text);
+            else { existingIds.add(userId); sameNameDifferentPeople.add(text); }
+          } else { userMap.set(text, new Set([userId])); }
+        }
+        isLookingForCommenter = false; 
+      }
+    });
+
+    extractedFBNames = [];
+    userMap.forEach((idsSet, name) => {
+      if (idsSet.size === 1) extractedFBNames.push(name);
+      else idsSet.forEach(id => extractedFBNames.push(`${name} (@${id})`));
+    });
+
+    document.getElementById('fb-outputArea').value = extractedFBNames.join('\n');
+    document.getElementById('statParsed').innerText = totalParsedCount;
+    document.getElementById('statOutput').innerText = extractedFBNames.length;
+    document.getElementById('statDuplicates').innerHTML = duplicateExclusions.size > 0 ? `<span class="highlight">${Array.from(duplicateExclusions).join(', ')}</span>` : "無";
+    document.getElementById('statSameName').innerHTML = sameNameDifferentPeople.size > 0 ? `<span class="highlight">${Array.from(sameNameDifferentPeople).join(', ')}</span>` : "無";
+    document.getElementById('fb-statsPanel').style.display = "block";
+  }
+
+  function importFBToList() {
+    if(extractedFBNames.length === 0) {
+      alert("請先整理名單！"); return;
+    }
+    let raw = document.getElementById("digitalListInput");
+    let lines = raw.value.split('\n').filter(l => l.trim() !== "");
+    
+    // 接續找出現有的最高 F- 號碼
+    let currentMaxF = getMaxSequence(lines, 'F-');
+    
+    let newFBLines = extractedFBNames.map(name => {
+      currentMaxF++;
+      return `F-${String(currentMaxF).padStart(3, '0')} ${name}`;
+    });
+
+    lines = lines.concat(newFBLines);
+    raw.value = lines.join('\n');
+    
+    document.getElementById('modal-fb-extract').classList.add('hidden');
+    updateLiveStats();
+  }
+
+  // ================= 儀表板：即時統計 =================
+  let statsTimeout;
+  function debouncedUpdateStats() { clearTimeout(statsTimeout); statsTimeout = setTimeout(updateLiveStats, 300); }
+
+  function updateLiveStats() {
+    let validPaperCount = 0, paperRanges = [];
+    document.querySelectorAll("#ticketBooks tr:not(:first-child)").forEach(row => {
+      let s = parseInt(row.querySelector('.ticket-start').value), e = parseInt(row.querySelector('.ticket-end').value);
+      if (!isNaN(s) && !isNaN(e) && s <= e) { validPaperCount += (e - s + 1); paperRanges.push({start: s, end: e}); }
     });
 
     let excludeStr = document.getElementById("excludedNumbersInput").value;
     let excludes = excludeStr.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
-    let uniqueExcludes = new Set(excludes); 
     let effectiveExcludes = 0;
-
-    uniqueExcludes.forEach(ex => {
-      for (let r of paperRanges) {
-        if (ex >= r.start && ex <= r.end) {
-          effectiveExcludes++;
-          break;
-        }
-      }
-    });
+    new Set(excludes).forEach(ex => { for (let r of paperRanges) { if (ex >= r.start && ex <= r.end) { effectiveExcludes++; break; } } });
 
     validPaperCount = Math.max(0, validPaperCount - effectiveExcludes);
     let digitalCount = document.getElementById("digitalListInput").value.split('\n').filter(l => l.trim() !== "").length;
-    
     document.getElementById("live-ticket-count").innerText = validPaperCount + digitalCount;
     
     let totalPrizes = 0;
-    document.querySelectorAll("#prizeTable tr:not(:first-child)").forEach(row => {
-      totalPrizes += (parseInt(row.querySelector('.prize-count').value) || 0) + (parseInt(row.querySelector('.prize-backup').value) || 0);
-    });
+    document.querySelectorAll("#prizeTable tr:not(:first-child)").forEach(row => { totalPrizes += (parseInt(row.querySelector('.prize-count').value) || 0) + (parseInt(row.querySelector('.prize-backup').value) || 0); });
     document.getElementById("live-prize-count").innerText = totalPrizes;
   }
 
   function deleteRow(btn) { btn.closest('tr').remove(); updateLiveStats(); }
-  
   function addTicketBook() {
     let row = document.getElementById("ticketBooks").insertRow(-1);
     row.innerHTML = `<td><input type="number" class="ticket-start" value="1"></td><td><input type="number" class="ticket-end" value="50"></td><td><button onclick="deleteRow(this)" class="btn-delete" style="padding: 5px 10px;">刪</button></td>`;
     updateLiveStats();
   }
-  
   function addPrizeCategory() {
     let row = document.getElementById("prizeTable").insertRow(-1);
-    let newOrder = document.getElementById("prizeTable").rows.length - 1;
-    row.innerHTML = `<td><input type="number" class="prize-order" value="${newOrder}" style="width: 60px;"></td><td><input type="text" class="prize-name" value="新獎項"></td><td><input type="number" class="prize-count" value="1" style="width: 60px;"></td><td><input type="number" class="prize-backup" value="0" style="width: 60px;"></td><td><input type="checkbox" class="prize-effect"></td><td><button onclick="deleteRow(this)" class="btn-delete">刪除</button></td>`;
+    row.innerHTML = `<td><input type="number" class="prize-order" value="${document.getElementById("prizeTable").rows.length - 1}" style="width: 60px;"></td><td><input type="text" class="prize-name" value="新獎項"></td><td><input type="number" class="prize-count" value="1" style="width: 60px;"></td><td><input type="number" class="prize-backup" value="0" style="width: 60px;"></td><td><input type="checkbox" class="prize-effect"></td><td><button onclick="deleteRow(this)" class="btn-delete">刪除</button></td>`;
     updateLiveStats();
   }
+  function updateStatusBar() { document.getElementById("display-remaining-tickets").innerText = globalTicketsPool.length; }
 
-  function updateStatusBar() {
-    document.getElementById("display-remaining-tickets").innerText = globalTicketsPool.length;
-  }
-
-  // ================= 核心：系統初始化 =================
+  // ================= 核心初始化 =================
   function initLottery(mode) {
     const errorDiv = document.getElementById("errorMessage");
-    let errors = [];
-    let tempPool = [];
-    let paperCheckSet = new Set();
-    drawResults = {};
-    extraResults = {};
+    let errors = [], tempPool = [], paperCheckSet = new Set(), excludes = new Set();
+    drawResults = {}; extraResults = {};
 
-    let excludes = new Set();
-    document.getElementById("excludedNumbersInput").value.split(',').forEach(n => { 
-      let parsed = parseInt(n.trim());
-      if(!isNaN(parsed)) excludes.add(parsed); 
-    });
+    document.getElementById("excludedNumbersInput").value.split(',').forEach(n => { if(!isNaN(parseInt(n.trim()))) excludes.add(parseInt(n.trim())); });
 
     document.querySelectorAll("#ticketBooks tr:not(:first-child)").forEach((row, idx) => {
-      let s = parseInt(row.querySelector('.ticket-start').value);
-      let e = parseInt(row.querySelector('.ticket-end').value);
+      let s = parseInt(row.querySelector('.ticket-start').value), e = parseInt(row.querySelector('.ticket-end').value);
       if (isNaN(s) || isNaN(e) || s > e) errors.push(`第 ${idx+1} 本實體序號錯誤。`);
-      
       for (let i = s; i <= e; i++) {
         if (!excludes.has(i)) {
-          if (paperCheckSet.has(i)) {
-             errors.push(`實體序號 ${i} 重疊！`);
-          } else {
-             paperCheckSet.add(i);
-             tempPool.push({ sysId: "tk_" + generateUUID(), rawText: String(i), displayText: String(i), sourceType: "paper" });
-          }
+          if (paperCheckSet.has(i)) errors.push(`實體序號 ${i} 重疊！`);
+          else { paperCheckSet.add(i); tempPool.push({ sysId: "tk_" + generateUUID(), rawText: String(i), displayText: String(i), sourceType: "paper" }); }
         }
       }
     });
@@ -466,59 +543,39 @@
       tempPool.push({ sysId: "tk_" + generateUUID(), rawText: line, displayText: generateMaskedText(line), sourceType: "digital" });
     });
 
-    globalTicketsPool = [...tempPool]; 
-    originalTicketsPool = [...tempPool]; 
-    extraTicketsPool = [...tempPool];
-
-    globalPrizes = []; 
-    let totalNeeded = 0;
+    globalTicketsPool = [...tempPool]; originalTicketsPool = [...tempPool]; extraTicketsPool = [...tempPool];
+    globalPrizes = []; let totalNeeded = 0;
+    
     document.querySelectorAll("#prizeTable tr:not(:first-child)").forEach((row, idx) => {
-      let n = row.querySelector('.prize-name').value;
-      let c = parseInt(row.querySelector('.prize-count').value);
-      let b = parseInt(row.querySelector('.prize-backup').value);
+      let n = row.querySelector('.prize-name').value, c = parseInt(row.querySelector('.prize-count').value), b = parseInt(row.querySelector('.prize-backup').value);
       if(!n || isNaN(c) || c <= 0) errors.push(`第 ${idx+1} 個獎項設定異常。`);
-      
       totalNeeded += (c + b);
-      globalPrizes.push({ 
-        order: parseInt(row.querySelector('.prize-order').value) || 0, 
-        name: n, count: c, backupCount: b, 
-        effect: row.querySelector('.prize-effect').checked, 
-        resolved: false 
-      });
+      globalPrizes.push({ order: parseInt(row.querySelector('.prize-order').value) || 0, name: n, count: c, backupCount: b, effect: row.querySelector('.prize-effect').checked, resolved: false });
       drawResults[n] = { main: [], backup: [], voided: [] };
     });
 
     if (globalTicketsPool.length < totalNeeded) errors.push("⚠️ 總票數不足以抽出所有設定獎項！");
-    if (errors.length > 0) { 
-      errorDiv.innerHTML = errors.join("<br>"); 
-      errorDiv.classList.remove("hidden"); 
-      return; 
-    }
+    if (errors.length > 0) { errorDiv.innerHTML = errors.join("<br>"); errorDiv.classList.remove("hidden"); return; }
     
     globalPrizes.sort((a, b) => a.order - b.order);
-    
     document.getElementById("setup-section").classList.add("hidden"); 
     document.getElementById("presentation-section").classList.remove("hidden");
     document.getElementById("status-bar-container").classList.remove("hidden"); 
     document.getElementById("presentation-title").innerText = document.getElementById("main-title").innerText;
     
     updateStatusBar();
-    
-    if (mode === 'quick') {
-      executeQuickDraw(); 
-    } else { 
-      document.getElementById("showcase-area").classList.remove("hidden"); 
-      document.getElementById("btn-extra-prize").classList.remove("hidden"); 
-      preparePhase1(); 
-    }
+    if (mode === 'quick') executeQuickDraw(); 
+    else { document.getElementById("showcase-area").classList.remove("hidden"); document.getElementById("btn-extra-prize").classList.remove("hidden"); preparePhase1(); }
   }
 
-  // ================= 票券產生器 (包含智慧排版) =================
+  // ================= 三色票券產生器 (包含智慧排版) =================
   function generateTicketHTML(obj, size, showVoid, prize, totalCount) {
-    let theme = obj.sourceType === 'paper' ? 'ticket-paper' : 'ticket-digital';
-    let icon = obj.sourceType === 'paper' ? '🎫' : '👤';
+    // 智慧判斷來源，賦予專屬主題與圖示
+    let theme = 'ticket-digital', icon = '👤'; 
+    if (obj.sourceType === 'paper') { theme = 'ticket-paper'; icon = '🎫'; }
+    else if (obj.sourceType === 'digital' && obj.rawText.startsWith('F-')) { theme = 'ticket-fb'; icon = '📘'; }
+    
     let voidBtn = showVoid ? `<button class="btn-void" onclick="voidTicket('${prize}', '${obj.sysId}')">❌</button>` : '';
-
     let formattedText = obj.displayText;
 
     if (obj.sourceType === 'digital') {
@@ -526,12 +583,11 @@
       
       if (totalCount > 10) {
         let lastPart = parts[parts.length - 1];
-        if (parts.length > 1 && (lastPart.includes('****') || (/^09/.test(lastPart) && lastPart.length >= 8))) {
+        if (parts.length > 1 && (lastPart.includes('****') || (/^09/.test(lastPart) && lastPart.length >= 8) || lastPart.startsWith('(@'))) {
           parts.pop(); 
         }
         formattedText = `<span style="font-weight:bold; white-space:nowrap;">${parts.join(' ')}</span>`;
-      } 
-      else {
+      } else {
         if (parts.length === 2) {
           formattedText = `<div style="display:flex; flex-direction:column; align-items:center; line-height:1.2; gap:4px; padding: 5px 0;">
             <span style="font-size:1.1em; font-weight:900;">${parts[0]}</span>
@@ -546,107 +602,71 @@
         }
       }
     }
-
     return `<span class="winner-ticket ${size} ${theme}">${formattedText}${voidBtn}<div class="source-icon">${icon}</div></span>`;
   }
 
   // ================= 錄影快速模式 =================
   function executeQuickDraw() {
-    globalPrizes.forEach(p => { 
-      for(let i=0; i<p.count; i++) if(globalTicketsPool.length > 0) drawResults[p.name].main.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]); 
-    });
-    [...globalPrizes].reverse().forEach(p => { 
-      for(let i=0; i<p.backupCount; i++) if(globalTicketsPool.length > 0) drawResults[p.name].backup.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]); 
-    });
+    globalPrizes.forEach(p => { for(let i=0; i<p.count; i++) if(globalTicketsPool.length > 0) drawResults[p.name].main.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]); });
+    [...globalPrizes].reverse().forEach(p => { for(let i=0; i<p.backupCount; i++) if(globalTicketsPool.length > 0) drawResults[p.name].backup.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]); });
     
     let html = "<h2>✨ 抽獎結果總覽 ✨</h2>";
     globalPrizes.forEach(p => {
       html += `<h3>🎁 ${p.name} (正取 ${p.count} 名)</h3><div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;">${drawResults[p.name].main.map(t=>generateTicketHTML(t,'ticket-sm',false,p.name,p.count)).join('')}</div>`;
-      if(p.backupCount > 0) {
-        html += `<p style="color:#6c757d; font-weight:bold; margin-bottom:5px;">備取名單：</p><div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:15px;">${drawResults[p.name].backup.map(t=>generateTicketHTML(t,'ticket-sm',false,p.name,p.backupCount)).join('')}</div>`;
-      }
+      if(p.backupCount > 0) html += `<p style="color:#6c757d; font-weight:bold; margin-bottom:5px;">備取名單：</p><div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:15px;">${drawResults[p.name].backup.map(t=>generateTicketHTML(t,'ticket-sm',false,p.name,p.backupCount)).join('')}</div>`;
     });
-    document.getElementById("quick-draw-results").innerHTML = html; 
-    document.getElementById("quick-draw-results").classList.remove("hidden");
+    document.getElementById("quick-draw-results").innerHTML = html; document.getElementById("quick-draw-results").classList.remove("hidden");
   }
 
   // ================= 氣氛模式：階段一 =================
-  function preparePhase1() { 
-    currentPhase = 1; 
-    currentPrizeIndex = 0; 
-    updateMainActionButton(); 
-  }
+  function preparePhase1() { currentPhase = 1; currentPrizeIndex = 0; updateMainActionButton(); }
   
   function updateMainActionButton() {
     const btn = document.getElementById("btn-main-action");
-    if (currentPrizeIndex < globalPrizes.length) { 
-      btn.innerText = `👉 抽出正取：${globalPrizes[currentPrizeIndex].name}`; 
-      btn.disabled = false; 
-    } else {
-      let hasAnyBackups = globalPrizes.some(p => p.backupCount > 0 && !p.resolved);
-      if (hasAnyBackups) {
-        transitionToPhase2();
-      } else {
-        showEndScreen();
-      }
+    if (currentPrizeIndex < globalPrizes.length) { btn.innerText = `👉 抽出正取：${globalPrizes[currentPrizeIndex].name}`; btn.disabled = false; } 
+    else {
+      if (globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) transitionToPhase2(); else showEndScreen();
     }
   }
 
   function showEndScreen() {
-    document.getElementById("main-control-panel").classList.add("hidden");
-    document.getElementById("phase2-control-panel").classList.add("hidden");
+    document.getElementById("main-control-panel").classList.add("hidden"); document.getElementById("phase2-control-panel").classList.add("hidden");
     document.getElementById("showcase-prize-name").innerText = "🎉 所有抽獎活動圓滿結束 🎉";
     document.getElementById("showcase-winner-result").innerHTML = "<div style='font-size: 24px; color: #7f8c8d; margin-top: 20px;'>感謝大家的參與！可由下方狀態列匯出中獎名單。</div>";
   }
 
   function executeNextMainDraw() {
     const p = globalPrizes[currentPrizeIndex];
-    document.getElementById("btn-main-action").classList.add("hidden");
-    document.getElementById("showcase-prize-name").innerText = `🎉 ${p.name} 🎉`;
-    
-    let winners = []; 
-    for(let i=0; i<p.count; i++) {
-      if(globalTicketsPool.length > 0) winners.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]);
-    }
+    document.getElementById("btn-main-action").classList.add("hidden"); document.getElementById("showcase-prize-name").innerText = `🎉 ${p.name} 🎉`;
+    let winners = []; for(let i=0; i<p.count; i++) if(globalTicketsPool.length > 0) winners.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]);
     drawResults[p.name].main = winners;
     
     const render = () => {
-      const area = document.getElementById("showcase-winner-result"); 
-      area.innerHTML = "";
+      const area = document.getElementById("showcase-winner-result"); area.innerHTML = "";
       winners.forEach(t => area.innerHTML += generateTicketHTML(t, winners.length>10?'ticket-sm':'ticket-lg', true, p.name, p.count));
-      document.getElementById("decision-buttons").classList.remove("hidden");
-      updateStatusBar();
+      document.getElementById("decision-buttons").classList.remove("hidden"); updateStatusBar();
     };
     
     if (p.effect && winners.length > 0) {
       let count = 0, interval = setInterval(() => {
         document.getElementById("showcase-winner-result").innerHTML = winners.map(t => {
           let fakeText = Math.floor(Math.random() * 9000 + 1000).toString();
-          return generateTicketHTML({displayText: fakeText, sourceType: t.sourceType}, 'ticket-lg', false, p.name, p.count);
+          return generateTicketHTML({displayText: fakeText, sourceType: t.sourceType, rawText: t.rawText}, 'ticket-lg', false, p.name, p.count);
         }).join('');
         if (++count > 20) { clearInterval(interval); render(); }
       }, 100);
-    } else {
-      render();
-    }
+    } else render();
   }
 
   function voidTicket(prizeName, targetId) {
     if(!confirm("確定要作廢此得獎者嗎？將自動補抽一名。")) return;
-    
     let targetObj = drawResults[prizeName].main.find(t => t.sysId === targetId);
     if(targetObj) drawResults[prizeName].voided.push(targetObj);
-    
     drawResults[prizeName].main = drawResults[prizeName].main.filter(t => t.sysId !== targetId);
+    if(globalTicketsPool.length > 0) drawResults[prizeName].main.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]);
+    else alert("票池已空，無法補抽！");
     
-    if(globalTicketsPool.length > 0) {
-       drawResults[prizeName].main.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]);
-    } else {
-       alert("票池已空，無法補抽！");
-    }
-    
-    const area = document.getElementById("showcase-winner-result"); 
-    area.innerHTML = "";
+    const area = document.getElementById("showcase-winner-result"); area.innerHTML = "";
     let currentTotal = drawResults[prizeName].main.length;
     drawResults[prizeName].main.forEach(t => area.innerHTML += generateTicketHTML(t, currentTotal>10?'ticket-sm':'ticket-lg', true, prizeName, currentTotal));
     updateStatusBar();
@@ -654,48 +674,29 @@
 
   function finalizeCurrentPrize(isResolved) {
     const prize = globalPrizes[currentPrizeIndex];
-    if(isResolved || prize.backupCount === 0) {
-      prize.resolved = true;
-    }
-    document.getElementById("decision-buttons").classList.add("hidden"); 
-    document.getElementById("btn-main-action").classList.remove("hidden");
-    document.getElementById("showcase-winner-result").innerHTML = ""; 
-    currentPrizeIndex++; 
-    updateMainActionButton();
+    if(isResolved || prize.backupCount === 0) prize.resolved = true;
+    document.getElementById("decision-buttons").classList.add("hidden"); document.getElementById("btn-main-action").classList.remove("hidden");
+    document.getElementById("showcase-winner-result").innerHTML = ""; currentPrizeIndex++; updateMainActionButton();
   }
 
   // ================= 氣氛模式：階段二 =================
   function transitionToPhase2() {
-    currentPhase = 2; 
-    document.getElementById("main-control-panel").classList.add("hidden"); 
-    document.getElementById("phase2-control-panel").classList.remove("hidden");
-    document.getElementById("showcase-prize-name").innerText = "進入備取階段";
-    document.getElementById("showcase-winner-result").innerHTML = "";
-    renderManualBackupButtons();
+    currentPhase = 2; document.getElementById("main-control-panel").classList.add("hidden"); document.getElementById("phase2-control-panel").classList.remove("hidden");
+    document.getElementById("showcase-prize-name").innerText = "進入備取階段"; document.getElementById("showcase-winner-result").innerHTML = ""; renderManualBackupButtons();
   }
 
   function renderManualBackupButtons() {
-    const pnl = document.getElementById("manual-backup-buttons"); 
-    pnl.innerHTML = "";
+    const pnl = document.getElementById("manual-backup-buttons"); pnl.innerHTML = "";
     globalPrizes.forEach(p => {
       if(!p.resolved && p.backupCount > 0 && drawResults[p.name].backup.length === 0) {
-        let b = document.createElement("button"); 
-        b.className = "toolbar-btn";
-        b.style.padding = "10px 15px";
-        b.innerText = `單獨抽：${p.name}`;
+        let b = document.createElement("button"); b.className = "toolbar-btn"; b.style.padding = "10px 15px"; b.innerText = `單獨抽：${p.name}`;
         b.onclick = () => {
-          let wins = []; 
-          for(let i=0; i<p.backupCount; i++) if(globalTicketsPool.length > 0) wins.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]);
-          drawResults[p.name].backup = wins; 
-          p.resolved = true;
+          let wins = []; for(let i=0; i<p.backupCount; i++) if(globalTicketsPool.length > 0) wins.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]);
+          drawResults[p.name].backup = wins; p.resolved = true;
           document.getElementById("showcase-prize-name").innerText = `備取抽出：${p.name}`;
           document.getElementById("showcase-winner-result").innerHTML = wins.map(t => generateTicketHTML(t,'ticket-md',false,p.name, p.backupCount)).join('');
-          updateStatusBar();
-          renderManualBackupButtons();
-          
-          if (!globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) {
-             setTimeout(showEndScreen, 3000);
-          }
+          updateStatusBar(); renderManualBackupButtons();
+          if (!globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) setTimeout(showEndScreen, 3000);
         };
         pnl.appendChild(b);
       }
@@ -706,8 +707,7 @@
     let html = ""; 
     globalPrizes.forEach(p => { 
       if(p.backupCount > 0 && drawResults[p.name].backup.length === 0) {
-        let checked = p.resolved ? "" : "checked";
-        let label = p.resolved ? `${p.name} (已結案)` : `${p.name} (缺 ${p.backupCount} 名)`;
+        let checked = p.resolved ? "" : "checked", label = p.resolved ? `${p.name} (已結案)` : `${p.name} (缺 ${p.backupCount} 名)`;
         html += `<label style="display:block; margin-bottom:10px; font-size:18px;"><input type="checkbox" class="chk-backup" value="${p.name}" ${checked} style="transform:scale(1.5); margin-right:10px;"> ${label}</label>`; 
       }
     });
@@ -717,107 +717,53 @@
 
   function executeCheckedBackups() {
     const chks = Array.from(document.querySelectorAll(".chk-backup:checked")).map(c => c.value);
-    
     [...globalPrizes].reverse().forEach(p => { 
-      if(chks.includes(p.name)) { 
-        for(let i=0; i<p.backupCount; i++) {
-           if(globalTicketsPool.length > 0) drawResults[p.name].backup.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]); 
-        }
-        p.resolved = true; 
-      } 
+      if(chks.includes(p.name)) { for(let i=0; i<p.backupCount; i++) { if(globalTicketsPool.length > 0) drawResults[p.name].backup.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]); } p.resolved = true; } 
     });
-    
-    document.getElementById("modal-backup-checklist").classList.add("hidden"); 
-    document.getElementById("showcase-prize-name").innerText = "批次備取補抽完成！";
-    
+    document.getElementById("modal-backup-checklist").classList.add("hidden"); document.getElementById("showcase-prize-name").innerText = "批次備取補抽完成！";
     let html = "";
     globalPrizes.forEach(p => {
        if(chks.includes(p.name) && drawResults[p.name].backup.length > 0) {
-         html += `<div style="width:100%; border-bottom:1px dashed #ccc; padding-bottom:15px; margin-bottom:15px;">`;
-         html += `<div style="font-size:24px; color:#d35400; font-weight:bold; margin-bottom:10px;">${p.name} 備取名單</div>`;
-         html += `<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px;">`;
+         html += `<div style="width:100%; border-bottom:1px dashed #ccc; padding-bottom:15px; margin-bottom:15px;"><div style="font-size:24px; color:#d35400; font-weight:bold; margin-bottom:10px;">${p.name} 備取名單</div><div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px;">`;
          html += drawResults[p.name].backup.map(t => generateTicketHTML(t,'ticket-md',false,p.name, p.backupCount)).join('');
          html += `</div></div>`;
        }
     });
-    document.getElementById("showcase-winner-result").innerHTML = html;
-    updateStatusBar();
-    renderManualBackupButtons();
-    
-    if (!globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) {
-       setTimeout(showEndScreen, 5000);
-    }
+    document.getElementById("showcase-winner-result").innerHTML = html; updateStatusBar(); renderManualBackupButtons();
+    if (!globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) setTimeout(showEndScreen, 5000);
   }
 
   // ================= 臨時加碼 =================
-  function showExtraPrizeModal() { 
-    document.getElementById("modal-extra").classList.remove("hidden"); 
-  }
-  
+  function showExtraPrizeModal() { document.getElementById("modal-extra").classList.remove("hidden"); }
   function executeExtraDraw() {
-    let n = document.getElementById("extra-name").value.trim();
-    let c = parseInt(document.getElementById("extra-count").value);
+    let n = document.getElementById("extra-name").value.trim(), c = parseInt(document.getElementById("extra-count").value);
     if (!n || isNaN(c) || c <= 0) { alert("請輸入正確資訊！"); return; }
-    
-    let wins = []; 
-    for(let i=0; i<c; i++) {
-       if(extraTicketsPool.length > 0) wins.push(extraTicketsPool.splice(Math.floor(Math.random()*extraTicketsPool.length),1)[0]);
-    }
-    extraResults[n] = wins; 
-    
-    document.getElementById("modal-extra").classList.add("hidden");
-    
-    const isMainVis = !document.getElementById("main-control-panel").classList.contains("hidden");
-    const isPhase2Vis = !document.getElementById("phase2-control-panel").classList.contains("hidden");
-    document.getElementById("main-control-panel").classList.add("hidden");
-    document.getElementById("phase2-control-panel").classList.add("hidden");
-
+    let wins = []; for(let i=0; i<c; i++) if(extraTicketsPool.length > 0) wins.push(extraTicketsPool.splice(Math.floor(Math.random()*extraTicketsPool.length),1)[0]);
+    extraResults[n] = wins; document.getElementById("modal-extra").classList.add("hidden");
+    const isMainVis = !document.getElementById("main-control-panel").classList.contains("hidden"), isPhase2Vis = !document.getElementById("phase2-control-panel").classList.contains("hidden");
+    document.getElementById("main-control-panel").classList.add("hidden"); document.getElementById("phase2-control-panel").classList.add("hidden");
     document.getElementById("showcase-prize-name").innerText = `⭐ 臨時加碼：${n}`;
     document.getElementById("showcase-winner-result").innerHTML = wins.map(t => generateTicketHTML(t,'ticket-md',false,n,c)).join('');
-    
-    document.querySelectorAll("#showcase-winner-result .winner-ticket").forEach(t => {
-       t.style.background = "#e84393"; t.style.borderColor = "#d63031"; t.style.color = "white";
-    });
-
-    let backBtn = document.createElement("button");
-    backBtn.innerText = "🔙 返回原流程";
-    backBtn.className = "btn-warning";
-    backBtn.style.marginTop = "20px";
+    document.querySelectorAll("#showcase-winner-result .winner-ticket").forEach(t => { t.style.background = "#e84393"; t.style.borderColor = "#d63031"; t.style.color = "white"; });
+    let backBtn = document.createElement("button"); backBtn.innerText = "🔙 返回原流程"; backBtn.className = "btn-warning"; backBtn.style.marginTop = "20px";
     backBtn.onclick = () => {
-      backBtn.remove();
-      document.getElementById("showcase-prize-name").innerText = "等待繼續...";
-      document.getElementById("showcase-winner-result").innerHTML = "";
-      if(isMainVis) document.getElementById("main-control-panel").classList.remove("hidden");
-      if(isPhase2Vis) document.getElementById("phase2-control-panel").classList.remove("hidden");
+      backBtn.remove(); document.getElementById("showcase-prize-name").innerText = "等待繼續..."; document.getElementById("showcase-winner-result").innerHTML = "";
+      if(isMainVis) document.getElementById("main-control-panel").classList.remove("hidden"); if(isPhase2Vis) document.getElementById("phase2-control-panel").classList.remove("hidden");
     };
     document.getElementById("current-prize-display").appendChild(backBtn);
   }
 
   // ================= 輔助功能：檢視設定 & 雙軌匯出 =================
   function showSettingsModal() {
-    let html = `<strong>🎫 實體摸彩券設定：</strong><br>`;
-    let hasPaper = false;
-    document.querySelectorAll("#ticketBooks tr:not(:first-child)").forEach((row, i) => {
-      let start = row.querySelector('.ticket-start').value;
-      let end = row.querySelector('.ticket-end').value;
-      if(start && end) { html += `- 第 ${i+1} 本： ${start} ~ ${end}<br>`; hasPaper = true; }
-    });
+    let html = `<strong>🎫 實體摸彩券設定：</strong><br>`; let hasPaper = false;
+    document.querySelectorAll("#ticketBooks tr:not(:first-child)").forEach((row, i) => { let start = row.querySelector('.ticket-start').value, end = row.querySelector('.ticket-end').value; if(start && end) { html += `- 第 ${i+1} 本： ${start} ~ ${end}<br>`; hasPaper = true; } });
     if(!hasPaper) html += `- 無設定<br>`;
-    
-    let ex = document.getElementById("excludedNumbersInput").value;
-    html += `- 排除號碼：${ex || '無'}<br><br>`;
-
+    let ex = document.getElementById("excludedNumbersInput").value; html += `- 排除號碼：${ex || '無'}<br><br>`;
     html += `<strong>👤 數位線上名單：</strong><br>`;
     let digitalCount = document.getElementById("digitalListInput").value.split('\n').filter(l => l.trim() !== "").length;
-    html += `- 共載入：${digitalCount} 筆資料<br><br>`;
-
-    html += `<strong>🎁 獎項設定 (含備取)：</strong><br>`;
-    globalPrizes.forEach(p => {
-      html += `- [順位 ${p.order}] ${p.name}：正取 ${p.count} / 備取 ${p.backupCount}<br>`;
-    });
-    
-    document.getElementById("settings-modal-body").innerHTML = html;
-    document.getElementById("modal-settings").classList.remove("hidden");
+    html += `- 共載入：${digitalCount} 筆資料<br><br><strong>🎁 獎項設定 (含備取)：</strong><br>`;
+    globalPrizes.forEach(p => { html += `- [順位 ${p.order}] ${p.name}：正取 ${p.count} / 備取 ${p.backupCount}<br>`; });
+    document.getElementById("settings-modal-body").innerHTML = html; document.getElementById("modal-settings").classList.remove("hidden");
   }
 
   function exportResultsData(type) {
@@ -826,12 +772,9 @@
     let txt = `${title} - ${typeName}\n匯出時間：${new Date().toLocaleString()}\n\n`;
     
     globalPrizes.forEach(p => {
-      let res = drawResults[p.name]; 
-      if(res.main.length === 0) return;
-      
+      let res = drawResults[p.name]; if(res.main.length === 0) return;
       txt += `【${p.name}】\n`;
-      let getVal = t => type === 'public' ? t.displayText : `${t.sourceType==='paper'?'[實體券]':'[數位]'} ${t.rawText}`;
-      
+      let getVal = t => type === 'public' ? t.displayText : `${t.sourceType==='paper'?'[實體]':'[數位]'} ${t.rawText}`;
       txt += `正取：\n    ${res.main.map(getVal).join('\n    ')}\n`;
       if(res.backup.length > 0) txt += `備取：\n    ${res.backup.map((t, idx) => `(備${idx+1}) ` + getVal(t)).join('\n    ')}\n`;
       if(res.voided.length > 0) txt += `作廢：\n    ${res.voided.map(getVal).join('\n    ')}\n`;
@@ -840,27 +783,15 @@
     
     if(Object.keys(extraResults).length > 0) {
       txt += `\n【⭐ 臨時加碼獎項】\n`;
-      for (const [prizeName, winners] of Object.entries(extraResults)) {
-         txt += `【${prizeName}】\n    ${winners.map(t => type === 'public' ? t.displayText : `${t.sourceType==='paper'?'[實體券]':'[數位]'} ${t.rawText}`).join('\n    ')}\n\n`;
-      }
+      for (const [prizeName, winners] of Object.entries(extraResults)) { txt += `【${prizeName}】\n    ${winners.map(t => type === 'public' ? t.displayText : `${t.sourceType==='paper'?'[實體]':'[數位]'} ${t.rawText}`).join('\n    ')}\n\n`; }
     }
-
-    let blob = new Blob([txt], {type: "text/plain;charset=utf-8"});
-    let a = document.createElement("a"); 
-    a.href = URL.createObjectURL(blob); 
-    a.download = `${title}_${typeName}.txt`; 
-    a.click();
+    let blob = new Blob([txt], {type: "text/plain;charset=utf-8"}); let a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${title}_${typeName}.txt`; a.click();
   }
 
-  // ================= 綁定事件與啟動 =================
   window.onload = updateLiveStats;
-  
   document.addEventListener('input', function(e) {
     if (e.target.type === 'number') e.target.value = e.target.value.replace(/[^0-9]/g, '');
-    if (e.target.id === 'excludedNumbersInput') {
-      let val = e.target.value.replace(/，/g, ',');
-      e.target.value = val.replace(/[^0-9,\s]/g, '');
-    }
+    if (e.target.id === 'excludedNumbersInput') e.target.value = e.target.value.replace(/，/g, ',').replace(/[^0-9,\s]/g, '');
     debouncedUpdateStats();
   });
 </script>

@@ -51,11 +51,10 @@
     .ticket-digital { background: #dff9fb; border: solid #0984e3; color: #2c3e50; }
     .ticket-fb { background: #e7f3ff; border: solid #1877f2; color: #1c1e21; }
 
-    /* 懸浮微型徽章 */
     .source-icon { position: absolute; bottom: -12px; right: -12px; width: 28px; height: 28px; background: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); border: 1px solid #eee; z-index: 5; }
     .ticket-sm .source-icon { width: 20px; height: 20px; font-size: 12px; bottom: -8px; right: -8px; }
 
-    /* ================= 作廢按鈕 ================= */
+    /* 作廢按鈕 */
     .btn-void { position: absolute; top: -12px; right: -12px; background-color: #555; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); color: transparent; font-size: 0; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 0; width: 28px; height: 28px; z-index: 10; transition: all 0.2s ease; }
     .btn-void:hover { background-color: #dc3545; transform: scale(1.15); }
     .btn-void::before, .btn-void::after { content: ''; position: absolute; background-color: white; border-radius: 2px; width: 14px; height: 3px; }
@@ -63,7 +62,7 @@
     .btn-void::after { transform: rotate(-45deg); }
     .ticket-sm .btn-void { width: 22px; height: 22px; top: -8px; right: -8px; }
 
-    /* ================= 控制面板與彈窗 ================= */
+    /* 控制面板與彈窗 */
     .control-panel { background: #e9ecef; padding: 20px; border-radius: 8px; margin-top: 30px; }
     .btn-auto-next { background-color: #6f42c1; color: white; font-size: 24px; padding: 15px 40px; border-radius: 50px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); width: 80%; }
     .btn-resolve { background-color: #28a745; color: white; font-size: 18px; padding: 10px 20px; border-radius: 8px; }
@@ -73,10 +72,17 @@
     .modal-content { background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 800px; max-height: 85vh; overflow-y: auto; text-align: left; }
     .extra-prize-btn { background-color: #e84393; color: white; position: fixed; bottom: 20px; right: 20px; font-size: 18px; border-radius: 50px; padding: 15px 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 900;}
     
+    /* ✨ 新增：待機與呼吸動畫 */
     .fade-in { animation: fadeIn 0.5s ease-in; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse-soft { 0% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.7; } }
+    
+    .waiting-placeholder { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #adb5bd; min-height: 180px; }
+    .waiting-placeholder .icon { font-size: 64px; margin-bottom: 10px; animation: pulse-soft 2s infinite; text-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .waiting-placeholder .title { font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #6c757d; }
+    .waiting-placeholder .subtitle { font-size: 16px; opacity: 0.7; margin-top: 8px; }
 
-    /* ================= FB 萃取器 V1.9 專屬樣式 ================= */
+    /* FB 萃取器專屬樣式 */
     .fb-stats-panel { background-color: #eef7e8; border-left: 5px solid #4CAF50; padding: 15px; border-radius: 4px; margin-bottom: 15px; font-size: 15px; line-height: 1.6; display: none; }
     .fb-stats-panel span.highlight { font-weight: bold; color: #d9534f; }
     .fb-stats-panel span.success { font-weight: bold; color: #2b542c; }
@@ -91,7 +97,7 @@
     .manual-input-group span { flex-shrink: 0; white-space: nowrap; font-weight: bold; color: #444; }
     .manual-input-group input { flex-grow: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: 100%; box-sizing: border-box; }
 
-    /* ================= 手機版專屬樣式 (RWD) ================= */
+    /* 手機版專屬樣式 (RWD) */
     @media (max-width: 768px) {
       body { padding: 10px; }
       .container { padding: 15px; overflow-x: hidden; }
@@ -374,7 +380,7 @@
       }).join(' ');
   }
 
-  // 專屬電話隱碼 (自動過濾空格，統一標準格式 0922****777)
+  // 專屬電話隱碼
   function maskPhone(phone) {
       if (!phone) return "";
       let cleaned = phone.replace(/\D/g, '');
@@ -384,7 +390,7 @@
       return phone;
   }
 
-  // 🌟 新增：FB 標籤「末四碼科技隱碼」(Option A)
+  // FB 標籤「末四碼科技隱碼」
   function maskFBTag(tag) {
       if (!tag) return "";
       let match = tag.match(/\(@(.+)\)/);
@@ -676,7 +682,7 @@
     else { document.getElementById("showcase-area").classList.remove("hidden"); document.getElementById("btn-extra-prize").classList.remove("hidden"); preparePhase1(); }
   }
 
-  // ================= 終極票券產生器 (屬性分類排版法) =================
+  // ================= 終極票券產生器 =================
   function generateTicketHTML(obj, size, showVoid, prize, totalCount) {
     let theme = 'ticket-digital', icon = '👤'; 
     if (obj.sourceType === 'paper') { theme = 'ticket-paper'; icon = '🎫'; }
@@ -687,10 +693,8 @@
 
     if (obj.sourceType === 'digital') {
       let parsed = parseLineEntities(obj.rawText);
-      
       let topText = parsed.prefix;
       let middleText = maskName(parsed.name);
-      // 將過濾出來的 FB Tag 加上壓縮魔法 (maskFBTag) 再合併
       let bottomText = [maskPhone(parsed.phone), maskFBTag(parsed.fbTag)].filter(Boolean).join(' ');
 
       if (totalCount > 10) {
@@ -719,17 +723,28 @@
       if(p.backupCount > 0) html += `<p style="color:#6c757d; font-weight:bold; margin-bottom:5px;">備取名單：</p><div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:15px;">${drawResults[p.name].backup.map(t=>generateTicketHTML(t,'ticket-sm',false,p.name,p.backupCount)).join('')}</div>`;
     });
     document.getElementById("quick-draw-results").innerHTML = html; document.getElementById("quick-draw-results").classList.remove("hidden");
-    
-    // ✨ 修復：快速開獎後，正確同步左上角剩餘票數
     updateStatusBar();
   }
 
   // ================= 氣氛模式：階段一 =================
   function preparePhase1() { currentPhase = 1; currentPrizeIndex = 0; updateMainActionButton(); }
   
+  // ✨ 高品質升級：預告與期待法 (加入待機動畫與預告字眼)
   function updateMainActionButton() {
     const btn = document.getElementById("btn-main-action");
-    if (currentPrizeIndex < globalPrizes.length) { btn.innerText = `👉 抽出正取：${globalPrizes[currentPrizeIndex].name}`; btn.disabled = false; } 
+    if (currentPrizeIndex < globalPrizes.length) { 
+      const pName = globalPrizes[currentPrizeIndex].name;
+      btn.innerText = `👉 抽出正取：${pName}`; 
+      btn.disabled = false; 
+      
+      document.getElementById("showcase-prize-name").innerText = `🎁 即將抽出：${pName}`;
+      document.getElementById("showcase-winner-result").innerHTML = `
+        <div class="waiting-placeholder fade-in">
+            <div class="icon">🎲</div>
+            <div class="title">等待開獎中...</div>
+            <div class="subtitle">請主持人點擊下方「👉 開始抽取」</div>
+        </div>`;
+    } 
     else {
       if (globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) transitionToPhase2(); else showEndScreen();
     }
@@ -786,9 +801,17 @@
   }
 
   // ================= 氣氛模式：階段二 =================
+  // ✨ 高品質升級：為備取階段加入專屬過場待機畫面
   function transitionToPhase2() {
     currentPhase = 2; document.getElementById("main-control-panel").classList.add("hidden"); document.getElementById("phase2-control-panel").classList.remove("hidden");
-    document.getElementById("showcase-prize-name").innerText = "進入備取階段"; document.getElementById("showcase-winner-result").innerHTML = ""; renderManualBackupButtons();
+    document.getElementById("showcase-prize-name").innerText = "⚡ 進入備取補抽階段"; 
+    document.getElementById("showcase-winner-result").innerHTML = `
+        <div class="waiting-placeholder fade-in">
+            <div class="icon">🎯</div>
+            <div class="title">請選擇補抽項目</div>
+            <div class="subtitle">可一鍵批次補抽，或針對單一獎項獨立補抽</div>
+        </div>`;
+    renderManualBackupButtons();
   }
 
   function renderManualBackupButtons() {
@@ -851,9 +874,17 @@
     document.getElementById("showcase-prize-name").innerText = `⭐ 臨時加碼：${n}`;
     document.getElementById("showcase-winner-result").innerHTML = wins.map(t => generateTicketHTML(t,'ticket-md',false,n,c)).join('');
     document.querySelectorAll("#showcase-winner-result .winner-ticket").forEach(t => { t.style.background = "#e84393"; t.style.borderColor = "#d63031"; t.style.color = "white"; });
+    
+    // ✨ 高品質升級：加碼結束後的過場動畫
     let backBtn = document.createElement("button"); backBtn.innerText = "🔙 返回原流程"; backBtn.className = "btn-warning"; backBtn.style.marginTop = "20px";
     backBtn.onclick = () => {
-      backBtn.remove(); document.getElementById("showcase-prize-name").innerText = "等待繼續..."; document.getElementById("showcase-winner-result").innerHTML = "";
+      backBtn.remove(); 
+      document.getElementById("showcase-prize-name").innerText = "⏳ 等待繼續..."; 
+      document.getElementById("showcase-winner-result").innerHTML = `
+        <div class="waiting-placeholder fade-in">
+            <div class="icon">⏳</div>
+            <div class="title">請繼續操作下方按鈕</div>
+        </div>`;
       if(isMainVis) document.getElementById("main-control-panel").classList.remove("hidden"); if(isPhase2Vis) document.getElementById("phase2-control-panel").classList.remove("hidden");
     };
     document.getElementById("current-prize-display").appendChild(backBtn);

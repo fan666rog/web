@@ -81,29 +81,13 @@
     .fb-stats-panel span.highlight { font-weight: bold; color: #d9534f; }
     .fb-stats-panel span.success { font-weight: bold; color: #2b542c; }
 
-    /* Tooltip 懸停與點擊提示框樣式 */
-    .tooltip {
-        position: relative; display: inline-flex; justify-content: center; align-items: center;
-        width: 18px; height: 18px; background-color: #aaa; color: white;
-        border-radius: 50%; font-size: 13px; font-weight: bold; cursor: help;
-        margin-left: 5px; outline: none; transition: background-color 0.2s;
-    }
+    .tooltip { position: relative; display: inline-flex; justify-content: center; align-items: center; width: 18px; height: 18px; background-color: #aaa; color: white; border-radius: 50%; font-size: 13px; font-weight: bold; cursor: help; margin-left: 5px; outline: none; transition: background-color 0.2s; }
     .tooltip:hover, .tooltip:focus { background-color: #666; }
-    .tooltip .tooltip-text {
-        visibility: hidden; width: 250px; background-color: #444; color: #fff;
-        text-align: left; border-radius: 6px; padding: 10px 14px; font-size: 13px;
-        position: absolute; z-index: 10; bottom: 140%; left: 50%; transform: translateX(-50%);
-        opacity: 0; transition: opacity 0.3s; font-weight: normal; line-height: 1.5;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2); pointer-events: none;
-    }
-    .tooltip .tooltip-text::after {
-        content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px;
-        border-width: 5px; border-style: solid; border-color: #444 transparent transparent transparent;
-    }
+    .tooltip .tooltip-text { visibility: hidden; width: 250px; background-color: #444; color: #fff; text-align: left; border-radius: 6px; padding: 10px 14px; font-size: 13px; position: absolute; z-index: 10; bottom: 140%; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s; font-weight: normal; line-height: 1.5; box-shadow: 0 4px 8px rgba(0,0,0,0.2); pointer-events: none; }
+    .tooltip .tooltip-text::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #444 transparent transparent transparent; }
     .tooltip:hover .tooltip-text, .tooltip:focus .tooltip-text { visibility: visible; opacity: 1; }
 
-    /* 電腦版：強迫文字不換行且不縮小 */
-    .manual-input-group { display: flex; align-items: center; gap: 10px; flex-grow: 1; width: 100%; margin-top: 10px;}
+    .manual-input-group { display: flex; align-items: center; gap: 10px; flex-grow: 1; white-space: nowrap; }
     .manual-input-group span { flex-shrink: 0; white-space: nowrap; font-weight: bold; color: #444; }
     .manual-input-group input { flex-grow: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: 100%; box-sizing: border-box; }
 
@@ -122,39 +106,25 @@
       table tr:first-child { display: none; }
       tr { background: #fff; border: 2px solid #17a2b8; border-radius: 10px; margin-bottom: 20px; padding: 15px 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.08); }
       
-      #ticketBooks td:nth-of-type(1), #ticketBooks td:nth-of-type(2) {
-        border: none; border-bottom: 1px dashed #ddd; padding: 10px 5px 15px 5px;
-        display: flex; flex-direction: column; align-items: flex-start; text-align: left; min-height: auto;
-      }
-      #ticketBooks td:nth-of-type(1)::before, #ticketBooks td:nth-of-type(2)::before {
-        position: static; transform: none; width: 100%; margin-bottom: 8px; color: #0056b3; font-size: 14px;
-      }
+      #ticketBooks td:nth-of-type(1), #ticketBooks td:nth-of-type(2) { border: none; border-bottom: 1px dashed #ddd; padding: 10px 5px 15px 5px; display: flex; flex-direction: column; align-items: flex-start; text-align: left; min-height: auto; }
+      #ticketBooks td:nth-of-type(1)::before, #ticketBooks td:nth-of-type(2)::before { position: static; transform: none; width: 100%; margin-bottom: 8px; color: #0056b3; font-size: 14px; }
       #ticketBooks td:nth-of-type(1)::before { content: "起始序號"; }
       #ticketBooks td:nth-of-type(2)::before { content: "結束序號"; }
-      
-      #ticketBooks input {
-        width: 100% !important; max-width: none !important; text-align: left !important; font-size: 18px !important; 
-        padding: 12px 10px !important; letter-spacing: 2px; background: #f8f9fa; border: 1px solid #ced4da; border-radius: 6px;
-      }
+      #ticketBooks input { width: 100% !important; max-width: none !important; text-align: left !important; font-size: 18px !important; padding: 12px 10px !important; letter-spacing: 2px; background: #f8f9fa; border: 1px solid #ced4da; border-radius: 6px; }
 
-      #prizeTable td { 
-        border: none; border-bottom: 1px dashed #ddd; position: relative; padding: 12px 10px 12px 40%; text-align: right; min-height: 30px; 
-        display: flex; justify-content: flex-end; align-items: center; 
-      }
+      #prizeTable td { border: none; border-bottom: 1px dashed #ddd; position: relative; padding: 12px 10px 12px 40%; text-align: right; min-height: 30px; display: flex; justify-content: flex-end; align-items: center; }
       #prizeTable td::before { position: absolute; top: 50%; left: 10px; transform: translateY(-50%); width: 35%; text-align: left; font-weight: bold; color: #495057; white-space: nowrap; }
       #prizeTable td:nth-of-type(1)::before { content: "順位"; }
       #prizeTable td:nth-of-type(2)::before { content: "獎項名稱"; }
       #prizeTable td:nth-of-type(3)::before { content: "正取"; }
       #prizeTable td:nth-of-type(4)::before { content: "備取"; }
       #prizeTable td:nth-of-type(5)::before { content: "特效"; }
-
       #prizeTable input[type="text"], #prizeTable input[type="number"] { width: 60% !important; max-width: 180px; text-align: center; font-size: 16px; }
       #prizeTable input[type="checkbox"] { transform: scale(1.5); margin-right: 15px; }
       td:last-child { border-bottom: 0; justify-content: center; padding: 15px 0 5px 0; display: flex; width: 100%; }
       .btn-void { width: 32px !important; height: 32px !important; top: -12px; right: -12px; }
       .btn-void::before, .btn-void::after { width: 15px; height: 3px; }
 
-      /* 手機版：排除名單分上下兩行排列，避免過擠 */
       .manual-input-group { flex-direction: column; align-items: flex-start; gap: 8px; }
       .manual-input-group input { width: 100%; }
     }
@@ -352,29 +322,82 @@
 
   function generateUUID() { return Math.random().toString(36).substring(2, 10) + Date.now().toString(36); }
 
-  function generateMaskedText(text) {
-    return text.split('\n').map(line => {
-      let words = line.split(/(\s+)/);
-      return words.map(word => {
-        if (word.trim() === "") return word;
-        if (/^(F-|M-)\d+$/.test(word)) return word; 
-        
-        let digitsOnly = word.replace(/\D/g, '');
-        if (digitsOnly.length >= 8) {
-          let len = word.length;
-          let start = Math.floor((len - 4) / 2);
-          return word.substring(0, start) + "****" + word.substring(start + 4);
-        }
-        
-        if (/^[\u4e00-\u9fa5]{2,4}$/.test(word)) {
-          if (word.length === 2) return word.charAt(0) + "Ｏ";
-          if (word.length === 3) return word.charAt(0) + "Ｏ" + word.charAt(2);
-          if (word.length === 4) return word.substring(0, 2) + "Ｏ" + word.charAt(3);
-        }
-        return word;
-      }).join('');
-    }).join('\n');
+  // -------------------------------------------------------------
+  // ✨ 終極升級：實體特徵解析引擎 (無視順序，精準抓取各部件)
+  // -------------------------------------------------------------
+  function parseLineEntities(text) {
+      let result = { prefix: "", phone: "", fbTag: "", name: "" };
+      let temp = text.trim();
+
+      // 1. 抓取流水號 (F- 或 M- 開頭)
+      let pMatch = temp.match(/^(F-|M-)\d+/);
+      if (pMatch) {
+          result.prefix = pMatch[0];
+          temp = temp.substring(pMatch[0].length).trim(); 
+      }
+
+      // 2. 抓取 FB 標籤 (@xxx)
+      let fbMatch = temp.match(/\(@.+?\)/);
+      if (fbMatch) {
+          result.fbTag = fbMatch[0];
+          temp = temp.replace(fbMatch[0], '').trim();
+      }
+
+      // 3. 抓取泛用電話號碼 (支援中間帶空格、橫槓，連續數字達 8 碼以上)
+      let phoneRegex = /(?:^|\s)(0[\d\-\s]{7,15})(?=\s|$)/;
+      let pMatch2 = temp.match(phoneRegex);
+      if (pMatch2) {
+          let potentialPhone = pMatch2[1];
+          let digitsCount = potentialPhone.replace(/\D/g, '').length;
+          if (digitsCount >= 8 && digitsCount <= 11) {
+              result.phone = potentialPhone.trim();
+              temp = temp.replace(potentialPhone, ' ').trim();
+          }
+      }
+
+      // 4. 剩餘所有文字，全部視為姓名與備註
+      result.name = temp.replace(/\s+/g, ' ').trim();
+
+      return result;
   }
+
+  // 專屬姓名隱碼
+  function maskName(name) {
+      if(!name) return "";
+      return name.split(/\s+/).map(word => {
+          if (/^[\u4e00-\u9fa5]{2,4}$/.test(word)) {
+              if (word.length === 2) return word.charAt(0) + "Ｏ";
+              if (word.length === 3) return word.charAt(0) + "Ｏ" + word.charAt(2);
+              if (word.length === 4) return word.substring(0, 2) + "Ｏ" + word.charAt(3);
+          }
+          return word;
+      }).join(' ');
+  }
+
+  // 專屬電話隱碼 (自動過濾空格，統一標準格式 0922****777)
+  function maskPhone(phone) {
+      if (!phone) return "";
+      let cleaned = phone.replace(/\D/g, '');
+      if (cleaned.length >= 8) {
+          return cleaned.substring(0, 4) + "****" + cleaned.substring(cleaned.length - 3);
+      }
+      return phone;
+  }
+
+  // 預覽區隱碼產生器 (依賴特徵解析，自動排版標準化)
+  function generateMaskedText(text) {
+      return text.split('\n').map(line => {
+          if(line.trim() === "") return "";
+          let parsed = parseLineEntities(line);
+          let out = [];
+          if(parsed.prefix) out.push(parsed.prefix);
+          if(parsed.name) out.push(maskName(parsed.name));
+          if(parsed.phone) out.push(maskPhone(parsed.phone));
+          if(parsed.fbTag) out.push(parsed.fbTag);
+          return out.join(' ');
+      }).join('\n');
+  }
+  // -------------------------------------------------------------
 
   function toggleMaskMode() {
     const raw = document.getElementById("digitalListInput"), masked = document.getElementById("digitalListMasked"), btn = document.getElementById("btn-toggle-mask");
@@ -423,7 +446,7 @@
     updateLiveStats();
   }
 
-  // ================= FB 萃取器邏輯 (移植 V1.9 防呆加強版) =================
+  // ================= FB 萃取器邏輯 =================
   function openFBModal() {
     document.getElementById('fb-inputArea').innerHTML = '';
     document.getElementById('fb-outputArea').value = '';
@@ -454,7 +477,6 @@
     const statsPanel = document.getElementById('fb-statsPanel');
     const excludeAuthorCheck = document.getElementById('excludeAuthorCheck').checked;
     
-    // V1.9 手動排除名單邏輯
     const manualRaw = document.getElementById('manualExclusions').value;
     const manualList = manualRaw.split(/[，,；;]+/).map(n => n.trim()).filter(n => n !== "");
 
@@ -465,16 +487,12 @@
     for (let i = 0; i < lines.length; i++) {
         if (authorTags.includes(lines[i])) {
             for (let j = i + 1; j < lines.length; j++) {
-                if (lines[j] !== "") { 
-                    detectedAuthors.add(lines[j]); 
-                    break; 
-                }
+                if (lines[j] !== "") { detectedAuthors.add(lines[j]); break; }
             }
         }
     }
 
     const links = Array.from(inputArea.querySelectorAll('a'));
-    
     let minLeftX = Infinity;
     links.forEach(link => {
         let rect = link.getBoundingClientRect();
@@ -485,10 +503,8 @@
 
     let userMap = new Map(); 
     let totalParsedCount = 0;
-    let excludedInfo = new Set();
-    let sameNameDifferentPeople = new Set();
+    let excludedInfo = new Set(), sameNameDifferentPeople = new Set();
     let isLookingForCommenter = true; 
-
     const blacklist = ["讚", "回覆", "分享", "檢舉", "隱藏", "查看更多", "追蹤", "發送訊息", "頭號粉絲", "編輯記錄", "作者", "已編輯"];
 
     links.forEach(link => {
@@ -497,17 +513,10 @@
 
         let text = link.innerText.trim();
         let href = link.getAttribute('href') || ""; 
-        
         const isTimeFormat = /^\d+\s*(天|小時|分鐘|秒|週|年)(前)?$/.test(text) || text === "剛剛" || text === "昨天" || /^\d+月\d+日$/.test(text) || /^\d{4}年\d+月\d+日$/.test(text) || /^\d+ 週$/.test(text);
 
-        if (isTimeFormat || text === "回覆" || text === "讚") {
-            isLookingForCommenter = true; 
-            return; 
-        }
-
-        if (text === "" || blacklist.includes(text) || !isNaN(text) || text.startsWith("http") || href.includes('/share/p/') || (href.startsWith('http') && !href.includes('facebook.com'))) {
-            return; 
-        }
+        if (isTimeFormat || text === "回覆" || text === "讚") { isLookingForCommenter = true; return; }
+        if (text === "" || blacklist.includes(text) || !isNaN(text) || text.startsWith("http") || href.includes('/share/p/') || (href.startsWith('http') && !href.includes('facebook.com'))) return; 
 
         if (isLookingForCommenter) {
             const isAutoAuthor = excludeAuthorCheck && detectedAuthors.has(text);
@@ -516,17 +525,12 @@
             if (!isAutoAuthor && !isManualExclude) {
                 let userId = extractUserId(href);
                 totalParsedCount++;
-
                 if (userMap.has(text)) {
                     let existingIds = userMap.get(text);
                     if (existingIds.has(userId)) excludedInfo.add(text);
                     else { existingIds.add(userId); sameNameDifferentPeople.add(text); }
-                } else {
-                    userMap.set(text, new Set([userId]));
-                }
-            } else {
-                excludedInfo.add(text);
-            }
+                } else userMap.set(text, new Set([userId]));
+            } else excludedInfo.add(text);
             isLookingForCommenter = false; 
         }
     });
@@ -538,7 +542,6 @@
     });
 
     outputArea.value = extractedFBNames.join('\n');
-    
     document.getElementById('statParsed').innerText = totalParsedCount;
     document.getElementById('statOutput').innerText = extractedFBNames.length;
     document.getElementById('detectedAuthor').innerText = detectedAuthors.size > 0 ? Array.from(detectedAuthors).join(', ') : "未偵測到";
@@ -621,6 +624,7 @@
       }
     });
 
+    // ✨ Auto-Patch 防呆機制：強制補齊所有未編號名單的 M- 前綴
     let rawLines = document.getElementById("digitalListInput").value.split('\n').filter(l => l.trim() !== "");
     let currentMaxM = getMaxSequence(rawLines, 'M-');
     rawLines = rawLines.map(line => {
@@ -660,7 +664,7 @@
     else { document.getElementById("showcase-area").classList.remove("hidden"); document.getElementById("btn-extra-prize").classList.remove("hidden"); preparePhase1(); }
   }
 
-  // ================= 三色票券產生器 =================
+  // ================= 終極票券產生器 (屬性分類排版法) =================
   function generateTicketHTML(obj, size, showVoid, prize, totalCount) {
     let theme = 'ticket-digital', icon = '👤'; 
     if (obj.sourceType === 'paper') { theme = 'ticket-paper'; icon = '🎫'; }
@@ -670,30 +674,21 @@
     let formattedText = obj.displayText;
 
     if (obj.sourceType === 'digital') {
-      let parts = obj.displayText.split(/\s+/).filter(Boolean);
+      // 這裡直接對「最乾淨的原始字串」進行特徵解析
+      let parsed = parseLineEntities(obj.rawText);
       
+      let topText = parsed.prefix;
+      let middleText = maskName(parsed.name);
+      let bottomText = [maskPhone(parsed.phone), parsed.fbTag].filter(Boolean).join(' ');
+
       if (totalCount > 10) {
-        let lastPart = parts[parts.length - 1];
-        if (lastPart && (lastPart.includes('****') || lastPart.startsWith('(@'))) parts.pop();
-        formattedText = `<span style="font-weight:bold; white-space:nowrap;">${parts.join(' ')}</span>`;
+        let compactText = [topText, middleText].filter(Boolean).join(' ');
+        formattedText = `<span style="font-weight:bold; white-space:nowrap;">${compactText}</span>`;
       } 
       else {
-        let topText = "", middleText = "", bottomText = "";
-        
-        if (/^(F-|M-)\d+/.test(parts[0])) {
-            topText = parts.shift();
-        }
-        
-        let lastPart = parts[parts.length - 1];
-        if (lastPart && (lastPart.includes('****') || lastPart.startsWith('(@'))) {
-            bottomText = parts.pop();
-        }
-        
-        middleText = parts.join(' '); 
-
         formattedText = `<div style="display:flex; flex-direction:column; align-items:center; line-height:1.2; gap:4px; padding: 5px 0;">`;
         if(topText) formattedText += `<span style="font-size:0.55em; opacity:0.7; letter-spacing:1px;">${topText}</span>`;
-        formattedText += `<span style="font-size:1.1em; font-weight:900;">${middleText}</span>`;
+        if(middleText) formattedText += `<span style="font-size:1.1em; font-weight:900; text-align:center;">${middleText}</span>`;
         if(bottomText) formattedText += `<span style="font-size:0.65em; opacity:0.8;">${bottomText}</span>`;
         formattedText += `</div>`;
       }

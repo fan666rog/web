@@ -226,7 +226,7 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.0Beta (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.0 Beta(點擊修改標題)</h1>
     
     <details class="instructions-panel">
       <summary>📖 點擊查看系統使用說明</summary>
@@ -272,7 +272,7 @@
           <button class="toolbar-btn" onclick="toolDeduplicate()">❌ 清除重複</button>
           <button id="btn-toggle-mask" class="toolbar-btn" onclick="toggleMaskMode()" style="background: #e67e22; font-weight: bold;">🔒 切換隱碼保護</button>
         </div>
-        <textarea id="digitalListInput" class="digital-list" placeholder="請將真實名單貼在此處...&#10;FB名單會自動帶有 F- 前綴&#10;手動名單可點擊上方按鈕加上 M- 前綴&#10;手動貼上名單請依照姓名 空格 電話格式"></textarea>
+        <textarea id="digitalListInput" class="digital-list" placeholder="請將真實名單貼在此處...&#10;FB名單會自動帶有 F- 前綴&#10;手動名單可點擊上方按鈕加上 M- 前綴&#10;手動名單格式參考姓名 空格 電話"></textarea>
         <textarea id="digitalListMasked" class="digital-list hidden" readonly style="background: #f1f2f6; color: #7f8c8d; border-color: #e67e22; outline: none;" placeholder="隱碼預覽畫面..."></textarea>
       </div>
     </div>
@@ -373,7 +373,7 @@
     <h2 style="margin-top:0; color:#1877f2;">📥 FB 留言智慧萃取工作站</h2>
     
     <div style="background:#f4f4f9; padding:15px; border-radius:8px; margin-bottom:15px; display:flex; flex-wrap:wrap; gap:15px; align-items:center;">
-        <button onclick="runFBExtraction()" style="background:#008CBA; color:white; font-weight:bold; padding:10px 20px; border-radius:5px; border:none; cursor:pointer;">⚡ 1. 整理名單</button>
+        <button onclick="runFBExtraction()" style="background:#008CBA; color:white; font-weight:bold; padding:10px 20px; border-radius:5px; border:none; cursor:pointer;">⚡ 2. 整理名單</button>
         <label style="font-weight:bold; cursor:pointer; display:flex; align-items:center;">
             <input type="checkbox" id="excludeAuthorCheck" checked style="margin-right:5px;"> 
             自動偵測並排除「作者」留言
@@ -398,7 +398,7 @@
 
     <div style="display:flex; gap:15px; flex-wrap:wrap;">
         <div style="flex:1; min-width:250px;">
-            <h4 style="margin-top:0;">2. 點擊下方並貼上 FB 留言 (Ctrl+V)</h4>
+            <h4 style="margin-top:0;">1. 點擊下方並貼上 FB 留言 (Ctrl+V)</h4>
             <div id="fb-inputArea" contenteditable="true" style="height:250px; border:2px dashed #aaa; padding:10px; overflow-y:auto; border-radius:6px; background:#fff; position:relative; text-align:left;"></div>
         </div>
         <div style="flex:1; min-width:250px;">
@@ -772,6 +772,9 @@
   function debouncedUpdateStats() { clearTimeout(statsTimeout); statsTimeout = setTimeout(updateLiveStats, 300); }
 
   function updateLiveStats() {
+    // ✨ 修正 1：只要輸入或修改，立即隱藏報錯訊息
+    document.getElementById('errorMessage').classList.add('hidden');
+    
     let validPaperCount = 0, paperRanges = [];
     document.querySelectorAll("#ticketBooks tr:not(:first-child)").forEach(row => {
       let s = parseInt(row.querySelector('.ticket-start').value), e = parseInt(row.querySelector('.ticket-end').value);
@@ -915,14 +918,40 @@
             <div class="subtitle">請主持人點擊下方「👉 開始抽取」</div>
         </div>`;
     } else {
-      if (globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) transitionToPhase2(); else showEndScreen();
+      if (globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) {
+          transitionToPhase2(); 
+      } else {
+          // ✨ 修正 2：取消強制跳轉，改為手動點擊「完成階段開獎」
+          document.getElementById("btn-main-action").classList.add("hidden");
+          document.getElementById("decision-buttons").classList.add("hidden");
+          
+          let existingBtn = document.getElementById("btn-finish-event");
+          if(!existingBtn) {
+              let pnl = document.getElementById("main-control-panel");
+              let finishBtn = document.createElement("button");
+              finishBtn.id = "btn-finish-event";
+              finishBtn.className = "btn-primary fade-in";
+              finishBtn.style.width = "80%";
+              finishBtn.style.fontSize = "24px";
+              finishBtn.style.padding = "15px 40px";
+              finishBtn.style.borderRadius = "50px";
+              finishBtn.innerText = "✅ 完成階段開獎";
+              finishBtn.onclick = showEndScreen;
+              pnl.appendChild(finishBtn);
+          }
+      }
     }
   }
 
   function showEndScreen() {
     document.getElementById("main-control-panel").classList.add("hidden"); document.getElementById("phase2-control-panel").classList.add("hidden");
     document.getElementById("showcase-prize-name").innerText = "🎉 所有抽獎活動圓滿結束 🎉";
-    document.getElementById("showcase-winner-result").innerHTML = "<div style='font-size: 24px; color: #7f8c8d; margin-top: 20px;'>感謝大家的參與！可由上方狀態列匯出中獎名單。</div>";
+    document.getElementById("showcase-winner-result").innerHTML = `
+        <div class="waiting-placeholder fade-in">
+            <div class="icon">🎊</div>
+            <div class="title">感謝大家的參與！</div>
+            <div class="subtitle">可由上方狀態列匯出中獎名單</div>
+        </div>`;
   }
 
   function executeNextMainDraw() {
@@ -980,6 +1009,26 @@
     renderManualBackupButtons();
   }
 
+  // ✨ 修正 2：判斷備取是否全數結案，並顯示手動完成按鈕
+  function checkPhase2Finish() {
+      if (!globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) {
+          const pnl = document.getElementById("manual-backup-buttons");
+          pnl.innerHTML = ""; 
+          
+          let autoBtn = document.querySelector("#phase2-control-panel .btn-auto-next");
+          if(autoBtn) autoBtn.classList.add("hidden");
+
+          let finishBtn = document.createElement("button");
+          finishBtn.className = "btn-primary fade-in";
+          finishBtn.style.width = "100%";
+          finishBtn.style.fontSize = "22px";
+          finishBtn.style.padding = "15px";
+          finishBtn.innerText = "✅ 完成階段開獎";
+          finishBtn.onclick = showEndScreen;
+          pnl.appendChild(finishBtn);
+      }
+  }
+
   function renderManualBackupButtons() {
     const pnl = document.getElementById("manual-backup-buttons"); pnl.innerHTML = "";
     globalPrizes.forEach(p => {
@@ -991,7 +1040,8 @@
           document.getElementById("showcase-prize-name").innerText = `備取抽出：${p.name}`;
           document.getElementById("showcase-winner-result").innerHTML = wins.map(t => generateTicketHTML(t,'ticket-md',false,p.name, p.backupCount)).join('');
           updateStatusBar(); renderManualBackupButtons();
-          if (!globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) setTimeout(showEndScreen, 3000);
+          
+          checkPhase2Finish(); // 呼叫手動檢查取代 setTimeout
         };
         pnl.appendChild(b);
       }
@@ -1025,7 +1075,8 @@
        }
     });
     document.getElementById("showcase-winner-result").innerHTML = html; updateStatusBar(); renderManualBackupButtons();
-    if (!globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) setTimeout(showEndScreen, 5000);
+    
+    checkPhase2Finish(); // 呼叫手動檢查取代 setTimeout
   }
 
   // ================= 臨時加碼 (時光機快照) =================

@@ -9,10 +9,10 @@
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
     .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
     h1, h2, h3 { color: #2c3e50; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: white; }
     th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
     th { background-color: #e9ecef; }
-    input[type="text"], input[type="number"] { width: 90%; padding: 8px; box-sizing: border-box; }
+    input[type="text"], input[type="number"] { width: 90%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
     button { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 5px; transition: background 0.3s; }
     
     .btn-add { background-color: #28a745; color: white; }
@@ -72,7 +72,7 @@
     .modal-content { background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 800px; max-height: 85vh; overflow-y: auto; text-align: left; }
     .extra-prize-btn { background-color: #e84393; color: white; position: fixed; bottom: 20px; right: 20px; font-size: 18px; border-radius: 50px; padding: 15px 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 900;}
     
-    /* ✨ 新增：待機與呼吸動畫 */
+    /* 待機與呼吸動畫 */
     .fade-in { animation: fadeIn 0.5s ease-in; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes pulse-soft { 0% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.7; } }
@@ -97,7 +97,19 @@
     .manual-input-group span { flex-shrink: 0; white-space: nowrap; font-weight: bold; color: #444; }
     .manual-input-group input { flex-grow: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: 100%; box-sizing: border-box; }
 
-    /* 手機版專屬樣式 (RWD) */
+    /* ✨ 拖曳排序 UI 樣式 */
+    .drag-row { cursor: grab; transition: background-color 0.2s; }
+    .drag-row:active { cursor: grabbing; }
+    .drag-row.dragging { opacity: 0.5; background-color: #f1f3f5; }
+    .order-cell-content { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .drag-handle { font-size: 20px; color: #adb5bd; cursor: grab; user-select: none; }
+    .drag-handle:active { cursor: grabbing; }
+    .move-btn-group { display: flex; flex-direction: column; gap: 2px; }
+    .move-btn-group button { padding: 0 4px; font-size: 10px; margin: 0; background: #ced4da; color: white; border-radius: 3px; line-height: 1.2; }
+    .move-btn-group button:hover { background: #6c757d; }
+    .order-number { font-size: 18px; font-weight: bold; color: #0056b3; min-width: 24px; }
+
+    /* ================= 手機版專屬樣式 (RWD) ================= */
     @media (max-width: 768px) {
       body { padding: 10px; }
       .container { padding: 15px; overflow-x: hidden; }
@@ -120,7 +132,7 @@
 
       #prizeTable td { border: none; border-bottom: 1px dashed #ddd; position: relative; padding: 12px 10px 12px 40%; text-align: right; min-height: 30px; display: flex; justify-content: flex-end; align-items: center; }
       #prizeTable td::before { position: absolute; top: 50%; left: 10px; transform: translateY(-50%); width: 35%; text-align: left; font-weight: bold; color: #495057; white-space: nowrap; }
-      #prizeTable td:nth-of-type(1)::before { content: "順位"; }
+      #prizeTable td:nth-of-type(1)::before { content: "順位調整"; } /* 修改標籤 */
       #prizeTable td:nth-of-type(2)::before { content: "獎項名稱"; }
       #prizeTable td:nth-of-type(3)::before { content: "正取"; }
       #prizeTable td:nth-of-type(4)::before { content: "備取"; }
@@ -133,6 +145,9 @@
 
       .manual-input-group { flex-direction: column; align-items: flex-start; gap: 8px; }
       .manual-input-group input { width: 100%; }
+
+      /* 手機版順位調整靠左，視覺更和諧 */
+      #prizeTable td:nth-of-type(1) { justify-content: flex-start; padding-left: 40%; }
     }
   </style>
 </head>
@@ -193,14 +208,23 @@
 
     <h3>2. 一般獎項設定</h3>
     <table id="prizeTable">
-      <tr><th>順位</th><th>獎項名稱</th><th>正取</th><th>備取</th><th>特效</th><th>操作</th></tr>
-      <tr>
-        <td><input type="number" min="1" class="prize-order" value="1" style="width: 60px;"></td>
+      <tr><th>順位調整</th><th>獎項名稱</th><th>正取</th><th>備取</th><th>特效</th><th>操作</th></tr>
+      <tr class="drag-row" draggable="true" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="drop(event)" ondragend="dragEnd(event)">
+        <td>
+          <div class="order-cell-content">
+            <span class="drag-handle" title="按住拖曳排序">☰</span>
+            <div class="move-btn-group">
+              <button type="button" onclick="moveRowUp(this)" title="上移">▲</button>
+              <button type="button" onclick="moveRowDown(this)" title="下移">▼</button>
+            </div>
+            <span class="order-number">1</span>
+          </div>
+        </td>
         <td><input type="text" class="prize-name" value="大獎"></td>
         <td><input type="number" min="1" class="prize-count" value="1" style="width: 60px;"></td>
         <td><input type="number" min="0" class="prize-backup" value="0" style="width: 60px;"></td>
         <td><input type="checkbox" class="prize-effect" checked></td>
-        <td><button onclick="deleteRow(this)" class="btn-delete">刪除</button></td>
+        <td><button onclick="deletePrizeRow(this)" class="btn-delete">刪除</button></td>
       </tr>
     </table>
     <button onclick="addPrizeCategory()" class="btn-add">➕ 新增獎項</button>
@@ -325,31 +349,111 @@
   let globalPrizes = [], drawResults = {}, extraResults = {};        
   let currentPhase = 1, currentPrizeIndex = 0, isMaskedMode = false;
   let extractedFBNames = []; 
+  let extraDrawSnapshot = null; // ✨ 時光機快照儲存點
 
   function generateUUID() { return Math.random().toString(36).substring(2, 10) + Date.now().toString(36); }
 
   // -------------------------------------------------------------
-  // ✨ 實體特徵解析引擎 (無視順序，精準抓取各部件)
+  // ✨ 獎項拖曳與重新編號系統 (Auto-Renumbering)
   // -------------------------------------------------------------
+  function updatePrizeOrders() {
+      const rows = document.querySelectorAll("#prizeTable tr:not(:first-child)");
+      rows.forEach((row, index) => {
+          let orderSpan = row.querySelector('.order-number');
+          if(orderSpan) orderSpan.innerText = index + 1; // 永遠保證連號
+      });
+      updateLiveStats();
+  }
+
+  function moveRowUp(btn) {
+      const row = btn.closest('tr');
+      if (row.previousElementSibling && row.previousElementSibling.rowIndex > 0) {
+          row.parentNode.insertBefore(row, row.previousElementSibling);
+          updatePrizeOrders();
+      }
+  }
+
+  function moveRowDown(btn) {
+      const row = btn.closest('tr');
+      if (row.nextElementSibling) {
+          row.parentNode.insertBefore(row.nextElementSibling, row);
+          updatePrizeOrders();
+      }
+  }
+
+  function deletePrizeRow(btn) {
+      btn.closest('tr').remove();
+      updatePrizeOrders();
+  }
+
+  function addPrizeCategory() {
+      let row = document.getElementById("prizeTable").insertRow(-1);
+      row.className = "drag-row";
+      row.setAttribute("draggable", "true");
+      row.ondragstart = dragStart; row.ondragover = dragOver; row.ondrop = drop; row.ondragend = dragEnd;
+      
+      row.innerHTML = `
+        <td>
+          <div class="order-cell-content">
+            <span class="drag-handle" title="按住拖曳排序">☰</span>
+            <div class="move-btn-group">
+              <button type="button" onclick="moveRowUp(this)" title="上移">▲</button>
+              <button type="button" onclick="moveRowDown(this)" title="下移">▼</button>
+            </div>
+            <span class="order-number">0</span>
+          </div>
+        </td>
+        <td><input type="text" class="prize-name" value="新獎項"></td>
+        <td><input type="number" min="1" class="prize-count" value="1" style="width: 60px;"></td>
+        <td><input type="number" min="0" class="prize-backup" value="0" style="width: 60px;"></td>
+        <td><input type="checkbox" class="prize-effect"></td>
+        <td><button onclick="deletePrizeRow(this)" class="btn-delete">刪除</button></td>
+      `;
+      updatePrizeOrders();
+  }
+
+  // HTML5 Drag & Drop 邏輯
+  let draggedRow = null;
+  function dragStart(e) {
+      draggedRow = e.target.closest('tr');
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/html", draggedRow.innerHTML);
+      setTimeout(() => { draggedRow.classList.add('dragging'); }, 0);
+  }
+  function dragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const targetRow = e.target.closest('tr');
+      if (targetRow && targetRow !== draggedRow && targetRow.rowIndex > 0) {
+          const bounding = targetRow.getBoundingClientRect();
+          const offset = bounding.y + (bounding.height / 2);
+          if (e.clientY - offset > 0) {
+              targetRow.parentNode.insertBefore(draggedRow, targetRow.nextSibling);
+          } else {
+              targetRow.parentNode.insertBefore(draggedRow, targetRow);
+          }
+      }
+  }
+  function drop(e) {
+      e.preventDefault();
+      if (draggedRow) {
+          draggedRow.classList.remove('dragging');
+          updatePrizeOrders();
+      }
+  }
+  function dragEnd(e) {
+      if (draggedRow) draggedRow.classList.remove('dragging');
+      draggedRow = null;
+  }
+  // -------------------------------------------------------------
+
   function parseLineEntities(text) {
       let result = { prefix: "", phone: "", fbTag: "", name: "" };
       let temp = text.trim();
-
-      // 1. 抓取流水號 (F- 或 M- 開頭)
       let pMatch = temp.match(/^(F-|M-)\d+/);
-      if (pMatch) {
-          result.prefix = pMatch[0];
-          temp = temp.substring(pMatch[0].length).trim(); 
-      }
-
-      // 2. 抓取 FB 標籤 (@xxx)
+      if (pMatch) { result.prefix = pMatch[0]; temp = temp.substring(pMatch[0].length).trim(); }
       let fbMatch = temp.match(/\(@.+?\)/);
-      if (fbMatch) {
-          result.fbTag = fbMatch[0];
-          temp = temp.replace(fbMatch[0], '').trim();
-      }
-
-      // 3. 抓取泛用電話號碼 (支援中間帶空格、橫槓，連續數字達 8 碼以上)
+      if (fbMatch) { result.fbTag = fbMatch[0]; temp = temp.replace(fbMatch[0], '').trim(); }
       let phoneRegex = /(?:^|\s)(0[\d\-\s]{7,15})(?=\s|$)/;
       let pMatch2 = temp.match(phoneRegex);
       if (pMatch2) {
@@ -360,14 +464,10 @@
               temp = temp.replace(potentialPhone, ' ').trim();
           }
       }
-
-      // 4. 剩餘所有文字，全部視為姓名與備註
       result.name = temp.replace(/\s+/g, ' ').trim();
-
       return result;
   }
 
-  // 專屬姓名隱碼
   function maskName(name) {
       if(!name) return "";
       return name.split(/\s+/).map(word => {
@@ -380,30 +480,23 @@
       }).join(' ');
   }
 
-  // 專屬電話隱碼
   function maskPhone(phone) {
       if (!phone) return "";
       let cleaned = phone.replace(/\D/g, '');
-      if (cleaned.length >= 8) {
-          return cleaned.substring(0, 4) + "****" + cleaned.substring(cleaned.length - 3);
-      }
+      if (cleaned.length >= 8) return cleaned.substring(0, 4) + "****" + cleaned.substring(cleaned.length - 3);
       return phone;
   }
 
-  // FB 標籤「末四碼科技隱碼」
   function maskFBTag(tag) {
       if (!tag) return "";
       let match = tag.match(/\(@(.+)\)/);
       if (match && match[1]) {
           let idStr = match[1];
-          if (idStr.length > 4) {
-              return `(@...${idStr.slice(-4)})`;
-          }
+          if (idStr.length > 4) return `(@...${idStr.slice(-4)})`;
       }
       return tag; 
   }
 
-  // 預覽區隱碼產生器
   function generateMaskedText(text) {
       return text.split('\n').map(line => {
           if(line.trim() === "") return "";
@@ -416,7 +509,6 @@
           return out.join(' ');
       }).join('\n');
   }
-  // -------------------------------------------------------------
 
   function toggleMaskMode() {
     const raw = document.getElementById("digitalListInput"), masked = document.getElementById("digitalListMasked"), btn = document.getElementById("btn-toggle-mask");
@@ -436,10 +528,7 @@
     let regex = new RegExp('^' + prefix + '(\\d+)');
     lines.forEach(l => {
       let match = l.match(regex);
-      if(match) {
-        let num = parseInt(match[1], 10);
-        if(num > max) max = num;
-      }
+      if(match) { let num = parseInt(match[1], 10); if(num > max) max = num; }
     });
     return max;
   }
@@ -448,7 +537,6 @@
     let raw = document.getElementById("digitalListInput");
     let lines = raw.value.split('\n').filter(l => l.trim() !== "");
     let currentMaxM = getMaxSequence(lines, 'M-');
-
     let newLines = lines.map(line => {
       if (/^(F-|M-)\d+\s/.test(line)) return line; 
       currentMaxM++;
@@ -465,7 +553,7 @@
     updateLiveStats();
   }
 
-  // ================= FB 萃取器邏輯 =================
+  // FB 萃取器邏輯 (V1.9)
   function openFBModal() {
     document.getElementById('fb-inputArea').innerHTML = '';
     document.getElementById('fb-outputArea').value = '';
@@ -495,14 +583,12 @@
     const outputArea = document.getElementById('fb-outputArea');
     const statsPanel = document.getElementById('fb-statsPanel');
     const excludeAuthorCheck = document.getElementById('excludeAuthorCheck').checked;
-    
     const manualRaw = document.getElementById('manualExclusions').value;
     const manualList = manualRaw.split(/[，,；;]+/).map(n => n.trim()).filter(n => n !== "");
 
     let detectedAuthors = new Set();
     const lines = inputArea.innerText.split('\n').map(line => line.trim());
     const authorTags = ["作者"]; 
-    
     for (let i = 0; i < lines.length; i++) {
         if (authorTags.includes(lines[i])) {
             for (let j = i + 1; j < lines.length; j++) {
@@ -586,7 +672,6 @@
     updateLiveStats();
   }
 
-  // ================= 儀表板：即時統計 =================
   let statsTimeout;
   function debouncedUpdateStats() { clearTimeout(statsTimeout); statsTimeout = setTimeout(updateLiveStats, 300); }
 
@@ -617,14 +702,9 @@
     row.innerHTML = `<td><input type="number" class="ticket-start" value="1"></td><td><input type="number" class="ticket-end" value="50"></td><td><button onclick="deleteRow(this)" class="btn-delete" style="padding: 5px 10px;">刪</button></td>`;
     updateLiveStats();
   }
-  function addPrizeCategory() {
-    let row = document.getElementById("prizeTable").insertRow(-1);
-    row.innerHTML = `<td><input type="number" class="prize-order" value="${document.getElementById("prizeTable").rows.length - 1}" style="width: 60px;"></td><td><input type="text" class="prize-name" value="新獎項"></td><td><input type="number" class="prize-count" value="1" style="width: 60px;"></td><td><input type="number" class="prize-backup" value="0" style="width: 60px;"></td><td><input type="checkbox" class="prize-effect"></td><td><button onclick="deleteRow(this)" class="btn-delete">刪除</button></td>`;
-    updateLiveStats();
-  }
   function updateStatusBar() { document.getElementById("display-remaining-tickets").innerText = globalTicketsPool.length; }
 
-  // ================= 核心初始化 =================
+  // ================= 核心初始化 (自動讀取絕對位置順位) =================
   function initLottery(mode) {
     const errorDiv = document.getElementById("errorMessage");
     let errors = [], tempPool = [], paperCheckSet = new Set(), excludes = new Set();
@@ -660,18 +740,18 @@
     globalTicketsPool = [...tempPool]; originalTicketsPool = [...tempPool]; extraTicketsPool = [...tempPool];
     globalPrizes = []; let totalNeeded = 0;
     
+    // ✨ 順位抓取邏輯變更：直接依照 DOM 由上往下的順序 (idx + 1)
     document.querySelectorAll("#prizeTable tr:not(:first-child)").forEach((row, idx) => {
       let n = row.querySelector('.prize-name').value, c = parseInt(row.querySelector('.prize-count').value), b = parseInt(row.querySelector('.prize-backup').value);
-      if(!n || isNaN(c) || c <= 0) errors.push(`第 ${idx+1} 個獎項設定異常。`);
+      if(!n || isNaN(c) || c <= 0) errors.push(`第 ${idx+1} 列獎項設定異常。`);
       totalNeeded += (c + b);
-      globalPrizes.push({ order: parseInt(row.querySelector('.prize-order').value) || 0, name: n, count: c, backupCount: b, effect: row.querySelector('.prize-effect').checked, resolved: false });
+      globalPrizes.push({ order: idx + 1, name: n, count: c, backupCount: b, effect: row.querySelector('.prize-effect').checked, resolved: false });
       drawResults[n] = { main: [], backup: [], voided: [] };
     });
 
     if (globalTicketsPool.length < totalNeeded) errors.push("⚠️ 總票數不足以抽出所有設定獎項！");
     if (errors.length > 0) { errorDiv.innerHTML = errors.join("<br>"); errorDiv.classList.remove("hidden"); return; }
     
-    globalPrizes.sort((a, b) => a.order - b.order);
     document.getElementById("setup-section").classList.add("hidden"); 
     document.getElementById("presentation-section").classList.remove("hidden");
     document.getElementById("status-bar-container").classList.remove("hidden"); 
@@ -682,7 +762,7 @@
     else { document.getElementById("showcase-area").classList.remove("hidden"); document.getElementById("btn-extra-prize").classList.remove("hidden"); preparePhase1(); }
   }
 
-  // ================= 終極票券產生器 =================
+  // ================= 票券產生器 =================
   function generateTicketHTML(obj, size, showVoid, prize, totalCount) {
     let theme = 'ticket-digital', icon = '👤'; 
     if (obj.sourceType === 'paper') { theme = 'ticket-paper'; icon = '🎫'; }
@@ -712,7 +792,6 @@
     return `<span class="winner-ticket ${size} ${theme}">${formattedText}${voidBtn}<div class="source-icon">${icon}</div></span>`;
   }
 
-  // ================= 錄影快速模式 =================
   function executeQuickDraw() {
     globalPrizes.forEach(p => { for(let i=0; i<p.count; i++) if(globalTicketsPool.length > 0) drawResults[p.name].main.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]); });
     [...globalPrizes].reverse().forEach(p => { for(let i=0; i<p.backupCount; i++) if(globalTicketsPool.length > 0) drawResults[p.name].backup.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]); });
@@ -726,17 +805,14 @@
     updateStatusBar();
   }
 
-  // ================= 氣氛模式：階段一 =================
   function preparePhase1() { currentPhase = 1; currentPrizeIndex = 0; updateMainActionButton(); }
   
-  // ✨ 高品質升級：預告與期待法 (加入待機動畫與預告字眼)
   function updateMainActionButton() {
     const btn = document.getElementById("btn-main-action");
     if (currentPrizeIndex < globalPrizes.length) { 
       const pName = globalPrizes[currentPrizeIndex].name;
       btn.innerText = `👉 抽出正取：${pName}`; 
       btn.disabled = false; 
-      
       document.getElementById("showcase-prize-name").innerText = `🎁 即將抽出：${pName}`;
       document.getElementById("showcase-winner-result").innerHTML = `
         <div class="waiting-placeholder fade-in">
@@ -744,8 +820,7 @@
             <div class="title">等待開獎中...</div>
             <div class="subtitle">請主持人點擊下方「👉 開始抽取」</div>
         </div>`;
-    } 
-    else {
+    } else {
       if (globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) transitionToPhase2(); else showEndScreen();
     }
   }
@@ -786,7 +861,6 @@
     drawResults[prizeName].main = drawResults[prizeName].main.filter(t => t.sysId !== targetId);
     if(globalTicketsPool.length > 0) drawResults[prizeName].main.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]);
     else alert("票池已空，無法補抽！");
-    
     const area = document.getElementById("showcase-winner-result"); area.innerHTML = "";
     let currentTotal = drawResults[prizeName].main.length;
     drawResults[prizeName].main.forEach(t => area.innerHTML += generateTicketHTML(t, currentTotal>10?'ticket-sm':'ticket-lg', true, prizeName, currentTotal));
@@ -800,8 +874,6 @@
     document.getElementById("showcase-winner-result").innerHTML = ""; currentPrizeIndex++; updateMainActionButton();
   }
 
-  // ================= 氣氛模式：階段二 =================
-  // ✨ 高品質升級：為備取階段加入專屬過場待機畫面
   function transitionToPhase2() {
     currentPhase = 2; document.getElementById("main-control-panel").classList.add("hidden"); document.getElementById("phase2-control-panel").classList.remove("hidden");
     document.getElementById("showcase-prize-name").innerText = "⚡ 進入備取補抽階段"; 
@@ -862,30 +934,58 @@
     if (!globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) setTimeout(showEndScreen, 5000);
   }
 
-  // ================= 臨時加碼 =================
+  // ================= ✨ 臨時加碼 (搭載時光機快照還原技術) =================
   function showExtraPrizeModal() { document.getElementById("modal-extra").classList.remove("hidden"); }
+  
   function executeExtraDraw() {
     let n = document.getElementById("extra-name").value.trim(), c = parseInt(document.getElementById("extra-count").value);
     if (!n || isNaN(c) || c <= 0) { alert("請輸入正確資訊！"); return; }
+    
+    // 如果尚未處於加碼狀態中，才進行快照拍攝 (避免連續加碼導致快照被覆蓋)
+    if (!extraDrawSnapshot) {
+        extraDrawSnapshot = {
+            title: document.getElementById("showcase-prize-name").innerText,
+            resultHtml: document.getElementById("showcase-winner-result").innerHTML,
+            mainPanelVis: !document.getElementById("main-control-panel").classList.contains("hidden"),
+            phase2PanelVis: !document.getElementById("phase2-control-panel").classList.contains("hidden"),
+            decisionBtnVis: !document.getElementById("decision-buttons").classList.contains("hidden"),
+            mainBtnVis: !document.getElementById("btn-main-action").classList.contains("hidden"),
+            mainBtnText: document.getElementById("btn-main-action").innerText
+        };
+    }
+
     let wins = []; for(let i=0; i<c; i++) if(extraTicketsPool.length > 0) wins.push(extraTicketsPool.splice(Math.floor(Math.random()*extraTicketsPool.length),1)[0]);
-    extraResults[n] = wins; document.getElementById("modal-extra").classList.add("hidden");
-    const isMainVis = !document.getElementById("main-control-panel").classList.contains("hidden"), isPhase2Vis = !document.getElementById("phase2-control-panel").classList.contains("hidden");
-    document.getElementById("main-control-panel").classList.add("hidden"); document.getElementById("phase2-control-panel").classList.add("hidden");
+    extraResults[n] = wins; 
+    document.getElementById("modal-extra").classList.add("hidden");
+    
+    document.getElementById("main-control-panel").classList.add("hidden"); 
+    document.getElementById("phase2-control-panel").classList.add("hidden");
     document.getElementById("showcase-prize-name").innerText = `⭐ 臨時加碼：${n}`;
     document.getElementById("showcase-winner-result").innerHTML = wins.map(t => generateTicketHTML(t,'ticket-md',false,n,c)).join('');
     document.querySelectorAll("#showcase-winner-result .winner-ticket").forEach(t => { t.style.background = "#e84393"; t.style.borderColor = "#d63031"; t.style.color = "white"; });
     
-    // ✨ 高品質升級：加碼結束後的過場動畫
     let backBtn = document.createElement("button"); backBtn.innerText = "🔙 返回原流程"; backBtn.className = "btn-warning"; backBtn.style.marginTop = "20px";
+    
+    // 返回按鈕：執行快照還原
     backBtn.onclick = () => {
       backBtn.remove(); 
-      document.getElementById("showcase-prize-name").innerText = "⏳ 等待繼續..."; 
-      document.getElementById("showcase-winner-result").innerHTML = `
-        <div class="waiting-placeholder fade-in">
-            <div class="icon">⏳</div>
-            <div class="title">請繼續操作下方按鈕</div>
-        </div>`;
-      if(isMainVis) document.getElementById("main-control-panel").classList.remove("hidden"); if(isPhase2Vis) document.getElementById("phase2-control-panel").classList.remove("hidden");
+      if (extraDrawSnapshot) {
+          document.getElementById("showcase-prize-name").innerText = extraDrawSnapshot.title;
+          document.getElementById("showcase-winner-result").innerHTML = extraDrawSnapshot.resultHtml;
+          
+          if(extraDrawSnapshot.mainPanelVis) document.getElementById("main-control-panel").classList.remove("hidden");
+          if(extraDrawSnapshot.phase2PanelVis) document.getElementById("phase2-control-panel").classList.remove("hidden");
+          
+          if(extraDrawSnapshot.decisionBtnVis) document.getElementById("decision-buttons").classList.remove("hidden");
+          else document.getElementById("decision-buttons").classList.add("hidden");
+          
+          if(extraDrawSnapshot.mainBtnVis) document.getElementById("btn-main-action").classList.remove("hidden");
+          else document.getElementById("btn-main-action").classList.add("hidden");
+          
+          document.getElementById("btn-main-action").innerText = extraDrawSnapshot.mainBtnText;
+          
+          extraDrawSnapshot = null; // 清除快照
+      }
     };
     document.getElementById("current-prize-display").appendChild(backBtn);
   }
@@ -925,7 +1025,11 @@
     let blob = new Blob([txt], {type: "text/plain;charset=utf-8"}); let a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${title}_${typeName}.txt`; a.click();
   }
 
-  window.onload = updateLiveStats;
+  window.onload = function() {
+    updateLiveStats();
+    updatePrizeOrders(); // 啟動時強制校準一次順位
+  };
+  
   document.addEventListener('input', function(e) {
     if (e.target.type === 'number') e.target.value = e.target.value.replace(/[^0-9]/g, '');
     if (e.target.id === 'excludedNumbersInput') e.target.value = e.target.value.replace(/，/g, ',').replace(/[^0-9,\s]/g, '');

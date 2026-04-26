@@ -323,7 +323,7 @@
   function generateUUID() { return Math.random().toString(36).substring(2, 10) + Date.now().toString(36); }
 
   // -------------------------------------------------------------
-  // ✨ 終極升級：實體特徵解析引擎 (無視順序，精準抓取各部件)
+  // ✨ 實體特徵解析引擎 (無視順序，精準抓取各部件)
   // -------------------------------------------------------------
   function parseLineEntities(text) {
       let result = { prefix: "", phone: "", fbTag: "", name: "" };
@@ -384,7 +384,20 @@
       return phone;
   }
 
-  // 預覽區隱碼產生器 (依賴特徵解析，自動排版標準化)
+  // 🌟 新增：FB 標籤「末四碼科技隱碼」(Option A)
+  function maskFBTag(tag) {
+      if (!tag) return "";
+      let match = tag.match(/\(@(.+)\)/);
+      if (match && match[1]) {
+          let idStr = match[1];
+          if (idStr.length > 4) {
+              return `(@...${idStr.slice(-4)})`;
+          }
+      }
+      return tag; 
+  }
+
+  // 預覽區隱碼產生器
   function generateMaskedText(text) {
       return text.split('\n').map(line => {
           if(line.trim() === "") return "";
@@ -393,7 +406,7 @@
           if(parsed.prefix) out.push(parsed.prefix);
           if(parsed.name) out.push(maskName(parsed.name));
           if(parsed.phone) out.push(maskPhone(parsed.phone));
-          if(parsed.fbTag) out.push(parsed.fbTag);
+          if(parsed.fbTag) out.push(maskFBTag(parsed.fbTag));
           return out.join(' ');
       }).join('\n');
   }
@@ -624,7 +637,6 @@
       }
     });
 
-    // ✨ Auto-Patch 防呆機制：強制補齊所有未編號名單的 M- 前綴
     let rawLines = document.getElementById("digitalListInput").value.split('\n').filter(l => l.trim() !== "");
     let currentMaxM = getMaxSequence(rawLines, 'M-');
     rawLines = rawLines.map(line => {
@@ -674,12 +686,12 @@
     let formattedText = obj.displayText;
 
     if (obj.sourceType === 'digital') {
-      // 這裡直接對「最乾淨的原始字串」進行特徵解析
       let parsed = parseLineEntities(obj.rawText);
       
       let topText = parsed.prefix;
       let middleText = maskName(parsed.name);
-      let bottomText = [maskPhone(parsed.phone), parsed.fbTag].filter(Boolean).join(' ');
+      // 將過濾出來的 FB Tag 加上壓縮魔法 (maskFBTag) 再合併
+      let bottomText = [maskPhone(parsed.phone), maskFBTag(parsed.fbTag)].filter(Boolean).join(' ');
 
       if (totalCount > 10) {
         let compactText = [topText, middleText].filter(Boolean).join(' ');
@@ -707,6 +719,9 @@
       if(p.backupCount > 0) html += `<p style="color:#6c757d; font-weight:bold; margin-bottom:5px;">備取名單：</p><div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:15px;">${drawResults[p.name].backup.map(t=>generateTicketHTML(t,'ticket-sm',false,p.name,p.backupCount)).join('')}</div>`;
     });
     document.getElementById("quick-draw-results").innerHTML = html; document.getElementById("quick-draw-results").classList.remove("hidden");
+    
+    // ✨ 修復：快速開獎後，正確同步左上角剩餘票數
+    updateStatusBar();
   }
 
   // ================= 氣氛模式：階段一 =================

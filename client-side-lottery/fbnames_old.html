@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>FB 留言萃取器 V1.9 (防呆加強版)</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; }
+        h2 { margin-bottom: 20px; }
+        
+        .control-panel {
+            background-color: #fff; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+
+        .row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+
+        .option-group { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: bold; color: #444; cursor: pointer; }
+        input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+
+        /* Tooltip 懸停與點擊提示框樣式 */
+        .tooltip {
+            position: relative; display: inline-flex; justify-content: center; align-items: center;
+            width: 18px; height: 18px; background-color: #aaa; color: white;
+            border-radius: 50%; font-size: 13px; font-weight: bold; cursor: help;
+            margin-left: 5px; outline: none; transition: background-color 0.2s;
+        }
+        .tooltip:hover, .tooltip:focus { background-color: #666; }
+        .tooltip .tooltip-text {
+            visibility: hidden; width: 250px; background-color: #444; color: #fff;
+            text-align: left; border-radius: 6px; padding: 10px 14px; font-size: 13px;
+            position: absolute; z-index: 10; bottom: 140%; left: 50%; transform: translateX(-50%);
+            opacity: 0; transition: opacity 0.3s; font-weight: normal; line-height: 1.5;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2); pointer-events: none;
+        }
+        .tooltip .tooltip-text::after {
+            content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px;
+            border-width: 5px; border-style: solid; border-color: #444 transparent transparent transparent;
+        }
+        .tooltip:hover .tooltip-text, .tooltip:focus .tooltip-text { visibility: visible; opacity: 1; }
+
+        .manual-input-group { display: flex; align-items: center; gap: 10px; flex-grow: 1; }
+        .manual-input-group input { 
+            flex-grow: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; 
+        }
+
+        button.run-btn {
+            padding: 12px 30px; font-size: 18px; font-weight: bold; cursor: pointer;
+            background-color: #008CBA; color: white; border: none; border-radius: 5px; transition: background-color 0.2s;
+        }
+        button.run-btn:hover { background-color: #007399; }
+
+        .stats-panel {
+            background-color: #eef7e8; border-left: 5px solid #4CAF50; padding: 15px;
+            border-radius: 4px; margin-bottom: 20px; font-size: 15px; line-height: 1.6; display: none;
+        }
+        .stats-panel span.highlight { font-weight: bold; color: #d9534f; }
+        .stats-panel span.success { font-weight: bold; color: #2b542c; }
+
+        .container { display: flex; gap: 20px; }
+        .box { flex: 1; display: flex; flex-direction: column; }
+        .title { font-weight: bold; margin-bottom: 10px; font-size: 16px; color: #444; }
+        
+        #inputArea { height: 500px; border: 2px dashed #aaa; padding: 15px; overflow-y: auto; background-color: #fff; border-radius: 8px; }
+        #outputArea { height: 500px; border: 2px solid #555; padding: 15px; resize: none; font-size: 16px; line-height: 1.5; border-radius: 8px; background-color: #fff; }
+    </style>
+</head>
+<body>
+
+    <h2>FB 留言名單萃取器 (防呆加強版)</h2>
+
+    <div class="control-panel">
+        <div class="row">
+            <button class="run-btn" onclick="extractNames()">⚡ 整理名單</button>
+            
+            <label class="option-group">
+                <input type="checkbox" id="excludeAuthorCheck" checked>
+                自動偵測並排除「作者」留言
+                <span class="tooltip" tabindex="0">?
+                    <span class="tooltip-text">程式依賴「作者」標籤進行辨識。若遇到社團等未顯示標籤的發文者，請在下方「加強排除名單」手動輸入名稱排除。</span>
+                </span>
+            </label>
+        </div>
+
+        <div class="row">
+            <div class="manual-input-group">
+                <span style="font-weight: bold; color: #444;">🚫 加強排除名單：</span>
+                <input type="text" id="manualExclusions" placeholder="輸入要排除的人名，多人請用「逗號」隔開 (例如: 王小明, Jason Chen)">
+            </div>
+        </div>
+    </div>
+
+    <div id="statsPanel" class="stats-panel">
+        <div>📌 抓取到主留言人次： <span id="statParsed" class="success">0</span> 次</div>
+        <div>✅ 最終乾淨名單產出： <span id="statOutput" class="success">0</span> 位</div>
+        <hr style="border: 0; border-top: 1px dashed #ccc; margin: 10px 0;">
+        <div id="authorInfo">🔍 自動偵測作者： <span id="detectedAuthor">無</span></div>
+        <div>🗑️ 排除名單 (重複/指定)： <span id="statDuplicates">無</span></div>
+        <div>⚠️ 偵測同名不同人 (已標記)： <span id="statSameName">無</span></div>
+    </div>
+
+    <div class="container">
+        <div class="box">
+            <div class="title">1. 在下方點擊並貼上 FB 留言 (Ctrl+V)</div>
+            <div id="inputArea" contenteditable="true"></div>
+        </div>
+        <div class="box">
+            <div class="title">2. 乾淨名單輸出區</div>
+            <textarea id="outputArea" readonly placeholder="萃取後的名字會出現在這裡..."></textarea>
+        </div>
+    </div>
+
+    <script>
+        function extractUserId(href) {
+            if (!href) return "unknown";
+            try {
+                let urlObj = new URL(href);
+                if (urlObj.pathname.includes('/profile.php')) return urlObj.searchParams.get('id') || "unknown";
+                if (urlObj.pathname.includes('/groups/') && urlObj.pathname.includes('/user/')) {
+                    let segments = urlObj.pathname.split('/').filter(p => p !== "");
+                    let userIdx = segments.indexOf('user');
+                    if (userIdx !== -1 && segments.length > userIdx + 1) return segments[userIdx + 1];
+                }
+                let pathSegments = urlObj.pathname.split('/').filter(p => p !== "");
+                if (pathSegments.length > 0 && !pathSegments[0].includes("groups")) return pathSegments[0];
+                return "unknown";
+            } catch (e) { return "unknown"; }
+        }
+
+        function extractNames() {
+            const inputArea = document.getElementById('inputArea');
+            const outputArea = document.getElementById('outputArea');
+            const statsPanel = document.getElementById('statsPanel');
+            const excludeAuthorCheck = document.getElementById('excludeAuthorCheck').checked;
+            
+            // 修正點：移除 \s (空白切分)，只保留逗號與分號，保護包含空白的英文名字
+            const manualRaw = document.getElementById('manualExclusions').value;
+            const manualList = manualRaw.split(/[，,；;]+/).map(n => n.trim()).filter(n => n !== "");
+
+            let detectedAuthors = new Set();
+            const lines = inputArea.innerText.split('\n').map(line => line.trim());
+            const authorTags = ["作者"]; 
+            
+            for (let i = 0; i < lines.length; i++) {
+                if (authorTags.includes(lines[i])) {
+                    for (let j = i + 1; j < lines.length; j++) {
+                        if (lines[j] !== "") { 
+                            detectedAuthors.add(lines[j]); 
+                            break; 
+                        }
+                    }
+                }
+            }
+
+            const links = Array.from(inputArea.querySelectorAll('a'));
+            
+            let minLeftX = Infinity;
+            links.forEach(link => {
+                let rect = link.getBoundingClientRect();
+                if (rect.width > 0 && rect.left > 0 && rect.left < minLeftX) minLeftX = rect.left;
+            });
+            const indentThreshold = minLeftX + 20;
+
+            let userMap = new Map(); 
+            let totalParsedCount = 0;
+            let excludedInfo = new Set();
+            let sameNameDifferentPeople = new Set();
+            let isLookingForCommenter = true; 
+
+            const blacklist = ["讚", "回覆", "分享", "檢舉", "隱藏", "查看更多", "追蹤", "發送訊息", "頭號粉絲", "編輯記錄", "作者", "已編輯"];
+
+            links.forEach(link => {
+                let rect = link.getBoundingClientRect();
+                if (rect.left > indentThreshold) return; 
+
+                let text = link.innerText.trim();
+                let href = link.getAttribute('href') || ""; 
+                
+                const isTimeFormat = /^\d+\s*(天|小時|分鐘|秒|週|年)(前)?$/.test(text) || text === "剛剛" || text === "昨天" || /^\d+月\d+日$/.test(text) || /^\d{4}年\d+月\d+日$/.test(text) || /^\d+ 週$/.test(text);
+
+                if (isTimeFormat || text === "回覆" || text === "讚") {
+                    isLookingForCommenter = true; 
+                    return; 
+                }
+
+                if (text === "" || blacklist.includes(text) || !isNaN(text) || text.startsWith("http") || href.includes('/share/p/') || (href.startsWith('http') && !href.includes('facebook.com'))) {
+                    return; 
+                }
+
+                if (isLookingForCommenter) {
+                    const isAutoAuthor = excludeAuthorCheck && detectedAuthors.has(text);
+                    const isManualExclude = manualList.includes(text);
+
+                    if (!isAutoAuthor && !isManualExclude) {
+                        let userId = extractUserId(href);
+                        totalParsedCount++;
+
+                        if (userMap.has(text)) {
+                            let existingIds = userMap.get(text);
+                            if (existingIds.has(userId)) excludedInfo.add(text);
+                            else { existingIds.add(userId); sameNameDifferentPeople.add(text); }
+                        } else {
+                            userMap.set(text, new Set([userId]));
+                        }
+                    } else {
+                        excludedInfo.add(text);
+                    }
+                    isLookingForCommenter = false; 
+                }
+            });
+
+            let finalNamesArray = [];
+            userMap.forEach((idsSet, name) => {
+                if (idsSet.size === 1) finalNamesArray.push(name);
+                else idsSet.forEach(id => finalNamesArray.push(`${name} (@${id})`));
+            });
+
+            outputArea.value = finalNamesArray.join('\n');
+            
+            document.getElementById('statParsed').innerText = totalParsedCount;
+            document.getElementById('statOutput').innerText = finalNamesArray.length;
+            document.getElementById('detectedAuthor').innerText = detectedAuthors.size > 0 ? Array.from(detectedAuthors).join(', ') : "未偵測到";
+            document.getElementById('statDuplicates').innerHTML = excludedInfo.size > 0 ? `<span class="highlight">${Array.from(excludedInfo).join(', ')}</span>` : "無";
+            document.getElementById('statSameName').innerHTML = sameNameDifferentPeople.size > 0 ? `<span class="highlight">${Array.from(sameNameDifferentPeople).join(', ')}</span>` : "無";
+            statsPanel.style.display = "block"; 
+        }
+    </script>
+</body>
+</html>

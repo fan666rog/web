@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV 抽獎名單匯入插件 - 精緻 UI 版</title>
+    <style>
+        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background-color: #f4f7f6; color: #333; line-height: 1.6; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; letter-spacing: 1px; }
+        
+        /* 步驟區塊固定版面 */
+        .step-box { border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 20px; position: relative; }
+        
+        /* 標題與按鈕並排的新佈局 */
+        .step-header-row { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px; }
+        .step-title { font-weight: bold; font-size: 1.1em; color: #34495e; margin: 0; }
+        
+        /* 鎖定狀態 */
+        .locked-area { opacity: 0.4; pointer-events: none; background-color: #fafafa; }
+        .unlocked-area { opacity: 1; pointer-events: auto; background-color: #fff; transition: 0.4s; }
+
+        /* 漂亮的專屬上傳按鈕 */
+        .btn-custom-upload { background: #8e44ad; color: white; border: none; padding: 8px 16px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 0.9em; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-custom-upload:hover { background: #9b59b6; box-shadow: 0 4px 6px rgba(0,0,0,0.15); transform: translateY(-1px); }
+        .btn-custom-upload:active { transform: translateY(0); }
+        #id-file-input { display: none; } /* 隱藏原生醜醜的按鈕 */
+
+        /* 檔案讀取狀態文字 */
+        #upload-text { text-align: center; color: #7f8c8d; font-size: 0.95em; margin-top: 10px; }
+        .upload-success-text { color: #2ecc71 !important; font-weight: bold; }
+
+        /* 表單 */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.9em; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
+        
+        .radio-group { display: flex; gap: 15px; margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px; border: 1px solid #eee; }
+        .radio-group label { display: inline-flex; align-items: center; font-weight: bold; cursor: pointer; margin: 0; font-size: 0.95em; }
+        .radio-group input { margin-right: 6px; }
+
+        /* 主要按鈕 */
+        button.action-btn { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 5px; font-size: 1em; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button.action-btn:hover { background: #2980b9; }
+        button.confirm-btn { background: #2ecc71; margin-top: 15px; }
+        button.confirm-btn:hover { background: #27ae60; }
+
+        /* 預覽與摘要區 */
+        .summary-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; font-size: 0.95em; }
+        .summary-count { font-weight: bold; color: #e74c3c; }
+        
+        /* 圓圈問號提示 (?) */
+        .info-tip { 
+            color: #7f8c8d; cursor: help; font-size: 0.85em; display: inline-flex; align-items: center; justify-content: center; position: relative; 
+            width: 18px; height: 18px; border: 1.5px solid #bdc3c7; border-radius: 50%; font-weight: bold; font-family: Arial, sans-serif;
+        }
+        .info-tip:hover { color: #34495e; border-color: #34495e; }
+        .info-tip:hover::after {
+            content: "為確保系統流暢，此處僅預覽前 100 筆。如需核對完整洗淨後的名單，請下載完整檔案檢查。";
+            position: absolute; left: 25px; top: -5px; width: 220px; background: #333; color: #fff;
+            padding: 8px; border-radius: 5px; font-size: 12px; z-index: 100; line-height: 1.4; font-weight: normal; text-align: left;
+        }
+
+        /* 下載小按鈕 */
+        .export-link { color: #3498db; text-decoration: none; font-size: 0.9em; border-bottom: 1px dashed #3498db; cursor: pointer; padding: 2px 0; }
+        .export-link:hover { color: #2980b9; border-bottom-style: solid; }
+
+        #preview-list { background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 5px; max-height: 220px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; }
+        .list-item { border-bottom: 1px solid #f0f0f0; padding: 4px 0; color: #444; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>CSV 名單匯入配置</h2>
+
+    <div class="step-box" id="step1-area">
+        <div class="step-header-row">
+            <div class="step-title">📦 步驟一：讀取檔案</div>
+            <button class="btn-custom-upload" onclick="document.getElementById('id-file-input').click()">📁 選擇 CSV 檔案</button>
+            <input type="file" id="id-file-input" accept=".csv" onchange="handleFileUpload(event)">
+        </div>
+        <div id="upload-text">尚未選擇檔案...</div>
+    </div>
+
+    <div class="step-box locked-area" id="settings-area">
+        <div class="step-title" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">⚙️ 步驟二：設定擷取規則</div>
+        
+        <div class="radio-group">
+            <label><input type="radio" name="direction" value="col" checked onchange="updateUIText()"> ⬇️ 直向 (欄 Column)</label>
+            <label><input type="radio" name="direction" value="row" onchange="updateUIText()"> ➡️ 橫向 (列 Row)</label>
+        </div>
+
+        <div class="form-group">
+            <label id="label-target">鎖定目標欄位 (Column)</label>
+            <input type="text" id="target-input" placeholder="例如：A">
+        </div>
+
+        <div class="form-group">
+            <label id="label-start">起始資料列 (Row) - 跳過標題用</label>
+            <input type="text" id="start-input" value="2" placeholder="例如：2">
+        </div>
+
+        <div class="form-group">
+            <label id="label-exclude">排除特定列 (Row) - 選填</label>
+            <input type="text" id="exclude-input" placeholder="例如：5,8">
+        </div>
+
+        <button class="action-btn" onclick="generatePreview()">產生名單預覽</button>
+    </div>
+
+    <div class="step-box locked-area" id="preview-area">
+        <div class="step-title" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">🔍 步驟三：名單核對</div>
+        
+        <div class="summary-row">
+            <span class="summary-count" id="preview-summary">總共擷取：0 筆有效名單</span>
+            <span class="info-tip" title="">?</span>
+            <a class="export-link" id="export-btn" style="display: none;" onclick="exportFullList()">📥 下載完整名單 (.txt)</a>
+        </div>
+
+        <div id="preview-list">等待產生預覽...</div>
+        
+        <button class="action-btn confirm-btn" onclick="confirmImport()">確認匯入抽獎池</button>
+    </div>
+</div>
+
+<script>
+    let rawCsvData = []; 
+    let finalCleanList = []; 
+    let currentFileName = "lottery_list";
+
+    // 檔案讀取：更新提示文字樣式
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        currentFileName = file.name.replace(/\.[^/.]+$/, "");
+        const uploadText = document.getElementById('upload-text');
+        
+        uploadText.innerHTML = `✅ 讀取成功：${file.name}`;
+        uploadText.className = 'upload-success-text';
+        
+        document.getElementById('settings-area').classList.remove('locked-area');
+        document.getElementById('settings-area').classList.add('unlocked-area');
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            rawCsvData = parseCSVText(e.target.result);
+        };
+        reader.readAsText(file, 'UTF-8');
+    }
+
+    // 文字動態切換
+    function updateUIText() {
+        const direction = document.querySelector('input[name="direction"]:checked').value;
+        const ui = {
+            target: document.getElementById('label-target'),
+            targetIn: document.getElementById('target-input'),
+            start: document.getElementById('label-start'),
+            startIn: document.getElementById('start-input'),
+            exclude: document.getElementById('label-exclude'),
+            excludeIn: document.getElementById('exclude-input')
+        };
+
+        if (direction === 'col') {
+            ui.target.innerText = "鎖定目標欄位 (Column)";
+            ui.targetIn.placeholder = "例如：A";
+            ui.start.innerText = "起始資料列 (Row) - 跳過標題用";
+            ui.startIn.placeholder = "例如：2";
+            ui.startIn.value = "2";
+            ui.exclude.innerText = "排除特定列 (Row) - 選填";
+            ui.excludeIn.placeholder = "例如：5,8";
+        } else {
+            ui.target.innerText = "鎖定目標列 (Row)";
+            ui.targetIn.placeholder = "例如：2";
+            ui.start.innerText = "起始資料欄位 (Column) - 跳過標題用";
+            ui.startIn.placeholder = "例如：B";
+            ui.startIn.value = "B";
+            ui.exclude.innerText = "排除特定欄位 (Column) - 選填";
+            ui.excludeIn.placeholder = "例如：C,F";
+        }
+        ui.targetIn.value = "";
+        ui.excludeIn.value = "";
+    }
+
+    // CSV 解析核心
+    function parseCSVText(text) {
+        const lines = text.split(/\r?\n/);
+        return lines.map(line => {
+            let result = [], currentStr = '', inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                let char = line[i];
+                if (char === '"') inQuotes = !inQuotes;
+                else if (char === ',' && !inQuotes) { result.push(currentStr.trim()); currentStr = ''; }
+                else currentStr += char;
+            }
+            result.push(currentStr.trim());
+            return result;
+        });
+    }
+
+    // 格式防呆
+    const isAlpha = (str) => /^[A-Za-z]+$/.test(str);
+    const isNumeric = (str) => /^[1-9]\d*$/.test(str);
+    const isAlphaList = (str) => str === "" || /^[A-Za-z]+(,[A-Za-z]+)*$/.test(str);
+    const isNumericList = (str) => str === "" || /^[1-9]\d*(,[1-9]\d*)*$/.test(str);
+
+    function letterToIndex(letter) {
+        let col = 0; letter = letter.toUpperCase().trim();
+        for (let i = 0; i < letter.length; i++) col = col * 26 + (letter.charCodeAt(i) - 64);
+        return col - 1;
+    }
+
+    // 產生預覽
+    function generatePreview() {
+        const direction = document.querySelector('input[name="direction"]:checked').value;
+        const targetStr = document.getElementById('target-input').value.trim();
+        const startStr = document.getElementById('start-input').value.trim();
+        const excludeStr = document.getElementById('exclude-input').value.trim();
+        
+        if (!targetStr || !startStr) return alert("必填欄位不可為空！");
+
+        // 防呆驗證
+        if (direction === 'col') {
+            if (!isAlpha(targetStr)) return alert("❌ 格式錯誤：鎖定目標請輸入英文字母");
+            if (!isNumeric(startStr)) return alert("❌ 格式錯誤：起始資料列請輸入數字");
+            if (!isNumericList(excludeStr)) return alert("❌ 格式錯誤：排除列請輸入數字並用逗號隔開");
+        } else {
+            if (!isNumeric(targetStr)) return alert("❌ 格式錯誤：鎖定目標請輸入數字");
+            if (!isAlpha(startStr)) return alert("❌ 格式錯誤：起始資料欄位請輸入英文字母");
+            if (!isAlphaList(excludeStr)) return alert("❌ 格式錯誤：排除欄位請輸入英文字母並用逗號隔開");
+        }
+
+        finalCleanList = [];
+        let excludeList = [];
+
+        if (direction === 'col') {
+            const colIdx = letterToIndex(targetStr);
+            const startIdx = parseInt(startStr) - 1;
+            if(excludeStr) excludeList = excludeStr.split(',').map(n => parseInt(n.trim()) - 1);
+            for (let i = startIdx; i < rawCsvData.length; i++) {
+                if (excludeList.includes(i)) continue;
+                let val = rawCsvData[i][colIdx];
+                if (val !== undefined && val.trim() !== "") finalCleanList.push(val);
+            }
+        } else {
+            const rowIdx = parseInt(targetStr) - 1;
+            const startColIdx = letterToIndex(startStr);
+            if(excludeStr) excludeList = excludeStr.split(',').map(l => letterToIndex(l));
+            if (rawCsvData[rowIdx]) {
+                const rowData = rawCsvData[rowIdx];
+                for (let i = startColIdx; i < rowData.length; i++) {
+                    if (excludeList.includes(i)) continue;
+                    let val = rowData[i];
+                    if (val !== undefined && val.trim() !== "") finalCleanList.push(val);
+                }
+            }
+        }
+        renderPreview();
+    }
+
+    function renderPreview() {
+        document.getElementById('preview-area').classList.remove('locked-area');
+        document.getElementById('preview-area').classList.add('unlocked-area');
+        document.getElementById('preview-summary').innerText = `總共擷取：${finalCleanList.length} 筆`;
+        document.getElementById('export-btn').style.display = 'inline-block';
+        
+        const listContainer = document.getElementById('preview-list');
+        listContainer.innerHTML = ''; 
+        if (finalCleanList.length === 0) {
+            listContainer.innerHTML = '<div style="color:red; text-align:center;">無有效名單</div>';
+            return;
+        }
+
+        const max = 100;
+        finalCleanList.slice(0, max).forEach((name, i) => {
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.innerText = `${i + 1}. ${name}`;
+            listContainer.appendChild(div);
+        });
+
+        if (finalCleanList.length > max) {
+            const more = document.createElement('div');
+            more.style.cssText = "text-align:center; padding:10px; color:#999; font-style:italic;";
+            more.innerText = `... 還有 ${finalCleanList.length - max} 筆資料未顯示 (請下載檔案核對) ...`;
+            listContainer.appendChild(more);
+        }
+    }
+
+    function exportFullList() {
+        if (finalCleanList.length === 0) return;
+        const blob = new Blob([finalCleanList.join('\r\n')], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${currentFileName}_已洗淨名單.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    function confirmImport() {
+        if (finalCleanList.length === 0) return alert("無名單可匯入");
+        alert(`匯入完成！已將 ${finalCleanList.length} 筆資料傳送至抽獎系統。`);
+    }
+</script>
+</body>
+</html>

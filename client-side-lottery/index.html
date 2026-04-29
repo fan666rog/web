@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券抽獎系統 V4.3</title>
+  <title>彩券抽獎系統 V4.5</title>
   <style>
     /* ================= 基礎樣式 ================= */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
@@ -98,6 +98,9 @@
     .tooltip .tooltip-text { visibility: hidden; width: 250px; background-color: #444; color: #fff; text-align: left; border-radius: 6px; padding: 10px 14px; font-size: 13px; position: absolute; z-index: 10; bottom: 140%; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s; font-weight: normal; line-height: 1.5; box-shadow: 0 4px 8px rgba(0,0,0,0.2); pointer-events: none; white-space: normal; }
     .tooltip .tooltip-text::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #444 transparent transparent transparent; }
     .tooltip:hover .tooltip-text, .tooltip:focus .tooltip-text { visibility: visible; opacity: 1; }
+    /* 向下展開的提示框 (專治天花板切邊) */
+    .tooltip-bottom .tooltip-text { bottom: auto; top: 140%; }
+    .tooltip-bottom .tooltip-text::after { top: auto; bottom: 100%; border-color: transparent transparent #444 transparent; }
 
     
     /* ================= FB 萃取器專屬進階樣式 (進化版方案 C) ================= */
@@ -122,6 +125,26 @@
     .move-btn-group button { padding: 0 4px; font-size: 10px; margin: 0; background: #ced4da; color: white; border-radius: 3px; line-height: 1.2; }
     .move-btn-group button:hover { background: #6c757d; }
     .order-number { font-size: 18px; font-weight: bold; color: #0056b3; min-width: 24px; }
+
+    /* ================= CSV 匯入插件專屬樣式 ================= */
+    .csv-step-box { border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 20px; position: relative; }
+    .csv-step-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px; }
+    .csv-step-title { font-weight: bold; font-size: 1.1em; color: #34495e; margin: 0; }
+    .csv-locked-area { opacity: 0.4; pointer-events: none; background-color: #fafafa; }
+    .csv-unlocked-area { opacity: 1; pointer-events: auto; background-color: #fff; transition: 0.4s; }
+    .csv-btn-upload { background: #8e44ad; color: white; border: none; padding: 8px 16px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 0.9em; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .csv-btn-upload:hover { background: #9b59b6; box-shadow: 0 4px 6px rgba(0,0,0,0.15); transform: translateY(-1px); }
+    .csv-radio-group { display: flex; gap: 15px; margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px; border: 1px solid #eee; }
+    .csv-radio-group label { display: inline-flex; align-items: center; font-weight: bold; cursor: pointer; margin: 0; font-size: 0.95em; }
+    .csv-form-group { margin-bottom: 15px; }
+    .csv-form-group label { display: block; font-size: 0.9em; margin-bottom: 5px; font-weight: bold; color: #555; }
+    .csv-form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
+    .csv-action-btn { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 5px; font-size: 1em; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .csv-action-btn:hover { background: #2980b9; }
+    #csv-upload-text { text-align: center; color: #7f8c8d; font-size: 0.95em; margin-top: 10px; }
+    .csv-success-text { color: #2ecc71 !important; font-weight: bold; }
+    #csv-preview-list { background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 5px; max-height: 180px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; }
+    .csv-list-item { border-bottom: 1px solid #f0f0f0; padding: 4px 0; color: #444; }
 
     /* ✨ 酷炫聯名徽章 (幽靈按鍵 ✕ RGB流光) */
     .footer-badges {
@@ -227,7 +250,7 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.3 (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.5 (點擊修改標題)</h1>
     
     <details class="instructions-panel">
       <summary>📖 點擊查看系統使用說明</summary>
@@ -270,11 +293,12 @@
         <h4>👤 數位線上名單</h4>
         <div style="margin-bottom: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
           <button class="toolbar-btn" onclick="openFBModal()" style="background: #1877f2; font-weight: bold;">📥 FB 留言一鍵匯入</button>
+          <button class="toolbar-btn" onclick="openCSVModal()" style="background: #8e44ad; font-weight: bold;">📁 CSV 名單匯入</button>
           <button class="toolbar-btn" onclick="toolAutoSerial()">✨ 加編號 (M-)</button>
           <button class="toolbar-btn" onclick="toolDeduplicate()">❌ 清除重複</button>
           <button id="btn-toggle-mask" class="toolbar-btn" onclick="toggleMaskMode()" style="background: #e67e22; font-weight: bold;">🔒 切換隱碼保護</button>
         </div>
-        <textarea id="digitalListInput" class="digital-list" placeholder="請將真實名單貼在此處...&#10;FB名單會自動帶有 F- 前綴&#10;手動名單可點擊上方按鈕加上 M- 前綴&#10;手動名單格式參考姓名 空格 電話"></textarea>
+        <textarea id="digitalListInput" class="digital-list" placeholder="請將真實名單貼在此處...&#10;FB名單會自動帶有 F- 前綴&#10;CSV名單會自動帶有 M- 前綴&#10;手動名單可點擊上方按鈕加上 M- 前綴&#10;手動名單格式參考姓名 空格 電話"></textarea>
         <textarea id="digitalListMasked" class="digital-list hidden" readonly style="background: #f1f2f6; color: #7f8c8d; border-color: #e67e22; outline: none;" placeholder="隱碼預覽畫面..."></textarea>
       </div>
     </div>
@@ -369,6 +393,69 @@
 </div>
 
 <button id="btn-extra-prize" class="extra-prize-btn hidden" onclick="showExtraPrizeModal()">➕ 臨時加碼</button>
+
+<div id="modal-csv-extract" class="modal-overlay hidden">
+  <div class="modal-content" style="max-width: 600px;">
+    <h2 style="margin-top:0; color:#8e44ad; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span>📊 CSV 名單匯入配置</span>
+        <span class="tooltip tooltip-bottom" tabindex="0">?
+            <span class="tooltip-text" style="width: 260px; font-size: 14px; font-weight: normal;">支援 Excel 或表單輸出的 CSV 檔。建議先將資料整理乾淨再用本工具讀取，操作會更順暢哦！</span>
+        </span>
+      </div>
+      <button onclick="document.getElementById('modal-csv-extract').classList.add('hidden')" style="background:none; border:none; font-size:24px; cursor:pointer; color:#999; padding: 0 5px;">&times;</button>
+    </h2>
+
+    <div class="csv-step-box" id="csv-step1-area">
+        <div class="csv-step-header">
+            <div class="csv-step-title">📦 步驟一：讀取檔案</div>
+            <button class="csv-btn-upload" onclick="document.getElementById('csv-file-input').click()">📁 選擇 CSV 檔案</button>
+            <input type="file" id="csv-file-input" accept=".csv" style="display:none;" onchange="handleCSVUpload(event)">
+        </div>
+        <div id="csv-upload-text">尚未選擇檔案...</div>
+    </div>
+
+    <div class="csv-step-box csv-locked-area" id="csv-settings-area">
+        <div class="csv-step-title" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">⚙️ 步驟二：設定擷取規則</div>
+        
+        <div class="csv-radio-group">
+            <label><input type="radio" name="csvDirection" value="col" checked onchange="updateCSVUIText()"> ⬇️ 直向 (欄 Column)</label>
+            <label><input type="radio" name="csvDirection" value="row" onchange="updateCSVUIText()"> ➡️ 橫向 (列 Row)</label>
+        </div>
+
+        <div class="csv-form-group">
+            <label id="csv-label-target">鎖定目標欄位 (Column)</label>
+            <input type="text" id="csv-target-input" placeholder="例如：A">
+        </div>
+        <div class="csv-form-group">
+            <label id="csv-label-start">起始資料列 (Row) - 跳過標題用</label>
+            <input type="text" id="csv-start-input" value="2" placeholder="例如：2">
+        </div>
+        <div class="csv-form-group">
+            <label id="csv-label-exclude">排除特定列 (Row) - 選填</label>
+            <input type="text" id="csv-exclude-input" placeholder="例如：5,8">
+        </div>
+        <button class="csv-action-btn" onclick="generateCSVPreview()">🔍 產生名單預覽</button>
+    </div>
+
+    <div class="csv-step-box csv-locked-area" id="csv-preview-area" style="margin-bottom: 0;">
+        <div class="csv-step-header" style="justify-content: space-between;">
+            <div style="display: flex; align-items: center;">
+                <div class="csv-step-title" style="margin-right: 10px;">📋 步驟三：名單核對</div>
+                <span class="tooltip" tabindex="0">?
+                    <span class="tooltip-text" style="width: 220px; bottom: 120%;">為確保系統流暢，此處僅預覽前 100 筆。如需核對完整洗淨後的名單，請點擊下方「下載預覽」檢查。</span>
+                </span>
+            </div>
+            <span style="font-weight: bold; color: #e74c3c;" id="csv-preview-summary">總共擷取：0 筆</span>
+        </div>
+        <div id="csv-preview-list">等待產生預覽...</div>
+        <div style="display:flex; gap:10px; margin-top: 15px;">
+            <button class="csv-action-btn" onclick="exportCSVFullList()" style="background:#f39c12; flex:1;">📥 下載預覽</button>
+            <button class="csv-action-btn" onclick="confirmCSVImport()" style="background:#2ecc71; flex:2;">✅ 加上 M- 編號並匯入抽獎池</button>
+        </div>
+    </div>
+  </div>
+</div>
 
 <div id="modal-fb-extract" class="modal-overlay hidden">
   <div class="modal-content">
@@ -695,6 +782,178 @@
     let lines = raw.value.split('\n').filter(l => l.trim() !== "");
     raw.value = Array.from(new Set(lines)).join('\n');
     updateLiveStats();
+  }
+
+  // ================= CSV 讀取插件核心邏輯 =================
+  let rawCsvData = [], finalCleanCsvList = [], currentCsvFileName = "lottery_list";
+
+  function openCSVModal() {
+      document.getElementById('csv-file-input').value = "";
+      document.getElementById('csv-upload-text').innerHTML = "尚未選擇檔案...";
+      document.getElementById('csv-upload-text').className = "";
+      document.getElementById('csv-settings-area').classList.add('csv-locked-area');
+      document.getElementById('csv-preview-area').classList.add('csv-locked-area');
+      document.getElementById('csv-target-input').value = "";
+      document.getElementById('csv-exclude-input').value = "";
+      document.getElementById('csv-preview-list').innerHTML = "等待產生預覽...";
+      document.getElementById('modal-csv-extract').classList.remove('hidden');
+  }
+
+  function handleCSVUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      currentCsvFileName = file.name.replace(/\.[^/.]+$/, "");
+      const uploadText = document.getElementById('csv-upload-text');
+      uploadText.innerHTML = `✅ 讀取成功：${file.name}`;
+      uploadText.className = 'csv-success-text';
+      document.getElementById('csv-settings-area').classList.remove('csv-locked-area');
+      
+      const reader = new FileReader();
+      reader.onload = function(e) { rawCsvData = parseCSVText(e.target.result); };
+      reader.readAsText(file, 'UTF-8');
+  }
+
+  function updateCSVUIText() {
+      const direction = document.querySelector('input[name="csvDirection"]:checked').value;
+      const ui = {
+          target: document.getElementById('csv-label-target'), targetIn: document.getElementById('csv-target-input'),
+          start: document.getElementById('csv-label-start'), startIn: document.getElementById('csv-start-input'),
+          exclude: document.getElementById('csv-label-exclude'), excludeIn: document.getElementById('csv-exclude-input')
+      };
+      if (direction === 'col') {
+          ui.target.innerText = "鎖定目標欄位 (Column)"; ui.targetIn.placeholder = "例如：A";
+          ui.start.innerText = "起始資料列 (Row) - 跳過標題用"; ui.startIn.placeholder = "例如：2"; ui.startIn.value = "2";
+          ui.exclude.innerText = "排除特定列 (Row) - 選填"; ui.excludeIn.placeholder = "例如：5,8";
+      } else {
+          ui.target.innerText = "鎖定目標列 (Row)"; ui.targetIn.placeholder = "例如：2";
+          ui.start.innerText = "起始資料欄位 (Column) - 跳過標題用"; ui.startIn.placeholder = "例如：B"; ui.startIn.value = "B";
+          ui.exclude.innerText = "排除特定欄位 (Column) - 選填"; ui.excludeIn.placeholder = "例如：C,F";
+      }
+      ui.targetIn.value = ""; ui.excludeIn.value = "";
+  }
+
+  function parseCSVText(text) {
+      const lines = text.split(/\r?\n/);
+      return lines.map(line => {
+          let result = [], currentStr = '', inQuotes = false;
+          for (let i = 0; i < line.length; i++) {
+              let char = line[i];
+              if (char === '"') inQuotes = !inQuotes;
+              else if (char === ',' && !inQuotes) { result.push(currentStr.trim()); currentStr = ''; }
+              else currentStr += char;
+          }
+          result.push(currentStr.trim()); return result;
+      });
+  }
+
+  const isAlpha = (str) => /^[A-Za-z]+$/.test(str);
+  const isNumeric = (str) => /^[1-9]\d*$/.test(str);
+  const isAlphaList = (str) => str === "" || /^[A-Za-z]+(,[A-Za-z]+)*$/.test(str);
+  const isNumericList = (str) => str === "" || /^[1-9]\d*(,[1-9]\d*)*$/.test(str);
+
+  function letterToIndex(letter) {
+      let col = 0; letter = letter.toUpperCase().trim();
+      for (let i = 0; i < letter.length; i++) col = col * 26 + (letter.charCodeAt(i) - 64);
+      return col - 1;
+  }
+
+  function generateCSVPreview() {
+      const direction = document.querySelector('input[name="csvDirection"]:checked').value;
+      const targetStr = document.getElementById('csv-target-input').value.trim();
+      const startStr = document.getElementById('csv-start-input').value.trim();
+      const excludeStr = document.getElementById('csv-exclude-input').value.trim();
+      if (!targetStr || !startStr) return alert("必填欄位不可為空！");
+
+      if (direction === 'col') {
+          if (!isAlpha(targetStr)) return alert("❌ 格式錯誤：鎖定目標請輸入英文字母");
+          if (!isNumeric(startStr)) return alert("❌ 格式錯誤：起始資料列請輸入數字");
+          if (!isNumericList(excludeStr)) return alert("❌ 格式錯誤：排除列請輸入數字並用逗號隔開");
+      } else {
+          if (!isNumeric(targetStr)) return alert("❌ 格式錯誤：鎖定目標請輸入數字");
+          if (!isAlpha(startStr)) return alert("❌ 格式錯誤：起始資料欄位請輸入英文字母");
+          if (!isAlphaList(excludeStr)) return alert("❌ 格式錯誤：排除欄位請輸入英文字母並用逗號隔開");
+      }
+
+      finalCleanCsvList = []; let excludeList = [];
+      
+      // 新增：一個極簡的防護函式，把半形角括號替換成全形
+      const sanitizeCsvText = (str) => str.replace(/</g, '＜').replace(/>/g, '＞');
+
+      if (direction === 'col') {
+          const colIdx = letterToIndex(targetStr), startIdx = parseInt(startStr) - 1;
+          if(excludeStr) excludeList = excludeStr.split(',').map(n => parseInt(n.trim()) - 1);
+          for (let i = startIdx; i < rawCsvData.length; i++) {
+              if (excludeList.includes(i)) continue;
+              let val = rawCsvData[i][colIdx];
+              // 修改：把 val 包進 sanitizeCsvText 過濾
+              if (val !== undefined && val.trim() !== "") finalCleanCsvList.push(sanitizeCsvText(val));
+          }
+      } else {
+          const rowIdx = parseInt(targetStr) - 1, startColIdx = letterToIndex(startStr);
+          if(excludeStr) excludeList = excludeStr.split(',').map(l => letterToIndex(l));
+          if (rawCsvData[rowIdx]) {
+              const rowData = rawCsvData[rowIdx];
+              for (let i = startColIdx; i < rowData.length; i++) {
+                  if (excludeList.includes(i)) continue;
+                  let val = rowData[i];
+                  // 修改：把 val 包進 sanitizeCsvText 過濾
+                  if (val !== undefined && val.trim() !== "") finalCleanCsvList.push(sanitizeCsvText(val));
+              }
+          }
+      }
+      
+      document.getElementById('csv-preview-area').classList.remove('csv-locked-area');
+      document.getElementById('csv-preview-summary').innerText = `總共擷取：${finalCleanCsvList.length} 筆`;
+      
+      const listContainer = document.getElementById('csv-preview-list');
+      if (finalCleanCsvList.length === 0) { 
+          listContainer.innerHTML = '<div style="color:red; text-align:center;">無有效名單</div>'; 
+          return; 
+      }
+      
+      const max = 100;
+      let htmlBuffer = ""; // 新增一個暫存字串
+      
+      finalCleanCsvList.slice(0, max).forEach((name, i) => { 
+          //改成先拼接字串，不操作 DOM
+          htmlBuffer += `<div class="csv-list-item">${i + 1}. ${name}</div>`; 
+      });
+      
+      if (finalCleanCsvList.length > max) {
+          //同樣先拼接字串
+          htmlBuffer += `<div style="text-align:center; padding:10px; color:#999; font-style:italic;">... 還有 ${finalCleanCsvList.length - max} 筆資料未顯示 ...</div>`;
+      }
+      
+      //迴圈結束後，只做這一次 DOM 寫入
+      listContainer.innerHTML = htmlBuffer;
+  }
+
+  function exportCSVFullList() {
+      if (finalCleanCsvList.length === 0) return;
+      const blob = new Blob([finalCleanCsvList.join('\r\n')], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url;
+      link.download = `${currentCsvFileName}_已洗淨名單.txt`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
+  }
+
+  function confirmCSVImport() {
+      if (finalCleanCsvList.length === 0) { alert("⚠️ 名單為空！請先產生預覽名單。"); return; }
+      
+      let raw = document.getElementById("digitalListInput");
+      let lines = raw.value.split('\n').filter(l => l.trim() !== "");
+      
+      // 這裡直接借用系統原有的 getMaxSequence 函式來找目前最大的 M- 編號
+      let currentMaxM = getMaxSequence(lines, 'M-');
+      
+      let newCsvLines = finalCleanCsvList.map(name => {
+          currentMaxM++;
+          return `M-${String(currentMaxM).padStart(3, '0')} ${name}`;
+      });
+
+      lines = lines.concat(newCsvLines);
+      raw.value = lines.join('\n');
+      
+      document.getElementById('modal-csv-extract').classList.add('hidden');
+      updateLiveStats(); // 呼叫原本的更新儀表板功能
   }
 
   // -------------------------------------------------------------
@@ -1074,16 +1333,73 @@
   }
 
   function voidTicket(prizeName, targetId) {
-    if(!confirm("確定要作廢此得獎者嗎？將自動補抽一名。")) return;
+    if(!confirm("確定要作廢此得獎者嗎？系統將自動驗證票池並嘗試補抽。")) return;
+    
+    // 取得當前操作的獎項物件
+    let currentPrize = globalPrizes.find(p => p.name === prizeName);
+    let canRedraw = false;
+    let isUsingGlobalBuffer = false; // 標記是否動用到全局票池
+
+    // --- 第一層防護：檢查是否有自身的備取額度可以扣抵 ---
+    if (currentPrize.backupCount > 0) {
+        currentPrize.backupCount--; // 扣減備取額度
+        canRedraw = true;
+    } 
+    // --- 第二層防護：計算全局剩餘水位 (Global Buffer) ---
+    else {
+        isUsingGlobalBuffer = true;
+        let requiredTickets = 0;
+        
+        globalPrizes.forEach(p => {
+            let missingMain = p.count - drawResults[p.name].main.length;
+            let missingBackup = p.backupCount - drawResults[p.name].backup.length;
+            
+            // 如果剛好是現在準備作廢的獎項，因為等一下會少一個人，所以正取缺額要 +1
+            if (p.name === prizeName) missingMain++; 
+            
+            if (missingMain > 0) requiredTickets += missingMain;
+            if (missingBackup > 0) requiredTickets += missingBackup;
+        });
+
+        if (globalTicketsPool.length >= requiredTickets) {
+            canRedraw = true; 
+        }
+    }
+
+    // --- 最終攔截與提示系統 ---
+    if (!canRedraw) {
+        alert(`⚠️ 警告：票池餘額僅足夠保障後續既定開獎！\n【${prizeName}】的備取額度已用盡，無法再進行任何作廢補抽。`);
+        return; 
+    }
+
+    if (isUsingGlobalBuffer) {
+        // 已經是 0，且動用到全局票池的二次警告
+        if(!confirm(`⚠️ 注意：【${prizeName}】的專屬備取額度已為 0！\n本次補抽將會消耗「全場尚未抽出的名單」。\n確定要強制補抽嗎？`)) {
+            return; // 主持人選擇退縮，取消作廢
+        }
+    }
+
+    // --- 正式執行作廢與補抽流程 ---
     let targetObj = drawResults[prizeName].main.find(t => t.sysId === targetId);
     if(targetObj) drawResults[prizeName].voided.push(targetObj);
     drawResults[prizeName].main = drawResults[prizeName].main.filter(t => t.sysId !== targetId);
-    if(globalTicketsPool.length > 0) drawResults[prizeName].main.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]);
-    else alert("票池已空，無法補抽！");
-    const area = document.getElementById("showcase-winner-result"); area.innerHTML = "";
+    
+    drawResults[prizeName].main.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]);
+    
+    const area = document.getElementById("showcase-winner-result"); 
+    area.innerHTML = "";
     let currentTotal = drawResults[prizeName].main.length;
     drawResults[prizeName].main.forEach(t => area.innerHTML += generateTicketHTML(t, currentTotal>10?'ticket-sm':'ticket-lg', true, prizeName, currentTotal));
+    
     updateStatusBar();
+
+    // 溫和提醒：剛好把最後一個專屬備取用掉時，給予通知
+    if (!isUsingGlobalBuffer && currentPrize.backupCount === 0) {
+        // 使用 setTimeout 讓畫面先完成渲染，再跳出提示框，體驗會比較順暢
+        setTimeout(() => {
+            alert(`🔔 額度提醒：【${prizeName}】的專屬備取名額剛好用盡（剩餘 0 名）。\n若後續再進行作廢，將會開始消耗全局總票池。`);
+        }, 100);
+    }
   }
 
   function finalizeCurrentPrize(isResolved) {

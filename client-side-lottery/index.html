@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券抽獎系統 V4.5</title>
+  <title>彩券抽獎系統 V4.6</title>
   <style>
     /* ================= 基礎樣式 ================= */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
@@ -36,7 +36,7 @@
     .input-section { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
     .input-card { flex: 1; min-width: 300px; background: #f8f9fa; border: 1px solid #dee2e6; padding: 20px; border-radius: 8px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); box-sizing: border-box; }
     .input-card h4 { margin-top: 0; color: #0056b3; border-bottom: 2px solid #0056b3; padding-bottom: 10px; display: flex; align-items: center; gap: 8px;}
-    textarea.digital-list { width: 100%; height: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; font-family: monospace; box-sizing: border-box; }
+    textarea.digital-list { width: 100%; height: 230px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; font-family: monospace; box-sizing: border-box; }
     .toolbar-btn { font-size: 14px; padding: 6px 10px; background: #6c757d; color: white; margin: 2px; }
     .toolbar-btn:hover { background: #5a6268; }
 
@@ -194,6 +194,22 @@
     }
     .gemini-spark svg { animation: hue-cycle 4s linear infinite; }
 
+    /* ================= 新增：隱碼開關 (Toggle Switch) ================= */
+    .mask-toggle { display: inline-flex; align-items: center; cursor: pointer; font-size: 14px; margin-left: auto; font-weight: normal; user-select: none; }
+    .mask-toggle input { display: none; }
+    .mask-slider { position: relative; width: 36px; height: 20px; background-color: #ccc; border-radius: 20px; transition: .4s; margin-right: 8px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
+    .mask-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .4s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .mask-toggle input:checked + .mask-slider { background-color: #27ae60; }
+    .mask-toggle input:checked + .mask-slider:before { transform: translateX(16px); }
+    .mask-label-text { color: #666; transition: color 0.3s; }
+    .mask-toggle input:checked ~ .mask-label-text { color: #27ae60; font-weight: bold; }
+
+    /* ================= 新增：CSV 分段控制器 (Segmented Control) ================= */
+    .csv-segmented-control { display: flex; background: #e9ecef; border-radius: 8px; padding: 4px; margin-bottom: 20px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
+    .csv-segmented-control input[type="radio"] { display: none; }
+    .csv-segmented-control label { flex: 1; text-align: center; padding: 10px; cursor: pointer; font-weight: bold; color: #6c757d; border-radius: 6px; transition: all 0.3s ease; margin: 0; font-size: 15px; }
+    .csv-segmented-control input[type="radio"]:checked + label { background: #fff; color: #0056b3; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
     /* ================= 手機版專屬樣式 (RWD) ================= */
     @media (max-width: 768px) {
       body { padding: 10px; }
@@ -231,6 +247,11 @@
       #prizeTable td:nth-of-type(1) { justify-content: flex-start; padding-left: 40%; }
       
       .footer-badges { flex-direction: column; gap: 15px; }
+
+      /* 新增：CSV 步驟標題與排版手機版最佳化 */
+      .csv-step-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .csv-step-header button, .csv-step-header .csv-btn-upload { width: 100%; margin-top: 5px; }
+      #csv-preview-summary { width: 100%; text-align: right; margin-top: -5px; margin-bottom: 10px; }
     }
   </style>
 </head>
@@ -250,7 +271,7 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.5 (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.6 (點擊修改標題)</h1>
     
     <details class="instructions-panel">
       <summary>📖 點擊查看系統使用說明</summary>
@@ -290,13 +311,27 @@
       </div>
 
       <div class="input-card">
-        <h4>👤 數位線上名單</h4>
-        <div style="margin-bottom: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-          <button class="toolbar-btn" onclick="openFBModal()" style="background: #1877f2; font-weight: bold;">📥 FB 留言一鍵匯入</button>
-          <button class="toolbar-btn" onclick="openCSVModal()" style="background: #8e44ad; font-weight: bold;">📁 CSV 名單匯入</button>
-          <button class="toolbar-btn" onclick="toolAutoSerial()">✨ 加編號 (M-)</button>
+        <h4>
+          👤 數位線上名單
+          <label class="mask-toggle" title="隱藏個資以利螢幕錄影">
+            <input type="checkbox" id="mask-toggle-checkbox" onchange="toggleMaskMode()">
+            <span class="mask-slider"></span>
+            <span class="mask-label-text">隱碼保護</span>
+          </label>
+        </h4>
+        
+        <div id="primary-toolbar" style="margin-bottom: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <button class="toolbar-btn" onclick="openFBModal()" style="background: #1877f2; font-weight: bold; width: 36px; height: 32px; display: flex; justify-content: center; align-items: center; padding: 0; border-radius: 4px;" title="FB 留言一鍵匯入">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          </button>
+          <button class="toolbar-btn" onclick="openCSVModal()" style="background: #8e44ad; font-weight: bold;" title="CSV 名單匯入">CSV</button>
+          <button class="toolbar-btn" onclick="toggleToolbars()" style="background: #6c757d; font-weight: bold;">⚙️ 更多</button>
+        </div>
+        
+        <div id="secondary-toolbar" class="hidden" style="margin-bottom: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <button class="toolbar-btn" onclick="toolAutoSerial()">✨ 加編號</button>
           <button class="toolbar-btn" onclick="toolDeduplicate()">❌ 清除重複</button>
-          <button id="btn-toggle-mask" class="toolbar-btn" onclick="toggleMaskMode()" style="background: #e67e22; font-weight: bold;">🔒 切換隱碼保護</button>
+          <button class="toolbar-btn" onclick="toggleToolbars()" style="background: #495057; font-weight: bold;">🔙 返回</button>
         </div>
         <textarea id="digitalListInput" class="digital-list" placeholder="請將真實名單貼在此處...&#10;FB名單會自動帶有 F- 前綴&#10;CSV名單會自動帶有 M- 前綴&#10;手動名單可點擊上方按鈕加上 M- 前綴&#10;手動名單格式參考姓名 空格 電話"></textarea>
         <textarea id="digitalListMasked" class="digital-list hidden" readonly style="background: #f1f2f6; color: #7f8c8d; border-color: #e67e22; outline: none;" placeholder="隱碼預覽畫面..."></textarea>
@@ -418,11 +453,12 @@
     <div class="csv-step-box csv-locked-area" id="csv-settings-area">
         <div class="csv-step-title" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">⚙️ 步驟二：設定擷取規則</div>
         
-        <div class="csv-radio-group">
-            <label><input type="radio" name="csvDirection" value="col" checked onchange="updateCSVUIText()"> ⬇️ 直向 (欄 Column)</label>
-            <label><input type="radio" name="csvDirection" value="row" onchange="updateCSVUIText()"> ➡️ 橫向 (列 Row)</label>
+        <div class="csv-segmented-control">
+            <input type="radio" id="csv-dir-col" name="csvDirection" value="col" checked onchange="updateCSVUIText()">
+            <label for="csv-dir-col">⬇️ 直向(欄)</label>
+            <input type="radio" id="csv-dir-row" name="csvDirection" value="row" onchange="updateCSVUIText()">
+            <label for="csv-dir-row">➡️ 橫向(列)</label>
         </div>
-
         <div class="csv-form-group">
             <label id="csv-label-target">鎖定目標欄位 (Column)</label>
             <input type="text" id="csv-target-input" placeholder="例如：A">
@@ -742,15 +778,29 @@
   }
 
   function toggleMaskMode() {
-    const raw = document.getElementById("digitalListInput"), masked = document.getElementById("digitalListMasked"), btn = document.getElementById("btn-toggle-mask");
-    isMaskedMode = !isMaskedMode;
+    const raw = document.getElementById("digitalListInput"), masked = document.getElementById("digitalListMasked");
+    // 改為直接讀取 Checkbox 的物理狀態，確保邏輯絕對同步
+    isMaskedMode = document.getElementById("mask-toggle-checkbox").checked; 
+    
     if (isMaskedMode) {
       masked.value = generateMaskedText(raw.value);
       raw.classList.add("hidden"); masked.classList.remove("hidden");
-      btn.innerHTML = "👁️ 解除保護 (編輯模式)"; btn.style.background = "#27ae60";
     } else {
       masked.classList.add("hidden"); raw.classList.remove("hidden");
-      btn.innerHTML = "🔒 切換隱碼保護"; btn.style.background = "#e67e22";
+    }
+  }
+
+  function toggleToolbars() {
+    const primary = document.getElementById("primary-toolbar");
+    const secondary = document.getElementById("secondary-toolbar");
+    
+    // 原地抽換：隱藏目前的，顯示另一個
+    if (primary.classList.contains("hidden")) {
+        primary.classList.remove("hidden");
+        secondary.classList.add("hidden");
+    } else {
+        primary.classList.add("hidden");
+        secondary.classList.remove("hidden");
     }
   }
 

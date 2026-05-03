@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券抽獎系統 V4.7</title>
+  <title>彩券抽獎系統 V4.7.1</title>
   <style>
     /* ================= 基礎樣式 ================= */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
@@ -244,11 +244,14 @@
       #prizeTable input[type="text"], #prizeTable input[type="number"] { width: 60% !important; max-width: 180px; text-align: center; font-size: 16px; }
       #prizeTable input[type="checkbox"] { transform: scale(1.5); margin-right: 15px; }
       td:last-child { border-bottom: 0; justify-content: center; padding: 15px 0 5px 0; display: flex; width: 100%; }
+      /* 手機版預設：大/中票券維持 32px 大按鈕防誤觸 */
       .btn-void { width: 32px !important; height: 32px !important; top: -12px; right: -12px; }
       .btn-void::before, .btn-void::after { width: 15px; height: 3px; }
+      /* 手機版專屬：小票券縮小按鈕並維持大力外推，避免遮擋文字 */
+      .ticket-sm .btn-void { width: 24px !important; height: 24px !important; top: -12px !important; right: -12px !important; }
+      .ticket-sm .btn-void::before, .ticket-sm .btn-void::after { width: 12px; height: 2px; }
 
       #prizeTable td:nth-of-type(1) { justify-content: flex-start; padding-left: 40%; }
-      
       .footer-badges { flex-direction: column; gap: 15px; }
 
       /* 新增：CSV 步驟標題與排版手機版最佳化 */
@@ -274,7 +277,7 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.7 (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.7.1 (點擊修改標題)</h1>
     
     <details class="instructions-panel">
       <summary>📖 點擊查看系統使用說明</summary>

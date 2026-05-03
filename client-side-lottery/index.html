@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券抽獎系統 V4.6</title>
+  <title>彩券抽獎系統 V4.7</title>
   <style>
     /* ================= 基礎樣式 ================= */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
@@ -60,6 +60,9 @@
     .ticket-paper { background: #f1c40f; border: solid #f39c12; color: #2c3e50; }
     .ticket-digital { background: #dff9fb; border: solid #0984e3; color: #2c3e50; }
     .ticket-fb { background: #e7f3ff; border: solid #1877f2; color: #1c1e21; }
+    /* 盲盒特效專屬樣式 */
+    .ticket-mystery { background: #e2e8f0; border: solid #94a3b8; color: #475569; }
+    .ticket-mystery .source-icon { font-size: 18px; }
 
     .source-icon { position: absolute; bottom: -12px; right: -12px; width: 28px; height: 28px; background: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); border: 1px solid #eee; z-index: 5; }
     .ticket-sm .source-icon { width: 20px; height: 20px; font-size: 12px; bottom: -8px; right: -8px; }
@@ -271,16 +274,17 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.6 (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.7 (點擊修改標題)</h1>
     
     <details class="instructions-panel">
       <summary>📖 點擊查看系統使用說明</summary>
       <div class="instructions-content">
-        <p><strong>① 匯入名單</strong>：支援實體與數位混抽。數位可利用 <code>[FB 留言一鍵匯入]</code>，手動貼上的名單請點擊 <code>[✨加編號]</code> 自動補齊 M- 序號。</p>
+        <p><strong>① 匯入名單</strong>：支援實體與數位混抽。數位可利用 <code>[FB 暱稱匯入]</code>..等，手動貼上的名單請點擊 <code>[✨加編號]</code> 自動補齊 M- 序號。</p>
         <p><strong>② 設定獎項</strong>：本系統採用「視覺絕對排序」，直接拖曳「☰」或點擊上下按鈕調整，<strong>畫面由上到下即為真實開獎順序</strong>。</p>
         <p><strong>③ 選擇開獎模式</strong>：<br>
            　• <code>[一鍵快速開獎]</code>：適合錄影抽獎後公佈，瞬間產出結果清單。<br>
-           　• <code>[進入展演模式]</code>：適合現場大螢幕，支援單項抽出、待機動畫、備取單獨補抽與臨時加碼功能。</p>
+           　• <code>[進入展演模式]</code>：適合現場大螢幕，支援單項抽出、待機動畫、正取作廢補抽、備取單獨補抽與臨時加碼功能。<br>
+           　• <strong>💡 盲盒解碼特效</strong>：展演模式下勾選特效，將啟動「電影級逐一解碼」動畫。系統會依人數智能變速。為保護系統效能，<strong>若單次抽出超過 30 人，系統將自動關閉動畫瞬間開獎</strong>。</p>
         <p><strong>④ 雙軌匯出</strong>：開獎完畢後，可由頂部狀態列匯出「公告版」或「留存版(含完整資料)」文字檔。</p>
         <p></p>免責聲明：本程式雖經反覆測試，仍難免有未發現BUG，正式使用前請先自行測試和熟悉。</p>
       </div>
@@ -1371,15 +1375,62 @@
       document.getElementById("decision-buttons").classList.remove("hidden"); updateStatusBar();
     };
     
-    if (p.effect && winners.length > 0) {
-      let count = 0, interval = setInterval(() => {
-        document.getElementById("showcase-winner-result").innerHTML = winners.map(t => {
-          let fakeText = Math.floor(Math.random() * 9000 + 1000).toString();
-          return generateTicketHTML({displayText: fakeText, sourceType: t.sourceType, rawText: t.rawText}, 'ticket-lg', false, p.name, p.count);
-        }).join('');
-        if (++count > 20) { clearInterval(interval); render(); }
-      }, 100);
-    } else render();
+    // 效能保護鎖：人數 <= 30 人且勾選特效才執行盲盒動畫
+    if (p.effect && p.count <= 30 && winners.length > 0) {
+      const area = document.getElementById("showcase-winner-result");
+      const ticketSize = winners.length > 10 ? 'ticket-sm' : 'ticket-lg';
+      
+      // 初始化：將所有得獎者包裝成未解開的「盲盒」狀態
+      let mysteryBoxes = winners.map(t => ({ revealed: false, winner: t }));
+
+      // 產生 4 碼隨機科技感亂碼 (大寫英數混合)
+      const genRandomCode = () => {
+          const chars = '0123456789ABCDEF'; let code = '';
+          for(let i=0; i<4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+          return code;
+      };
+
+      // 動態渲染函式：同時顯示「已解開(真實票券)」與「未解開(盲盒跳動)」的狀態
+      const renderCurrentState = () => {
+         area.innerHTML = mysteryBoxes.map(box => {
+            if (box.revealed) {
+                // 已解碼：直接呼叫真實的 HTML 生成器
+                return generateTicketHTML(box.winner, ticketSize, true, p.name, p.count);
+            } else {
+                // 未解碼：顯示盲盒樣式與骰子圖示
+                let content = `<span style="font-family: monospace; font-size: 1.2em; font-weight: bold; letter-spacing: 2px;">${genRandomCode()}</span>`;
+                return `<span class="winner-ticket ${ticketSize} ticket-mystery">${content}<div class="source-icon">🎲</div></span>`;
+            }
+         }).join('');
+      };
+
+      // 1. 啟動背景亂碼高頻閃爍 (每 50 毫秒更新一次)
+      let scrambleInterval = setInterval(renderCurrentState, 50);
+
+      // 2. 啟動電影級逐一解碼
+      let revealIndex = 0;
+      let revealSpeed = p.count <= 5 ? 800 : 200; // 智能變速：5人內停頓0.8秒，大於5人停頓0.2秒
+      
+      // 先讓全部盲盒閃爍 0.5 秒建立期待感，再開始逐一翻牌
+      setTimeout(() => {
+          let revealInterval = setInterval(() => {
+              mysteryBoxes[revealIndex].revealed = true; // 鎖定目前這張票
+              revealIndex++;
+              
+              if (revealIndex >= mysteryBoxes.length) {
+                  // 全部解開，清除所有迴圈，結束動畫
+                  clearInterval(revealInterval);
+                  clearInterval(scrambleInterval);
+                  renderCurrentState(); // 執行最終渲染，確保全部翻牌
+                  document.getElementById("decision-buttons").classList.remove("hidden"); 
+                  updateStatusBar();
+              }
+          }, revealSpeed);
+      }, 500);
+    } else {
+      // 觸發安全鎖 (>30人) 或未勾選特效：瞬間開出真實結果
+      render();
+    }
   }
 
   function voidTicket(prizeName, targetId) {

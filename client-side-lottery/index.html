@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券抽獎系統 V4.7.1</title>
+  <title>彩券抽獎系統 V4.7.2</title>
   <style>
     /* ================= 基礎樣式 ================= */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
@@ -116,6 +116,8 @@
     .fb-stats-panel summary { padding: 8px 12px; cursor: pointer; font-weight: bold; color: #555; background: #fdfdfd; user-select: none; transition: background 0.2s; }
     .fb-stats-panel summary:hover { background: #f4f4f4; }
     .fb-stats-panel .details-content { padding: 10px; max-height: 120px; overflow-y: auto; font-family: monospace; color: #d9534f; word-break: break-all; font-size: 13px; border-top: 1px solid #eee; }
+    /* FB 貼上區提示字 */
+    #fb-inputArea:empty:before { content: attr(data-placeholder); color: #adb5bd; font-size: 14px; line-height: 1.6; white-space: pre-wrap; pointer-events: none; display: block; }
 
     /* 拖曳排序 UI 樣式 */
     .drag-row { cursor: grab; transition: background-color 0.2s; }
@@ -277,7 +279,7 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.7.1 (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.7.2 (點擊修改標題)</h1>
     
     <details class="instructions-panel">
       <summary>📖 點擊查看系統使用說明</summary>
@@ -577,9 +579,10 @@
     <div style="display:flex; flex-direction:column; gap:15px;">
         <div style="width:100%;">
             <h4 style="margin-top:0; margin-bottom:8px; color:#555;">1. 在下方貼上 FB 留言 (Ctrl+V)</h4>
-            <div id="fb-inputArea" contenteditable="true" 
+              <div id="fb-inputArea" contenteditable="true" 
+                 data-placeholder="💡 操作小撇步：&#10;1. 請開啟 FB 抽獎貼文『網頁版』&#10;2. 留言區點選『顯示所有留言』&#10;3. 用滑鼠由上往下『反白選取』所有留言內容&#10;4. 按下 Ctrl+C 複製，並在此處按下 Ctrl+V 貼上即可！"
                  style="height:230px; border:2px dashed #aaa; padding:12px; overflow-y:auto; overflow-x:hidden; word-break:break-word; background:#fff; box-sizing:border-box; border-radius:6px;">
-            </div>
+              </div>
         </div>
 
         <div style="width:100%;">

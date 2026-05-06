@@ -1503,6 +1503,7 @@
     let currentTotal = drawResults[prizeName].main.length;
     let ticketSize = currentTotal > 10 ? 'ticket-sm' : 'ticket-lg';
 
+    // 將額度提醒包裝成函數，保留 100ms 讓瀏覽器完成最後的畫面渲染再彈窗
     const checkBufferAlert = () => {
         if (!isUsingGlobalBuffer && currentPrize.backupCount === 0) {
             setTimeout(() => alert(`🔔 額度提醒：【${prizeName}】的專屬備取名額剛好用盡（剩餘 0 名）。\n若後續再進行作廢，將會開始消耗全局總票池。`), 100);
@@ -1529,7 +1530,8 @@
                 position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
                 background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%);
                 transform: skewX(-25deg);
-                animation: shimmer-sweep 1s ease-in-out 2; /* 動畫時間 1 秒，來回掃 2 次 */
+                /* ★ 改為 0.75 秒掃 1 次，執行 2 次，總計剛好 1.5 秒 */
+                animation: shimmer-sweep 0.75s ease-in-out 2; 
             }
             `;
             document.head.appendChild(style);
@@ -1553,7 +1555,7 @@
                 if (t.sysId === newWinner.sysId) {
                     if (isRevealed) {
                         let html = generateTicketHTML(t, ticketSize, true, prizeName, currentTotal);
-                        // ★ 核心魔法：在票券第一層 <span> 打開後，立刻塞入我們的掃光遮罩層
+                        // ★ 揭曉瞬間：在票券內層注入透明遮罩與掃光光束
                         return html.replace(/(<span[^>]+>)/, '$1<div class="shimmer-wrapper"><div class="shimmer-line"></div></div>');
                     } else {
                         // 閃爍亂碼盲盒狀態
@@ -1561,26 +1563,35 @@
                         return `<span class="winner-ticket ${ticketSize} ticket-mystery">${content}<div class="source-icon">🎲</div></span>`;
                     }
                 }
+                // 其他未作廢的得獎者維持原狀
                 return generateTicketHTML(t, ticketSize, true, prizeName, currentTotal);
             }).join('');
 
+            // 動畫期間全面封鎖作廢按鈕
             if (!isRevealed) lockVoidButtons(true);
         };
 
-        // 1. 單張盲盒閃爍
+        // ================= 時間軸控制中心 =================
+        
+        // 階段一：啟動盲盒閃爍 (0s ~ 1.5s)
         let scrambleInterval = setInterval(() => renderPatchState(false), 50);
 
-        // 2. 1.5 秒後揭曉真面目，並自動觸發掃光
+        // 階段二：1.5 秒後揭曉，同時 CSS 掃光自動開始 (1.5s ~ 3.0s)
         setTimeout(() => {
             clearInterval(scrambleInterval);
             renderPatchState(true);
-            lockVoidButtons(false); 
-            updateStatusBar();      
-            checkBufferAlert();     
+            updateStatusBar(); // 票池數量可以先更新 
+            
+            // 階段三：再等 1.5 秒 (總計 3.0 秒) 讓掃光徹底跑完
+            setTimeout(() => {
+                lockVoidButtons(false); // 徹底跑完才解開防呆鎖
+                checkBufferAlert();     // 徹底跑完才允許跳出提示
+            }, 1500);
+
         }, 1500);
 
     } else {
-        // 無特效模式
+        // --- 無特效模式：維持瞬間開出與重繪 ---
         area.innerHTML = "";
         drawResults[prizeName].main.forEach(t => area.innerHTML += generateTicketHTML(t, ticketSize, true, prizeName, currentTotal));
         updateStatusBar();

@@ -1487,19 +1487,25 @@
     }
 
     // --- 正式執行作廢與補抽流程 ---
-    let targetObj = drawResults[prizeName].main.find(t => t.sysId === targetId);
-    if(targetObj) drawResults[prizeName].voided.push(targetObj);
-    drawResults[prizeName].main = drawResults[prizeName].main.filter(t => t.sysId !== targetId);
+    // ★ 優化 1：尋找目標在陣列中的「絕對位置」，準備進行原地替換
+    let targetIndex = drawResults[prizeName].main.findIndex(t => t.sysId === targetId);
+    if (targetIndex === -1) return; // 防呆機制
+    
+    // 將該位置的舊得獎者備份到作廢清單
+    let targetObj = drawResults[prizeName].main[targetIndex];
+    drawResults[prizeName].voided.push(targetObj);
     
     // 抽出遞補的新得獎者
-    let newWinner = globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0];
-    drawResults[prizeName].main.push(newWinner);
+    let newWinner = globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length), 1)[0];
+    
+    // ★ 核心改動：對號入座，直接覆蓋該位置，不使用 filter 與 push
+    drawResults[prizeName].main[targetIndex] = newWinner; 
     
     const area = document.getElementById("showcase-winner-result"); 
     let currentTotal = drawResults[prizeName].main.length;
     let ticketSize = currentTotal > 10 ? 'ticket-sm' : 'ticket-lg';
 
-    // 將額度提醒包裝成函數，方便配合動畫時間差呼叫
+    // 將額度提醒包裝成函數，配合動畫時間差呼叫
     const checkBufferAlert = () => {
         if (!isUsingGlobalBuffer && currentPrize.backupCount === 0) {
             setTimeout(() => {
@@ -1508,7 +1514,14 @@
         }
     };
 
-    // ★ 核心補丁：判斷是否啟用特效
+    // ★ 優化 2：依據票券來源，動態賦予專屬的光暈顏色
+    let glowColor = "#0984e3"; // 預設：數位名單 (科技藍)
+    if (newWinner.sourceType === 'paper') {
+        glowColor = "#f39c12"; // 實體名單 (溫暖橘黃)
+    } else if (newWinner.sourceType === 'digital' && newWinner.rawText.startsWith('F-')) {
+        glowColor = "#1877f2"; // FB 名單 (臉書藍)
+    }
+
     if (currentPrize.effect) {
         // 防止動畫期間連點其他作廢按鈕的安全鎖
         const lockVoidButtons = (locked) => {
@@ -1526,13 +1539,14 @@
 
         const renderPatchState = (isRevealed) => {
             area.innerHTML = drawResults[prizeName].main.map(t => {
+                // 針對「剛剛抽出來的新得主」做特殊處理
                 if (t.sysId === newWinner.sysId) {
                     if (isRevealed) {
                         let html = generateTicketHTML(t, ticketSize, true, prizeName, currentTotal);
-                        // 揭曉時動態注入高光外框與微縮放，宣告這位是「新科得主」
-                        return html.replace('class="winner-ticket', 'style="box-shadow: 0 0 15px #e67e22; transform: scale(1.05); transition: all 0.5s;" class="winner-ticket fade-in');
+                        // 揭曉時注入專屬色光暈 (glowColor) 與微縮放特效
+                        return html.replace('class="winner-ticket', `style="box-shadow: 0 0 15px ${glowColor}; transform: scale(1.05); transition: all 0.5s;" class="winner-ticket fade-in`);
                     } else {
-                        // 閃爍亂碼狀態 (直接借用正取的 ticket-mystery 樣式)
+                        // 閃爍亂碼狀態
                         let content = `<span style="font-family: monospace; font-size: 1.2em; font-weight: bold; letter-spacing: 2px;">${genRandomCode()}</span>`;
                         return `<span class="winner-ticket ${ticketSize} ticket-mystery">${content}<div class="source-icon">🎲</div></span>`;
                     }

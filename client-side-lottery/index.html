@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券抽獎系統 V4.7.2</title>
+  <title>彩券抽獎系統 V4.7.3</title>
   <style>
     /* ================= 基礎樣式 ================= */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
@@ -279,7 +279,7 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.7.2 (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.7.3 (點擊修改標題)</h1>
     
     <details class="instructions-panel">
       <summary>📖 點擊查看系統使用說明</summary>
@@ -1491,21 +1491,77 @@
     if(targetObj) drawResults[prizeName].voided.push(targetObj);
     drawResults[prizeName].main = drawResults[prizeName].main.filter(t => t.sysId !== targetId);
     
-    drawResults[prizeName].main.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]);
+    // 抽出遞補的新得獎者
+    let newWinner = globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0];
+    drawResults[prizeName].main.push(newWinner);
     
     const area = document.getElementById("showcase-winner-result"); 
-    area.innerHTML = "";
     let currentTotal = drawResults[prizeName].main.length;
-    drawResults[prizeName].main.forEach(t => area.innerHTML += generateTicketHTML(t, currentTotal>10?'ticket-sm':'ticket-lg', true, prizeName, currentTotal));
-    
-    updateStatusBar();
+    let ticketSize = currentTotal > 10 ? 'ticket-sm' : 'ticket-lg';
 
-    // 溫和提醒：剛好把最後一個專屬備取用掉時，給予通知
-    if (!isUsingGlobalBuffer && currentPrize.backupCount === 0) {
-        // 使用 setTimeout 讓畫面先完成渲染，再跳出提示框，體驗會比較順暢
+    // 將額度提醒包裝成函數，方便配合動畫時間差呼叫
+    const checkBufferAlert = () => {
+        if (!isUsingGlobalBuffer && currentPrize.backupCount === 0) {
+            setTimeout(() => {
+                alert(`🔔 額度提醒：【${prizeName}】的專屬備取名額剛好用盡（剩餘 0 名）。\n若後續再進行作廢，將會開始消耗全局總票池。`);
+            }, 100);
+        }
+    };
+
+    // ★ 核心補丁：判斷是否啟用特效
+    if (currentPrize.effect) {
+        // 防止動畫期間連點其他作廢按鈕的安全鎖
+        const lockVoidButtons = (locked) => {
+            document.querySelectorAll('.btn-void').forEach(btn => {
+                btn.style.pointerEvents = locked ? 'none' : 'auto';
+                btn.style.opacity = locked ? '0.5' : '1';
+            });
+        };
+
+        const genRandomCode = () => {
+            const chars = '0123456789ABCDEF'; let code = '';
+            for(let i=0; i<4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+            return code;
+        };
+
+        const renderPatchState = (isRevealed) => {
+            area.innerHTML = drawResults[prizeName].main.map(t => {
+                if (t.sysId === newWinner.sysId) {
+                    if (isRevealed) {
+                        let html = generateTicketHTML(t, ticketSize, true, prizeName, currentTotal);
+                        // 揭曉時動態注入高光外框與微縮放，宣告這位是「新科得主」
+                        return html.replace('class="winner-ticket', 'style="box-shadow: 0 0 15px #e67e22; transform: scale(1.05); transition: all 0.5s;" class="winner-ticket fade-in');
+                    } else {
+                        // 閃爍亂碼狀態 (直接借用正取的 ticket-mystery 樣式)
+                        let content = `<span style="font-family: monospace; font-size: 1.2em; font-weight: bold; letter-spacing: 2px;">${genRandomCode()}</span>`;
+                        return `<span class="winner-ticket ${ticketSize} ticket-mystery">${content}<div class="source-icon">🎲</div></span>`;
+                    }
+                }
+                // 原有得獎者維持一般顯示，不用重新跑動畫
+                return generateTicketHTML(t, ticketSize, true, prizeName, currentTotal);
+            }).join('');
+
+            if (!isRevealed) lockVoidButtons(true);
+        };
+
+        // 1. 開始單張盲盒閃爍
+        let scrambleInterval = setInterval(() => renderPatchState(false), 50);
+
+        // 2. 1.5 秒後揭曉真面目
         setTimeout(() => {
-            alert(`🔔 額度提醒：【${prizeName}】的專屬備取名額剛好用盡（剩餘 0 名）。\n若後續再進行作廢，將會開始消耗全局總票池。`);
-        }, 100);
+            clearInterval(scrambleInterval);
+            renderPatchState(true);
+            lockVoidButtons(false); // 解開安全鎖
+            updateStatusBar();      // 更新左上角剩餘票池
+            checkBufferAlert();     // 動畫跑完才跳額度警告
+        }, 1500);
+
+    } else {
+        // --- 無特效模式：維持瞬間開出 ---
+        area.innerHTML = "";
+        drawResults[prizeName].main.forEach(t => area.innerHTML += generateTicketHTML(t, ticketSize, true, prizeName, currentTotal));
+        updateStatusBar();
+        checkBufferAlert(); 
     }
   }
 

@@ -1487,43 +1487,54 @@
     }
 
     // --- 正式執行作廢與補抽流程 ---
-    // ★ 優化 1：尋找目標在陣列中的「絕對位置」，準備進行原地替換
+    // 1. 尋找目標在陣列中的「絕對位置」，準備原地替換
     let targetIndex = drawResults[prizeName].main.findIndex(t => t.sysId === targetId);
-    if (targetIndex === -1) return; // 防呆機制
+    if (targetIndex === -1) return; 
     
-    // 將該位置的舊得獎者備份到作廢清單
+    // 2. 將舊得獎者移至作廢清單
     let targetObj = drawResults[prizeName].main[targetIndex];
     drawResults[prizeName].voided.push(targetObj);
     
-    // 抽出遞補的新得獎者
+    // 3. 抽出新得主，並「對號入座」直接覆蓋原位置
     let newWinner = globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length), 1)[0];
-    
-    // ★ 核心改動：對號入座，直接覆蓋該位置，不使用 filter 與 push
     drawResults[prizeName].main[targetIndex] = newWinner; 
     
     const area = document.getElementById("showcase-winner-result"); 
     let currentTotal = drawResults[prizeName].main.length;
     let ticketSize = currentTotal > 10 ? 'ticket-sm' : 'ticket-lg';
 
-    // 將額度提醒包裝成函數，配合動畫時間差呼叫
     const checkBufferAlert = () => {
         if (!isUsingGlobalBuffer && currentPrize.backupCount === 0) {
-            setTimeout(() => {
-                alert(`🔔 額度提醒：【${prizeName}】的專屬備取名額剛好用盡（剩餘 0 名）。\n若後續再進行作廢，將會開始消耗全局總票池。`);
-            }, 100);
+            setTimeout(() => alert(`🔔 額度提醒：【${prizeName}】的專屬備取名額剛好用盡（剩餘 0 名）。\n若後續再進行作廢，將會開始消耗全局總票池。`), 100);
         }
     };
 
-    // ★ 優化 2：依據票券來源，動態賦予專屬的光暈顏色
-    let glowColor = "#0984e3"; // 預設：數位名單 (科技藍)
-    if (newWinner.sourceType === 'paper') {
-        glowColor = "#f39c12"; // 實體名單 (溫暖橘黃)
-    } else if (newWinner.sourceType === 'digital' && newWinner.rawText.startsWith('F-')) {
-        glowColor = "#1877f2"; // FB 名單 (臉書藍)
-    }
-
     if (currentPrize.effect) {
-        // 防止動畫期間連點其他作廢按鈕的安全鎖
+        // ★ 動態注入掃光特效的 CSS (防重複注入)
+        if (!document.getElementById('shimmer-css')) {
+            let style = document.createElement('style');
+            style.id = 'shimmer-css';
+            style.innerHTML = `
+            @keyframes shimmer-sweep {
+                0% { left: -100%; opacity: 0; }
+                10% { opacity: 1; }
+                90% { opacity: 1; }
+                100% { left: 200%; opacity: 0; }
+            }
+            .shimmer-wrapper {
+                position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                border-radius: inherit; overflow: hidden; pointer-events: none; z-index: 2;
+            }
+            .shimmer-line {
+                position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+                background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%);
+                transform: skewX(-25deg);
+                animation: shimmer-sweep 1s ease-in-out 2; /* 動畫時間 1 秒，來回掃 2 次 */
+            }
+            `;
+            document.head.appendChild(style);
+        }
+
         const lockVoidButtons = (locked) => {
             document.querySelectorAll('.btn-void').forEach(btn => {
                 btn.style.pointerEvents = locked ? 'none' : 'auto';
@@ -1539,39 +1550,37 @@
 
         const renderPatchState = (isRevealed) => {
             area.innerHTML = drawResults[prizeName].main.map(t => {
-                // 針對「剛剛抽出來的新得主」做特殊處理
                 if (t.sysId === newWinner.sysId) {
                     if (isRevealed) {
                         let html = generateTicketHTML(t, ticketSize, true, prizeName, currentTotal);
-                        // 揭曉時注入專屬色光暈 (glowColor) 與微縮放特效
-                        return html.replace('class="winner-ticket', `style="box-shadow: 0 0 15px ${glowColor}; transform: scale(1.05); transition: all 0.5s;" class="winner-ticket fade-in`);
+                        // ★ 核心魔法：在票券第一層 <span> 打開後，立刻塞入我們的掃光遮罩層
+                        return html.replace(/(<span[^>]+>)/, '$1<div class="shimmer-wrapper"><div class="shimmer-line"></div></div>');
                     } else {
-                        // 閃爍亂碼狀態
+                        // 閃爍亂碼盲盒狀態
                         let content = `<span style="font-family: monospace; font-size: 1.2em; font-weight: bold; letter-spacing: 2px;">${genRandomCode()}</span>`;
                         return `<span class="winner-ticket ${ticketSize} ticket-mystery">${content}<div class="source-icon">🎲</div></span>`;
                     }
                 }
-                // 原有得獎者維持一般顯示，不用重新跑動畫
                 return generateTicketHTML(t, ticketSize, true, prizeName, currentTotal);
             }).join('');
 
             if (!isRevealed) lockVoidButtons(true);
         };
 
-        // 1. 開始單張盲盒閃爍
+        // 1. 單張盲盒閃爍
         let scrambleInterval = setInterval(() => renderPatchState(false), 50);
 
-        // 2. 1.5 秒後揭曉真面目
+        // 2. 1.5 秒後揭曉真面目，並自動觸發掃光
         setTimeout(() => {
             clearInterval(scrambleInterval);
             renderPatchState(true);
-            lockVoidButtons(false); // 解開安全鎖
-            updateStatusBar();      // 更新左上角剩餘票池
-            checkBufferAlert();     // 動畫跑完才跳額度警告
+            lockVoidButtons(false); 
+            updateStatusBar();      
+            checkBufferAlert();     
         }, 1500);
 
     } else {
-        // --- 無特效模式：維持瞬間開出 ---
+        // 無特效模式
         area.innerHTML = "";
         drawResults[prizeName].main.forEach(t => area.innerHTML += generateTicketHTML(t, ticketSize, true, prizeName, currentTotal));
         updateStatusBar();

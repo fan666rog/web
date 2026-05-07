@@ -1510,7 +1510,7 @@
         }
     };
 
-    if (currentPrize.effect) {
+    if (currentPrize.effect && currentTotal <= 30) {
         // ★ 動態注入掃光特效的 CSS (防重複注入)
         if (!document.getElementById('shimmer-css')) {
             let style = document.createElement('style');

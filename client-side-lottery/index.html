@@ -1580,6 +1580,7 @@
         setTimeout(() => {
             clearInterval(scrambleInterval);
             renderPatchState(true);
+            lockVoidButtons(true); // ★ 核心修復：立刻把剛生出來的全新按鈕再次鎖上！
             updateStatusBar(); // 票池數量可以先更新 
             
             // 階段三：再等 1.5 秒 (總計 3.0 秒) 讓掃光徹底跑完

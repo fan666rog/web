@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券抽獎系統 V4.7.3</title>
+  <title>彩券抽獎系統 V4.7.5</title>
   <style>
     /* ================= 基礎樣式 ================= */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
@@ -279,7 +279,7 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.7.3 (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.7.5 (點擊修改標題)</h1>
     
     <details class="instructions-panel">
       <summary>📖 點擊查看系統使用說明</summary>
@@ -1250,6 +1250,12 @@
     rawLines.forEach(line => {
       tempPool.push({ sysId: "tk_" + generateUUID(), rawText: line, displayText: generateMaskedText(line), sourceType: "digital" });
     });
+
+    // ✨ Fisher-Yates 終極大洗牌演算法，在分發給全域陣列前，將 tempPool 徹底打亂，完美摧毀實體票與數位票的陣營區塊
+    for (let i = tempPool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tempPool[i], tempPool[j]] = [tempPool[j], tempPool[i]]; // ES6 原地交換元素
+    }
 
     globalTicketsPool = [...tempPool]; originalTicketsPool = [...tempPool]; extraTicketsPool = [...tempPool];
     globalPrizes = []; let totalNeeded = 0;

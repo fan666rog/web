@@ -332,6 +332,37 @@
         100% { box-shadow: 0 0 50px rgba(255, 56, 56, 1); }
     }
 
+    /* ================= 頭獎老虎機 - 右上角收起按鈕 ================= */
+    .slot-minimize-btn {
+        position: absolute; top: 20px; right: 20px;
+        width: 44px; height: 44px; /* 稍微放大一點點讓手感更好 */
+        background: rgba(255, 255, 255, 0.15);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        display: flex; justify-content: center; align-items: center;
+        cursor: pointer; transition: all 0.3s ease; z-index: 20;
+        color: #f1c40f; /* 金黃色 */
+    }
+    
+    /* 針對裡面圖示的精準控制 */
+    .slot-minimize-btn svg {
+        width: 26px; height: 26px;
+        stroke: currentColor;
+        stroke-width: 3;
+        margin-top: 2px;
+        transition: all 0.3s ease;
+    }
+
+    .slot-minimize-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: #f1c40f;
+        transform: scale(1.1);
+    }
+
+    .slot-machine-container.minimized .slot-minimize-btn {
+        display: none;
+    }
+
     /* ================= 手機版專屬樣式 (RWD) ================= */
     @media (max-width: 768px) {
       body { padding: 10px; }
@@ -1993,9 +2024,17 @@ let currentGrandPrize = null;
       const reelArea = document.getElementById('slot-reels-area');
       const bgList = document.getElementById('grand-prize-bg-list');
 
-      resetAutoScroll(); // 進場先重置狀態
+      resetAutoScroll(); 
 
-      title.innerText = `👑 ${prize.name} 👑`;
+      // ★ 新增：計算目前已經抽出幾位，動態更新老虎機標題
+      let currentDrawn = drawResults[prize.name].main.length;
+      let totalNeeded = prize.count;
+      if (totalNeeded > 1) {
+          title.innerText = `👑 ${prize.name} (${currentDrawn + 1}/${totalNeeded}) 👑`;
+      } else {
+          title.innerText = `👑 ${prize.name} 👑`;
+      }
+      
       overlay.classList.remove('hidden');
       overlay.style.display = 'flex';
       
@@ -2010,13 +2049,11 @@ let currentGrandPrize = null;
           reelArea.innerHTML += `<div class="slot-reel" id="reel-${i}">?</div>`;
       }
 
-      // ★ 綁定人為操作偵測 (滾輪、觸控、滑鼠按下)
       bgList.onwheel = handleUserInteraction;
       bgList.ontouchstart = handleUserInteraction;
       bgList.ontouchmove = handleUserInteraction;
       bgList.onmousedown = handleUserInteraction;
 
-      // ★ 修正：只有在「人為操作」時，才把老虎機縮小，避免被自動捲動觸發
       bgList.onscroll = function() {
           if (isUserInteracting) {
               const container = document.querySelector('.slot-machine-container');
@@ -2044,6 +2081,7 @@ let currentGrandPrize = null;
   let slotMaxStr = "";
   let slotDigitCount = 0;
 
+  let marqueeIndex = 0; // 新增：用來記錄跑馬燈跑到哪個人的位置
   // 控制背景名單的高光與跑馬燈
   function updateCandidateHighlight(digit, isLocked) {
       let candidates = document.querySelectorAll('.candidate-wrapper');
@@ -2052,6 +2090,7 @@ let currentGrandPrize = null;
       if (candidates.length > 10 && !isLocked) return;
 
       candidates.forEach(el => {
+          // ★ 恢復神級邏輯：光圈直接跟隨畫面上跳動的數字！
           if (el.getAttribute('data-digit') === String(digit)) {
               el.classList.add('highlight-active');
               if (isLocked) el.classList.add('highlight-locked');
@@ -2233,12 +2272,15 @@ let currentGrandPrize = null;
       resetAutoScroll(); 
       
       if (filteredTickets.length <= 100) {
-          bgList.innerHTML = `<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:15px; padding-bottom:120px; margin-top:20px;">
+          // ★ 動態決定票券大小：10人(含)以內用 ticket-lg(巨型)，否則用 ticket-sm(小)
+          let ticketSizeClass = filteredTickets.length <= 10 ? 'ticket-lg' : 'ticket-sm';
+          
+          bgList.innerHTML = `<div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:15px; padding-bottom:120px; margin-top:20px;">
               ${filteredTickets.map(t => {
                   let nextDigit = ticketToDigit[t.sysId] || "0";
                   // 包上 candidate-wrapper，並綁定下一碼數字
                   return `<div class="candidate-wrapper" data-digit="${nextDigit}">
-                      ${generateTicketHTML(t, 'ticket-sm', false, currentGrandPrize.name, filteredTickets.length)}
+                      ${generateTicketHTML(t, ticketSizeClass, false, currentGrandPrize.name, filteredTickets.length)}
                   </div>`;
               }).join('')}
           </div>`;
@@ -2281,12 +2323,29 @@ let currentGrandPrize = null;
 
       document.getElementById('grand-prize-overlay').classList.add('hidden');
 
+      // 取得目前的抽獎進度
+      let currentDrawn = drawResults[currentGrandPrize.name].main.length;
+      let totalNeeded = currentGrandPrize.count;
+
       document.getElementById("showcase-prize-name").innerText = `🎉 ${currentGrandPrize.name} 🎉`;
       const area = document.getElementById("showcase-winner-result");
-      area.innerHTML = generateTicketHTML(winner, 'ticket-lg', true, currentGrandPrize.name, 1);
       
-      document.getElementById("btn-main-action").classList.add("hidden");
-      document.getElementById("decision-buttons").classList.remove("hidden");
+      // 將目前這個獎項「已經抽出的所有人」一起渲染在主畫面上
+      area.innerHTML = drawResults[currentGrandPrize.name].main.map(t => generateTicketHTML(t, totalNeeded > 10 ? 'ticket-sm' : 'ticket-lg', true, currentGrandPrize.name, totalNeeded)).join('');
+      
+      // ★ 核心修復：判斷是否已經抽完指定名額
+      if (currentDrawn < totalNeeded) {
+          // 還沒抽完：按鈕改成「繼續抽出下一位」，並隱藏結案按鈕
+          let btn = document.getElementById("btn-main-action");
+          btn.innerText = `👉 繼續抽出下一位 (${currentDrawn + 1}/${totalNeeded})`;
+          btn.classList.remove("hidden");
+          document.getElementById("decision-buttons").classList.add("hidden");
+      } else {
+          // 全部抽完了：進入正常的結案/備取流程
+          document.getElementById("btn-main-action").classList.add("hidden");
+          document.getElementById("decision-buttons").classList.remove("hidden");
+      }
+      
       updateStatusBar(); 
   }
 </script>
@@ -2295,6 +2354,12 @@ let currentGrandPrize = null;
     <div id="grand-prize-bg-list"></div>
 
     <div class="slot-machine-container">
+        <button id="btn-slot-minimize" class="slot-minimize-btn" onclick="toggleSlotMinimize(event)" title="收起面板">
+            <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 9 12 17 20 9"></polyline>
+            </svg>
+        </button>
+
         <h2 id="grand-prize-title">👑 壓軸大獎 👑</h2>
         
         <div id="slot-reels-area">
@@ -2305,7 +2370,6 @@ let currentGrandPrize = null;
 
         <div class="slot-controls">
             <button id="btn-slot-action" class="btn-primary" style="font-size: 24px; padding: 15px 40px; border-radius: 50px;">🎰 啟動老虎機</button>
-            <button id="btn-slot-hide" class="btn-warning" style="font-size: 18px; background: #17a2b8; color: white;" onclick="toggleSlotMinimize(event)">👁️ 隱藏面板</button>
             <button id="btn-slot-cancel" class="btn-warning" style="font-size: 18px;" onclick="resetAutoScroll(); document.getElementById('grand-prize-overlay').classList.add('hidden')">❌ 緊急返回</button>
         </div>
     </div>

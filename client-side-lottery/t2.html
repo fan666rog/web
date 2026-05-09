@@ -543,6 +543,8 @@
       
       <div class="control-panel" id="main-control-panel">
         <button id="btn-main-action" class="btn-auto-next" onclick="executeNextMainDraw()">👉 開始抽取</button>
+        <button id="btn-fallback-blindbox" class="btn-warning hidden" style="background:#e67e22; color:white; border-radius:50px; padding:10px 25px;" onclick="executeBlindBoxFallback()">🎲 轉為盲盒抽出剩餘名額</button>
+        
         <div id="decision-buttons" class="hidden" style="margin-top: 15px;">
           <button class="btn-resolve" onclick="finalizeCurrentPrize(true)">✅ 結案 (略過備取)</button>
           <button class="btn-keep-backup" onclick="finalizeCurrentPrize(false)">⏭️ 進入下一獎項 (保留備取)</button>
@@ -1486,43 +1488,65 @@
 
   function preparePhase1() { currentPhase = 1; currentPrizeIndex = 0; updateMainActionButton(); }
   
+  // 主畫面控制按鈕與待機動畫
   function updateMainActionButton() {
-    const btn = document.getElementById("btn-main-action");
-    if (currentPrizeIndex < globalPrizes.length) { 
-      const pName = globalPrizes[currentPrizeIndex].name;
-      btn.innerText = `👉 抽出正取：${pName}`; 
-      btn.disabled = false; 
-      document.getElementById("showcase-prize-name").innerText = `🎁 即將抽出：${pName}`;
-      document.getElementById("showcase-winner-result").innerHTML = `
-        <div class="waiting-placeholder fade-in">
-            <div class="icon">🎲</div>
-            <div class="title">等待開獎中...</div>
-            <div class="subtitle">請主持人點擊下方「👉 開始抽取」</div>
-        </div>`;
-    } else {
-      if (globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) {
-          transitionToPhase2(); 
+      const btn = document.getElementById("btn-main-action");
+      const fallbackBtn = document.getElementById("btn-fallback-blindbox");
+
+      if (currentPrizeIndex < globalPrizes.length) {
+          const p = globalPrizes[currentPrizeIndex];
+          let currentDrawn = drawResults[p.name].main.length;
+
+          btn.classList.remove("hidden");
+          btn.disabled = false;
+
+          // 狀態 A：這個獎項已經抽了一半 (返回主畫面後繼續)
+          if (currentDrawn > 0 && currentDrawn < p.count) {
+              if (p.effect) fallbackBtn.classList.remove("hidden"); 
+              else fallbackBtn.classList.add("hidden");
+
+              btn.innerText = `👉 繼續抽出下一位 (${currentDrawn + 1}/${p.count})`;
+              document.getElementById("showcase-prize-name").innerText = `🎁 繼續抽出：${p.name}`;
+          } 
+          // 狀態 B：這個獎項完全還沒開始抽
+          else {
+              fallbackBtn.classList.add("hidden");
+              btn.innerText = `👉 抽出正取：${p.name}`;
+              document.getElementById("showcase-prize-name").innerText = `🎁 即將抽出：${p.name}`;
+
+              // 顯示漂亮的待機動畫
+              document.getElementById("showcase-winner-result").innerHTML = `
+                  <div class="waiting-placeholder fade-in">
+                      <div class="icon">🎲</div>
+                      <div class="title">等待開獎中...</div>
+                      <div class="subtitle">請主持人點擊下方「👉 開始抽取」</div>
+                  </div>`;
+          }
       } else {
-          // ✨ 修正 2：取消強制跳轉，改為手動點擊「完成階段開獎」
-          document.getElementById("btn-main-action").classList.add("hidden");
-          document.getElementById("decision-buttons").classList.add("hidden");
-          
-          let existingBtn = document.getElementById("btn-finish-event");
-          if(!existingBtn) {
-              let pnl = document.getElementById("main-control-panel");
-              let finishBtn = document.createElement("button");
-              finishBtn.id = "btn-finish-event";
-              finishBtn.className = "btn-primary fade-in";
-              finishBtn.style.width = "80%";
-              finishBtn.style.fontSize = "24px";
-              finishBtn.style.padding = "15px 40px";
-              finishBtn.style.borderRadius = "50px";
-              finishBtn.innerText = "✅ 完成階段開獎";
-              finishBtn.onclick = showEndScreen;
-              pnl.appendChild(finishBtn);
+          // 所有獎項都抽完的結案狀態
+          fallbackBtn.classList.add("hidden");
+          if (globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) {
+              transitionToPhase2(); 
+          } else {
+              btn.classList.add("hidden");
+              document.getElementById("decision-buttons").classList.add("hidden");
+              
+              let existingBtn = document.getElementById("btn-finish-event");
+              if(!existingBtn) {
+                  let pnl = document.getElementById("main-control-panel");
+                  let finishBtn = document.createElement("button");
+                  finishBtn.id = "btn-finish-event";
+                  finishBtn.className = "btn-primary fade-in";
+                  finishBtn.style.width = "80%";
+                  finishBtn.style.fontSize = "24px";
+                  finishBtn.style.padding = "15px 40px";
+                  finishBtn.style.borderRadius = "50px";
+                  finishBtn.innerText = "✅ 完成階段開獎";
+                  finishBtn.onclick = showEndScreen;
+                  pnl.appendChild(finishBtn);
+              }
           }
       }
-    }
   }
 
   function showEndScreen() {
@@ -2021,54 +2045,58 @@ let currentGrandPrize = null;
       currentGrandPrize = prize;
       const overlay = document.getElementById('grand-prize-overlay');
       const title = document.getElementById('grand-prize-title');
-      const reelArea = document.getElementById('slot-reels-area');
+      const btnCancel = document.getElementById('btn-slot-cancel'); 
       const bgList = document.getElementById('grand-prize-bg-list');
 
       resetAutoScroll(); 
+      btnCancel.classList.remove('hidden'); 
 
-      // ★ 新增：計算目前已經抽出幾位，動態更新老虎機標題
       let currentDrawn = drawResults[prize.name].main.length;
       let totalNeeded = prize.count;
-      if (totalNeeded > 1) {
-          title.innerText = `👑 ${prize.name} (${currentDrawn + 1}/${totalNeeded}) 👑`;
-      } else {
-          title.innerText = `👑 ${prize.name} 👑`;
-      }
+      title.innerText = totalNeeded > 1 ? `👑 ${prize.name} (${currentDrawn + 1}/${totalNeeded}) 👑` : `👑 ${prize.name} 👑`;
       
       overlay.classList.remove('hidden');
       overlay.style.display = 'flex';
       
-      bgList.innerHTML = "";
-      document.querySelector('.slot-machine-container').classList.remove('minimized');
+      const container = document.querySelector('.slot-machine-container');
+      container.classList.remove('minimized');
 
+      // 徹底清空上一次的殘留名單與紅光特效
+      bgList.innerHTML = "";
+
+      // 初始化轉軸
       let poolSize = globalTicketsPool.length;
       let digitCount = String(poolSize - 1).length;
-      
+      const reelArea = document.getElementById('slot-reels-area');
       reelArea.innerHTML = "";
-      for(let i=0; i < digitCount; i++) {
-          reelArea.innerHTML += `<div class="slot-reel" id="reel-${i}">?</div>`;
+      for(let i=0; i < digitCount; i++) { 
+          reelArea.innerHTML += `<div class="slot-reel" id="reel-${i}">?</div>`; 
       }
 
+      // ================= ★ 補回遺失的互動防呆機制 =================
+      // 1. 滾動背景時，讓系統知道使用者在互動
       bgList.onwheel = handleUserInteraction;
       bgList.ontouchstart = handleUserInteraction;
       bgList.ontouchmove = handleUserInteraction;
       bgList.onmousedown = handleUserInteraction;
 
+      // 2. 往下滾動背景時，自動縮小面板
       bgList.onscroll = function() {
           if (isUserInteracting) {
-              const container = document.querySelector('.slot-machine-container');
               if (!container.classList.contains('minimized')) {
                   container.classList.add('minimized');
               }
           }
       };
 
-      document.querySelector('.slot-machine-container').onclick = function() {
+      // 3. 修復 Bug：點擊縮小的面板時，把它放大回原狀
+      container.onclick = function() {
           if (this.classList.contains('minimized')) {
               this.classList.remove('minimized');
           }
       };
-      
+      // ========================================================
+
       const btn = document.getElementById('btn-slot-action');
       btn.innerText = "🎰 啟動老虎機";
       btn.onclick = startSlotMachineProcess;
@@ -2081,7 +2109,6 @@ let currentGrandPrize = null;
   let slotMaxStr = "";
   let slotDigitCount = 0;
 
-  let marqueeIndex = 0; // 新增：用來記錄跑馬燈跑到哪個人的位置
   // 控制背景名單的高光與跑馬燈
   function updateCandidateHighlight(digit, isLocked) {
       let candidates = document.querySelectorAll('.candidate-wrapper');
@@ -2104,50 +2131,44 @@ let currentGrandPrize = null;
   function startSlotMachineProcess() {
       let poolSize = globalTicketsPool.length;
       if(poolSize === 0) { alert("票池已空！"); return; }
-
-      slotMaxStr = String(poolSize - 1);
-      slotDigitCount = slotMaxStr.length;
-      slotMaxStr = slotMaxStr.padStart(slotDigitCount, '0');
       
+      // 老虎機啟動，隱藏返回按鈕
+      document.getElementById('btn-slot-cancel').classList.add('hidden');
+
+      slotMaxStr = String(poolSize - 1).padStart(String(poolSize - 1).length, '0');
+      slotDigitCount = slotMaxStr.length;
       slotCurrentReel = 0;
       slotLockedPrefix = "";
+      
+      // 清空舊的計時器
+      slotIntervals.forEach(id => clearInterval(id));
       slotIntervals = [];
 
-      document.getElementById('grand-prize-bg-list').innerHTML = "";
+      // ★ 效能與視覺平衡優化：將背景渲染門檻提升至 1100 人
+      if (poolSize <= 1100) {
+          // 當人數 <= 1100 (含千人獎項)，一啟動就顯示名單，氣氛拉滿
+          renderSlotBackground(""); 
+      } else {
+          // 當人數 > 1100 (如萬人海選)，一啟動先保持背景清空，確保老虎機流暢
+          document.getElementById('grand-prize-bg-list').innerHTML = ""; 
+      }
 
-      // 啟動連續滾動動畫 (取代原本的隨機亂跳)
       for(let i=0; i < slotDigitCount; i++) {
           let reel = document.getElementById(`reel-${i}`);
           reel.classList.remove('locked');
-          
-          // 初始給個隨機數字作為起點
           reel.innerText = Math.floor(Math.random() * 10);
-
           slotIntervals[i] = setInterval(() => {
               let maxAllowed = 9;
-              if (i === slotCurrentReel) {
-                  let currentMaxPrefix = slotMaxStr.substring(0, slotCurrentReel);
-                  if (slotLockedPrefix === currentMaxPrefix) {
-                      maxAllowed = parseInt(slotMaxStr[slotCurrentReel]);
-                  }
-              }
+              let currentMaxPrefix = slotMaxStr.substring(0, slotCurrentReel);
+              if (slotLockedPrefix === currentMaxPrefix) maxAllowed = parseInt(slotMaxStr[slotCurrentReel]);
+              let cur = (parseInt(reel.innerText) || 0);
+              cur = (cur - 1 + (maxAllowed + 1)) % (maxAllowed + 1);
+              reel.innerText = cur;
               
-              // 讀取目前的數字
-              let currentVal = parseInt(reel.innerText);
-              // 防呆：如果前一碼鎖定導致最大值縮小，當前數字又超過，強制把它壓回合法範圍內
-              if (isNaN(currentVal) || currentVal > maxAllowed) {
-                  currentVal = maxAllowed;
-              }
-
-              // ★ 連續遞減邏輯 (9->8->7->...0->9)
-              currentVal = (currentVal - 1 + (maxAllowed + 1)) % (maxAllowed + 1);
-              reel.innerText = currentVal;
-              
-              // 轉動時，同步呼叫跑馬燈
-              if (i === slotCurrentReel) updateCandidateHighlight(currentVal, false);
-          }, 50); // 高速旋轉
+              // 同步執行跑馬燈判斷 (內部仍維持 10 人內才實際發光)
+              if (i === slotCurrentReel) updateCandidateHighlight(cur, false);
+          }, 50);
       }
-
       let btn = document.getElementById('btn-slot-action');
       btn.innerText = `👉 鎖定第 1 碼`;
       btn.onclick = stopNextReel;
@@ -2333,20 +2354,92 @@ let currentGrandPrize = null;
       // 將目前這個獎項「已經抽出的所有人」一起渲染在主畫面上
       area.innerHTML = drawResults[currentGrandPrize.name].main.map(t => generateTicketHTML(t, totalNeeded > 10 ? 'ticket-sm' : 'ticket-lg', true, currentGrandPrize.name, totalNeeded)).join('');
       
-      // ★ 核心修復：判斷是否已經抽完指定名額
+      // 判斷是否已經抽完指定名額
       if (currentDrawn < totalNeeded) {
           // 還沒抽完：按鈕改成「繼續抽出下一位」，並隱藏結案按鈕
           let btn = document.getElementById("btn-main-action");
           btn.innerText = `👉 繼續抽出下一位 (${currentDrawn + 1}/${totalNeeded})`;
           btn.classList.remove("hidden");
+          
+          // ★ 修復 Bug 1：抽出單一人後強制顯示盲盒降級按鈕！
+          document.getElementById("btn-fallback-blindbox").classList.remove("hidden");
           document.getElementById("decision-buttons").classList.add("hidden");
       } else {
           // 全部抽完了：進入正常的結案/備取流程
           document.getElementById("btn-main-action").classList.add("hidden");
+          document.getElementById("btn-fallback-blindbox").classList.add("hidden"); // 確保抽完隱藏
           document.getElementById("decision-buttons").classList.remove("hidden");
       }
       
       updateStatusBar(); 
+  }
+
+  // 執行盲盒降級抽取的邏輯
+  function executeBlindBoxFallback() {
+      const p = globalPrizes[currentPrizeIndex];
+      let currentDrawn = drawResults[p.name].main.length;
+      let remaining = p.count - currentDrawn;
+      
+      if (!confirm(`確定要將剩餘的 ${remaining} 個名額轉為「盲盒解碼」抽取嗎？\n這將跳過老虎機特效。`)) return;
+      
+      // 抽出剩餘名單
+      let winners = []; 
+      for(let i=0; i < remaining; i++) {
+          if(globalTicketsPool.length > 0) winners.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]);
+      }
+      
+      // 併入已中獎名單
+      drawResults[p.name].main = drawResults[p.name].main.concat(winners);
+      
+      // 隱藏老虎機與降級按鈕
+      document.getElementById("btn-fallback-blindbox").classList.add("hidden");
+      document.getElementById("btn-main-action").classList.add("hidden");
+      
+      // 呼叫原本的盲盒動畫邏輯 (這裡直接借用 executeNextMainDraw 裡面的翻牌邏輯)
+      // 但因為名單已經抽出，我們直接渲染並啟動翻牌
+      renderBlindBoxDirectly(p.name, winners);
+  }
+
+  // 輔助：專門給降級後使用的翻牌渲染
+  function renderBlindBoxDirectly(prizeName, newWinners) {
+      const p = globalPrizes.find(x => x.name === prizeName);
+      const area = document.getElementById("showcase-winner-result");
+      const fullList = drawResults[prizeName].main;
+      const ticketSize = p.count > 10 ? 'ticket-sm' : 'ticket-lg';
+      
+      // 畫面先顯示全部 (舊的已揭曉，新的為盲盒)
+      let mysteryBoxes = fullList.map(t => ({ 
+          revealed: !newWinners.find(nw => nw.sysId === t.sysId), 
+          winner: t 
+      }));
+
+      const genRandomCode = () => {
+          const chars = '0123456789ABCDEF'; let code = '';
+          for(let i=0; i<4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+          return code;
+      };
+
+      const renderState = () => {
+         area.innerHTML = mysteryBoxes.map(box => {
+            if (box.revealed) return generateTicketHTML(box.winner, ticketSize, true, prizeName, p.count);
+            return `<span class="winner-ticket ${ticketSize} ticket-mystery"><span style="font-family:monospace; font-weight:bold;">${genRandomCode()}</span><div class="source-icon">🎲</div></span>`;
+         }).join('');
+      };
+
+      let scramble = setInterval(renderState, 50);
+      let revealIdx = mysteryBoxes.findIndex(b => !b.revealed);
+      
+      let revealInterval = setInterval(() => {
+          if (revealIdx === -1 || revealIdx >= mysteryBoxes.length) {
+              clearInterval(revealInterval); clearInterval(scramble);
+              renderState();
+              document.getElementById("decision-buttons").classList.remove("hidden");
+              updateStatusBar();
+              return;
+          }
+          mysteryBoxes[revealIdx].revealed = true;
+          revealIdx = mysteryBoxes.findIndex(b => !b.revealed);
+      }, 300);
   }
 </script>
 <div id="grand-prize-overlay" class="modal-overlay hidden" style="z-index: 9999; background: radial-gradient(circle, #2c3e50 0%, #000000 100%); flex-direction: column; overflow: hidden; align-items: center; justify-content: center;">
@@ -2370,7 +2463,7 @@ let currentGrandPrize = null;
 
         <div class="slot-controls">
             <button id="btn-slot-action" class="btn-primary" style="font-size: 24px; padding: 15px 40px; border-radius: 50px;">🎰 啟動老虎機</button>
-            <button id="btn-slot-cancel" class="btn-warning" style="font-size: 18px;" onclick="resetAutoScroll(); document.getElementById('grand-prize-overlay').classList.add('hidden')">❌ 緊急返回</button>
+            <button id="btn-slot-cancel" class="btn-warning" style="font-size: 18px;" onclick="resetAutoScroll(); document.getElementById('grand-prize-overlay').classList.add('hidden')">🔙 返回主畫面</button>
         </div>
     </div>
 </div>

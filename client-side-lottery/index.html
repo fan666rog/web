@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券抽獎系統 V4.7.5</title>
+  <title>彩券抽獎系統 V5.0</title>
   <style>
     /* ================= 基礎樣式 ================= */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
@@ -131,6 +131,14 @@
     .move-btn-group button:hover { background: #6c757d; }
     .order-number { font-size: 18px; font-weight: bold; color: #0056b3; min-width: 24px; }
 
+    /* ================= 頭獎皇冠特效按鈕 ================= */
+    .crown-icon { font-size: 20px; cursor: pointer; filter: grayscale(100%) opacity(0.4); transition: all 0.3s ease; user-select: none; margin-left: 5px; -webkit-tap-highlight-color: transparent; }
+    
+    @media (hover: hover) {
+        .crown-icon:hover { filter: grayscale(50%) opacity(0.8); transform: scale(1.1); }  /* 加入 @media (hover: hover) 判斷，解決手機版點擊後卡在 hover (假亮) 的 Bug */
+    }
+    
+    .crown-icon.active-crown { filter: grayscale(0%) opacity(1); transform: scale(1.2); text-shadow: 0 0 8px rgba(255, 215, 0, 0.8); }
     /* ================= CSV 匯入插件專屬樣式 ================= */
     .csv-step-box { border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 20px; position: relative; }
     .csv-step-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px; }
@@ -215,6 +223,198 @@
     .csv-segmented-control label { flex: 1; text-align: center; padding: 10px; cursor: pointer; font-weight: bold; color: #6c757d; border-radius: 6px; transition: all 0.3s ease; margin: 0; font-size: 15px; }
     .csv-segmented-control input[type="radio"]:checked + label { background: #fff; color: #0056b3; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
+    /* ================= 頭獎全螢幕舞台樣式 ================= */
+    #grand-prize-bg-list {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        padding: 40px; box-sizing: border-box;
+        overflow-y: auto; z-index: 1; pointer-events: auto;
+    }
+    
+    /* 新增：專門負責分欄的內層容器，不限制高度 */
+    .bg-list-inner {
+        column-count: 4; column-gap: 40px;
+        font-size: 22px; color: rgba(255, 255, 255, 0.15);
+        font-family: monospace; font-weight: bold;
+        word-break: break-all;
+    }
+
+    /* 響應式：螢幕變小自動減少背景欄數 */
+    @media (max-width: 1200px) { .bg-list-inner { column-count: 3; } }
+    @media (max-width: 768px) { 
+        #grand-prize-bg-list { padding: 20px; }
+        .bg-list-inner { column-count: 2; font-size: 16px; } 
+    }
+    .slot-machine-container {
+        position: relative; z-index: 10; text-align: center;
+        background: rgba(0, 0, 0, 0.6); padding: 50px; border-radius: 20px;
+        box-shadow: 0 0 40px rgba(255, 215, 0, 0.2); border: 1px solid rgba(255,215,0,0.3);
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        width: 90%; max-width: 800px;
+    }
+
+    #grand-prize-title { color: #f1c40f; font-size: 48px; margin-top: 0; margin-bottom: 40px; letter-spacing: 5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);}
+    
+    #slot-reels-area {
+        display: flex; justify-content: center; gap: 20px; margin-bottom: 40px; flex-wrap: wrap;
+    }
+    
+    .slot-reel {
+        width: 110px; height: 150px; background: #fff; color: #333;
+        font-size: 90px; font-weight: bold; border-radius: 15px;
+        display: flex; justify-content: center; align-items: center;
+        box-shadow: inset 0 10px 20px rgba(0,0,0,0.2), 0 10px 20px rgba(0,0,0,0.5);
+        border: 4px solid #ccc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    /* 鎖定（開出）狀態的轉軸：變成尊貴的金黃色 */
+    .slot-reel.locked { 
+        border-color: #f1c40f; color: #d35400; background: #fffdf0; 
+        box-shadow: inset 0 0 20px rgba(241, 196, 15, 0.3), 0 10px 20px rgba(0,0,0,0.5);
+    }
+    
+    .slot-controls { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+
+    /* 老虎機縮小狀態 */
+    .slot-machine-container.minimized {
+        transform: scale(0.3);
+        transform-origin: bottom right;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        cursor: pointer;
+        opacity: 0.8;
+        background: rgba(0, 0, 0, 0.9);
+        border: 4px solid #f1c40f;
+    }
+    .slot-machine-container.minimized:hover {
+        opacity: 1;
+        transform: scale(0.35);
+    }
+    /* 在縮小狀態下隱藏控制按鈕與標題，只留數字 */
+    .slot-machine-container.minimized h2, 
+    .slot-machine-container.minimized .slot-controls {
+        display: none;
+    }
+
+    /* ================= 新增：頭獎大局看板與微觀提示 ================= */
+    .macro-board {
+        background: rgba(0, 0, 0, 0.6);
+        border: 2px solid rgba(241, 196, 15, 0.5);
+        border-radius: 12px;
+        padding: 15px 25px;
+        margin-bottom: 30px;
+        color: #fff;
+        text-align: center;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .macro-board .survivor-text { font-size: 26px; font-weight: bold; color: #f1c40f; margin-bottom: 8px; letter-spacing: 2px; }
+    .macro-board .range-text { font-size: 18px; font-weight: bold; color: #00d2ff; transition: color 0.3s; }
+
+    .micro-hint {
+        font-size: 20px;
+        font-weight: bold;
+        color: #bdc3c7;
+        margin-bottom: 25px;
+        height: 30px; /* 預留高度避免排版跳動 */
+        letter-spacing: 1px;
+    }
+
+    /* 票券專屬編號標籤 (Cyberpunk 科技風) */
+    .ticket-sys-index {
+        position: absolute;
+        top: -12px;
+        left: -12px;
+        background: #f1c40f;
+        color: #000;
+        font-family: monospace;
+        font-size: 15px;
+        font-weight: 900;
+        padding: 4px 8px;
+        border-radius: 4px;
+        border: 2px solid #333;
+        box-shadow: 2px 2px 0px #000;
+        z-index: 20;
+        letter-spacing: 1px;
+    }
+    .ticket-sm .ticket-sys-index {
+        font-size: 11px;
+        padding: 2px 5px;
+        top: -8px;
+        left: -8px;
+        border-width: 1px;
+        box-shadow: 1px 1px 0px #000;
+    }
+
+    /* ================= 候選人高光與淘汰特效 ================= */
+    .candidate-wrapper {
+        transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1); /* 平滑縮放與消失 */
+        border-radius: 12px;
+        padding: 4px;
+        border: 4px solid transparent;
+        box-sizing: border-box;
+        opacity: 1;
+        transform: scale(1);
+    }
+    /* 淘汰消失 (毒圈縮小感) */
+    .candidate-wrapper.faded {
+        opacity: 0;
+        transform: scale(0.5) translateY(50px);
+        filter: grayscale(100%);
+        pointer-events: none;
+    }
+    /* 跑馬燈高光 (10人內專屬) */
+    .candidate-wrapper.highlight-active {
+        border-color: #f1c40f;
+        box-shadow: 0 0 25px rgba(241, 196, 15, 0.9);
+        transform: scale(1.15);
+        z-index: 10;
+        background: rgba(241, 196, 15, 0.15);
+    }
+    /* 最終鎖定霸氣紅光 */
+    .candidate-wrapper.highlight-locked {
+        border-color: #ff3838;
+        box-shadow: 0 0 40px rgba(255, 56, 56, 1);
+        transform: scale(1.2);
+        background: rgba(255, 56, 56, 0.1);
+        animation: pulse-locked 1s infinite alternate;
+        z-index: 20;
+    }
+    @keyframes pulse-locked {
+        0% { box-shadow: 0 0 20px rgba(255, 56, 56, 0.8); }
+        100% { box-shadow: 0 0 50px rgba(255, 56, 56, 1); }
+    }
+
+    /* ================= 頭獎老虎機 - 右上角收起按鈕 ================= */
+    .slot-minimize-btn {
+        position: absolute; top: 20px; right: 20px;
+        width: 44px; height: 44px; /* 稍微放大一點點讓手感更好 */
+        background: rgba(255, 255, 255, 0.15);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        display: flex; justify-content: center; align-items: center;
+        cursor: pointer; transition: all 0.3s ease; z-index: 20;
+        color: #f1c40f; /* 金黃色 */
+    }
+    
+    /* 針對裡面圖示的精準控制 */
+    .slot-minimize-btn svg {
+        width: 26px; height: 26px;
+        stroke: currentColor;
+        stroke-width: 3;
+        margin-top: 2px;
+        transition: all 0.3s ease;
+    }
+
+    .slot-minimize-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: #f1c40f;
+        transform: scale(1.1);
+    }
+
+    .slot-machine-container.minimized .slot-minimize-btn {
+        display: none;
+    }
+
     /* ================= 手機版專屬樣式 (RWD) ================= */
     @media (max-width: 768px) {
       body { padding: 10px; }
@@ -242,9 +442,7 @@
       #prizeTable td:nth-of-type(2)::before { content: "獎項名稱"; }
       #prizeTable td:nth-of-type(3)::before { content: "正取"; }
       #prizeTable td:nth-of-type(4)::before { content: "備取"; }
-      #prizeTable td:nth-of-type(5)::before { content: "特效"; }
       #prizeTable input[type="text"], #prizeTable input[type="number"] { width: 60% !important; max-width: 180px; text-align: center; font-size: 16px; }
-      #prizeTable input[type="checkbox"] { transform: scale(1.5); margin-right: 15px; }
       td:last-child { border-bottom: 0; justify-content: center; padding: 15px 0 5px 0; display: flex; width: 100%; }
       /* 手機版預設：大/中票券維持 32px 大按鈕防誤觸 */
       .btn-void { width: 32px !important; height: 32px !important; top: -12px; right: -12px; }
@@ -260,6 +458,49 @@
       .csv-step-header { flex-direction: column; align-items: flex-start; gap: 10px; }
       .csv-step-header button, .csv-step-header .csv-btn-upload { width: 100%; margin-top: 5px; }
       #csv-preview-summary { width: 100%; text-align: right; margin-top: -5px; margin-bottom: 10px; }
+
+      /* ================= 頭獎老虎機手機版 RWD ================= */
+      /* 1. 容器瘦身與防卡死機制 */
+      .slot-machine-container {
+          padding: 25px 15px; /* 大幅縮減原本 50px 的超厚內邊距 */
+          width: 95%; /* 盡可能利用手機螢幕寬度 */
+          max-height: 90vh; /* ★ 核心救援：限制面板最高只能佔螢幕的 90% */
+          overflow-y: auto; /* ★ 萬一內容真的太多，允許面板「內部上下滑動」，保證按鈕絕對按得到！ */
+          border-radius: 12px;
+      }
+      
+      /* 2. 標題與看板降級 */
+      #grand-prize-title { font-size: 28px; margin-bottom: 15px; letter-spacing: 2px; }
+      .macro-board { padding: 10px; margin-bottom: 15px; }
+      .macro-board .survivor-text { font-size: 20px; margin-bottom: 5px; }
+      .macro-board .range-text { font-size: 14px; }
+      
+      /* 3. 轉軸極限壓縮 (容納 5 碼萬人陣列) */
+      #slot-reels-area { gap: 6px; margin-bottom: 20px; }
+      .slot-reel {
+          width: 45px;   /* 寬度從 110px 狂砍到 45px */
+          height: 65px;  /* 高度從 150px 狂砍到 65px */
+          font-size: 40px; /* 字體縮小配合 */
+          border-width: 2px;
+          border-radius: 8px;
+      }
+      
+      .micro-hint { font-size: 15px; margin-bottom: 15px; height: auto; min-height: 24px; }
+      
+      /* 4. 按鈕改為「垂直疊羅漢」 */
+      .slot-controls {
+          flex-direction: column; /* 改為上下排列，不左右互擠 */
+          gap: 12px;
+      }
+      .slot-controls button {
+          width: 100%; /* 按鈕撐滿面板寬度，超好點擊 */
+          font-size: 18px !important; /* 強制覆蓋原本的 24px 巨無霸字體 */
+          padding: 12px !important;
+          margin: 0;
+      }
+      
+      /* 右上角縮小按鈕微調 */
+      .slot-minimize-btn { top: 10px; right: 10px; width: 36px; height: 36px; }
     }
   </style>
 </head>
@@ -279,19 +520,20 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V4.7.5 (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V5.0 (點擊修改標題)</h1>
     
     <details class="instructions-panel">
       <summary>📖 點擊查看系統使用說明</summary>
       <div class="instructions-content">
-        <p><strong>① 匯入名單</strong>：支援實體與數位混抽。數位可利用 <code>[FB 暱稱匯入]</code>..等，手動貼上的名單請點擊 <code>[✨加編號]</code> 自動補齊 M- 序號。</p>
-        <p><strong>② 設定獎項</strong>：本系統採用「視覺絕對排序」，直接拖曳「☰」或點擊上下按鈕調整，<strong>畫面由上到下即為真實開獎順序</strong>。</p>
+        <p><strong>① 匯入名單</strong>：支援實體與數位混抽。點擊 <code>[✨加編號]</code> 可補齊 M- 序號。</p>
+        <p><strong>② 設定獎項</strong>：採「視覺絕對排序」的開獎順序(先開1)，直接拖曳「☰」或點擊上下按鈕調整。點擊 👑 可啟動頭獎全螢幕老虎機特效。</p>
         <p><strong>③ 選擇開獎模式</strong>：<br>
-           　• <code>[一鍵快速開獎]</code>：適合錄影抽獎後公佈，瞬間產出結果清單。<br>
-           　• <code>[進入展演模式]</code>：適合現場大螢幕，支援單項抽出、待機動畫、正取作廢補抽、備取單獨補抽與臨時加碼功能。<br>
-           　• <strong>💡 盲盒解碼特效</strong>：勾選特效，展演模式系統會依人數智能變速。為保護系統效能，<strong>若單次抽出超過 30 人，系統將自動關閉動畫瞬間開獎</strong>。</p>
-        <p><strong>④ 雙軌匯出</strong>：開獎完畢後，可由頂部狀態列匯出「公告版」或「留存版(含完整資料)」文字檔。</p>
-        <p></p>免責聲明：本程式雖經反覆測試，仍難免有未發現BUG，正式使用前請先自行測試和熟悉。</p>
+           　• <code>[一鍵快速開獎]</code>：適合錄影，瞬間產出結果清單。<br>
+           　• <code>[進入展演模式]</code>：支援單抽、待機動畫、補抽與臨時加碼功能。<br>
+           　• <strong>👑 頭獎專屬特效</strong>：全螢幕舞台具備決賽圈洗牌、動態倖存者看板與轉軸區間提示。<br>
+           　• <strong>💡 盲盒解碼特效</strong>：依人數智能變速，超過 30 人自動關閉動畫以維護效能。</p>
+        <p><strong>④ 雙軌匯出</strong>：開獎完畢後，可匯出「公告版」或「留存版(含個資)」文字檔。</p>
+        <p>免責聲明：本程式雖經測試，仍難免有未發現BUG，請先行測試熟悉。</p>
       </div>
     </details>
 
@@ -352,10 +594,10 @@
       <tr>
         <th>順位調整
           <span class="tooltip" tabindex="0">?
-            <span class="tooltip-text">💡 <b>順位與排序規則</b><br>本系統採用「視覺絕對排序」，畫面由上到下的排列順序即為真實的開獎順序。請直接按住左側「☰」手把拖曳，或點擊「▲/▼」按鈕調整。</span>
+            <span class="tooltip-text">💡 <b>順位與排序規則</b><br>本系統採用「視覺絕對排序」，畫面由上到下的排列順序即為真實的開獎順序。點擊 👑 可將該獎項設為全螢幕頭獎特效。</span>
           </span>
         </th>
-        <th>獎項名稱</th><th>正取</th><th>備取</th><th>特效</th><th>操作</th>
+        <th>獎項名稱</th><th>正取</th><th>備取</th><th>操作</th>
       </tr>
       <tr class="drag-row" draggable="true" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="drop(event)" ondragend="dragEnd(event)">
         <td>
@@ -366,12 +608,12 @@
               <button type="button" onclick="moveRowDown(this)" title="下移">▼</button>
             </div>
             <span class="order-number">1</span>
+            <span class="crown-icon active-crown" onclick="toggleCrown(this)" title="設為頭獎專屬特效">👑</span>
           </div>
         </td>
-        <td><input type="text" class="prize-name" value="普獎"></td>
+        <td><input type="text" class="prize-name" value="頭獎"></td>
         <td><input type="number" min="1" class="prize-count" value="1" style="width: 60px;"></td>
         <td><input type="number" min="0" class="prize-backup" value="0" style="width: 60px;"></td>
-        <td><input type="checkbox" class="prize-effect" checked></td>
         <td><button onclick="deletePrizeRow(this)" class="btn-delete">刪</button></td>
       </tr>
     </table>
@@ -397,6 +639,8 @@
       
       <div class="control-panel" id="main-control-panel">
         <button id="btn-main-action" class="btn-auto-next" onclick="executeNextMainDraw()">👉 開始抽取</button>
+        <button id="btn-fallback-blindbox" class="btn-warning hidden" style="background:#e67e22; color:white; border-radius:50px; padding:10px 25px;" onclick="executeBlindBoxFallback()">🎲 轉為盲盒抽出剩餘名額</button>
+        
         <div id="decision-buttons" class="hidden" style="margin-top: 15px;">
           <button class="btn-resolve" onclick="finalizeCurrentPrize(true)">✅ 結案 (略過備取)</button>
           <button class="btn-keep-backup" onclick="finalizeCurrentPrize(false)">⏭️ 進入下一獎項 (保留備取)</button>
@@ -648,6 +892,21 @@
       updateLiveStats();
   }
 
+  function toggleCrown(clickedCrown) {
+      // 1. 先紀錄當前點擊的皇冠，在點擊瞬間是不是亮著的
+      const wasActive = clickedCrown.classList.contains('active-crown');
+      
+      // 2. 把所有的皇冠都強制變成灰色 (全部重置)
+      document.querySelectorAll('.crown-icon').forEach(crown => {
+          crown.classList.remove('active-crown');
+      });
+      
+      // 3. 如果它原本「不是」亮著的，才把它點亮；如果它原本「已經」亮著，那經過步驟 2 它就剛好被熄滅了，達成取消的效果。
+      if (!wasActive) {
+          clickedCrown.classList.add('active-crown');
+      }
+  }
+
   function moveRowUp(btn) {
       const row = btn.closest('tr');
       if (row.previousElementSibling && row.previousElementSibling.rowIndex > 0) {
@@ -684,12 +943,12 @@
               <button type="button" onclick="moveRowDown(this)" title="下移">▼</button>
             </div>
             <span class="order-number">0</span>
+            <span class="crown-icon" onclick="toggleCrown(this)" title="設為頭獎專屬特效">👑</span>
           </div>
         </td>
         <td><input type="text" class="prize-name" value="新獎項"></td>
         <td><input type="number" min="1" class="prize-count" value="1" style="width: 60px;"></td>
         <td><input type="number" min="0" class="prize-backup" value="0" style="width: 60px;"></td>
-        <td><input type="checkbox" class="prize-effect"></td>
         <td><button onclick="deletePrizeRow(this)" class="btn-delete">刪</button></td>
       `;
       updatePrizeOrders();
@@ -1264,7 +1523,7 @@
       let n = row.querySelector('.prize-name').value, c = parseInt(row.querySelector('.prize-count').value), b = parseInt(row.querySelector('.prize-backup').value);
       if(!n || isNaN(c) || c <= 0) errors.push(`第 ${idx+1} 列獎項設定異常。`);
       totalNeeded += (c + b);
-      globalPrizes.push({ order: idx + 1, name: n, count: c, backupCount: b, effect: row.querySelector('.prize-effect').checked, resolved: false });
+      globalPrizes.push({ order: idx + 1, name: n, count: c, backupCount: b, effect: row.querySelector('.crown-icon').classList.contains('active-crown'), resolved: false });
       drawResults[n] = { main: [], backup: [], voided: [] };
     });
 
@@ -1281,14 +1540,16 @@
     else { document.getElementById("showcase-area").classList.remove("hidden"); document.getElementById("btn-extra-prize").classList.remove("hidden"); preparePhase1(); }
   }
 
-  function generateTicketHTML(obj, size, showVoid, prize, totalCount) {
+  function generateTicketHTML(obj, size, showVoid, prize, totalCount, sysIndex = null) {
     let theme = 'ticket-digital', icon = '👤'; 
     if (obj.sourceType === 'paper') { theme = 'ticket-paper'; icon = '🎫'; }
     else if (obj.sourceType === 'digital' && obj.rawText.startsWith('F-')) { theme = 'ticket-fb'; icon = '📘'; }
     
     let voidBtn = showVoid ? `<button class="btn-void" onclick="voidTicket('${prize}', '${obj.sysId}')">❌</button>` : '';
+    // ★ 如果有傳入編號，就顯示賽博龐克標籤
+    let sysIndexLabel = sysIndex ? `<div class="ticket-sys-index">#${sysIndex}</div>` : '';
+    
     let formattedText = obj.displayText;
-
     if (obj.sourceType === 'digital') {
       let parsed = parseLineEntities(obj.rawText);
       let topText = parsed.prefix;
@@ -1298,8 +1559,7 @@
       if (totalCount > 10) {
         let compactText = [topText, middleText].filter(Boolean).join(' ');
         formattedText = `<span style="font-weight:bold; white-space:nowrap;">${compactText}</span>`;
-      } 
-      else {
+      } else {
         formattedText = `<div style="display:flex; flex-direction:column; align-items:center; line-height:1.2; gap:4px; padding: 5px 0;">`;
         if(topText) formattedText += `<span style="font-size:0.55em; opacity:0.7; letter-spacing:1px;">${topText}</span>`;
         if(middleText) formattedText += `<span style="font-size:1.1em; font-weight:900; text-align:center;">${middleText}</span>`;
@@ -1307,7 +1567,7 @@
         formattedText += `</div>`;
       }
     }
-    return `<span class="winner-ticket ${size} ${theme}">${formattedText}${voidBtn}<div class="source-icon">${icon}</div></span>`;
+    return `<span class="winner-ticket ${size} ${theme}">${sysIndexLabel}${formattedText}${voidBtn}<div class="source-icon">${icon}</div></span>`;
   }
 
   function executeQuickDraw() {
@@ -1325,43 +1585,68 @@
 
   function preparePhase1() { currentPhase = 1; currentPrizeIndex = 0; updateMainActionButton(); }
   
+  // 主畫面控制按鈕與待機動畫
   function updateMainActionButton() {
-    const btn = document.getElementById("btn-main-action");
-    if (currentPrizeIndex < globalPrizes.length) { 
-      const pName = globalPrizes[currentPrizeIndex].name;
-      btn.innerText = `👉 抽出正取：${pName}`; 
-      btn.disabled = false; 
-      document.getElementById("showcase-prize-name").innerText = `🎁 即將抽出：${pName}`;
-      document.getElementById("showcase-winner-result").innerHTML = `
-        <div class="waiting-placeholder fade-in">
-            <div class="icon">🎲</div>
-            <div class="title">等待開獎中...</div>
-            <div class="subtitle">請主持人點擊下方「👉 開始抽取」</div>
-        </div>`;
-    } else {
-      if (globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) {
-          transitionToPhase2(); 
+      const btn = document.getElementById("btn-main-action");
+      const fallbackBtn = document.getElementById("btn-fallback-blindbox");
+
+      if (currentPrizeIndex < globalPrizes.length) {
+          const p = globalPrizes[currentPrizeIndex];
+          let currentDrawn = drawResults[p.name].main.length;
+
+          btn.classList.remove("hidden");
+          btn.disabled = false;
+
+          // 狀態 A：這個獎項已經抽了一半 (返回主畫面後繼續)
+          if (currentDrawn > 0 && currentDrawn < p.count) {
+              if (p.effect) fallbackBtn.classList.remove("hidden"); 
+              else fallbackBtn.classList.add("hidden");
+
+              btn.innerText = `👉 繼續抽出下一位 (${currentDrawn + 1}/${p.count})`;
+              document.getElementById("showcase-prize-name").innerText = `🎁 繼續抽出：${p.name}`;
+          } 
+          // 狀態 B：這個獎項完全還沒開始抽
+          else {
+              // ★ 修正：一開始就給緊急逃生門！如果是頭獎(有特效)，直接顯示盲盒按鈕
+              if (p.effect) fallbackBtn.classList.remove("hidden"); 
+              else fallbackBtn.classList.add("hidden");
+
+              btn.innerText = `👉 抽出正取：${p.name}`;
+              document.getElementById("showcase-prize-name").innerText = `🎁 即將抽出：${p.name}`;
+
+              // 顯示漂亮的待機動畫
+              document.getElementById("showcase-winner-result").innerHTML = `
+                  <div class="waiting-placeholder fade-in">
+                      <div class="icon">🎲</div>
+                      <div class="title">等待開獎中...</div>
+                      <div class="subtitle">請主持人點擊下方「👉 開始抽取」</div>
+                  </div>`;
+          }
       } else {
-          // ✨ 修正 2：取消強制跳轉，改為手動點擊「完成階段開獎」
-          document.getElementById("btn-main-action").classList.add("hidden");
-          document.getElementById("decision-buttons").classList.add("hidden");
-          
-          let existingBtn = document.getElementById("btn-finish-event");
-          if(!existingBtn) {
-              let pnl = document.getElementById("main-control-panel");
-              let finishBtn = document.createElement("button");
-              finishBtn.id = "btn-finish-event";
-              finishBtn.className = "btn-primary fade-in";
-              finishBtn.style.width = "80%";
-              finishBtn.style.fontSize = "24px";
-              finishBtn.style.padding = "15px 40px";
-              finishBtn.style.borderRadius = "50px";
-              finishBtn.innerText = "✅ 完成階段開獎";
-              finishBtn.onclick = showEndScreen;
-              pnl.appendChild(finishBtn);
+          // 所有獎項都抽完的結案狀態
+          fallbackBtn.classList.add("hidden");
+          if (globalPrizes.some(p => p.backupCount > 0 && !p.resolved)) {
+              transitionToPhase2(); 
+          } else {
+              btn.classList.add("hidden");
+              document.getElementById("decision-buttons").classList.add("hidden");
+              
+              let existingBtn = document.getElementById("btn-finish-event");
+              if(!existingBtn) {
+                  let pnl = document.getElementById("main-control-panel");
+                  let finishBtn = document.createElement("button");
+                  finishBtn.id = "btn-finish-event";
+                  finishBtn.className = "btn-primary fade-in";
+                  finishBtn.style.width = "80%";
+                  finishBtn.style.fontSize = "24px";
+                  finishBtn.style.padding = "15px 40px";
+                  finishBtn.style.borderRadius = "50px";
+                  finishBtn.innerText = "✅ 完成階段開獎";
+                  finishBtn.onclick = showEndScreen;
+                  pnl.appendChild(finishBtn);
+              }
           }
       }
-    }
   }
 
   function showEndScreen() {
@@ -1377,6 +1662,11 @@
 
   function executeNextMainDraw() {
     const p = globalPrizes[currentPrizeIndex];
+    // ✨ 新增：判斷是否為頭獎專屬特效
+    if (p.effect) {
+        openGrandPrizeOverlay(p); // 呼叫全螢幕舞台函數
+        return; // 終止後續原本的流程
+    }
     document.getElementById("btn-main-action").classList.add("hidden"); document.getElementById("showcase-prize-name").innerText = `🎉 ${p.name} 🎉`;
     let winners = []; for(let i=0; i<p.count; i++) if(globalTicketsPool.length > 0) winners.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]);
     drawResults[p.name].main = winners;
@@ -1388,7 +1678,7 @@
     };
     
     // 效能保護鎖：人數 <= 30 人且勾選特效才執行盲盒動畫
-    if (p.effect && p.count <= 30 && winners.length > 0) {
+    if (p.count <= 30 && winners.length > 0) {
       const area = document.getElementById("showcase-winner-result");
       const ticketSize = winners.length > 10 ? 'ticket-sm' : 'ticket-lg';
       
@@ -1516,7 +1806,7 @@
         }
     };
 
-    if (currentPrize.effect && currentTotal <= 30) {
+    if (currentTotal <= 30) {
         // ★ 動態注入掃光特效的 CSS (防重複注入)
         if (!document.getElementById('shimmer-css')) {
             let style = document.createElement('style');
@@ -1791,6 +2081,385 @@
     if (e.target.id === 'excludedNumbersInput') e.target.value = e.target.value.replace(/，/g, ',').replace(/[^0-9,\s]/g, '');
     debouncedUpdateStats();
   });
+
+// ================= 頭獎自動捲動控制引擎 =================
+  let autoScrollRAF = null;
+  let resumeScrollTimeout = null;
+  let isUserInteracting = false;
+  let scrollAccumulator = 0;
+  const AUTO_SCROLL_SPEED = 0.5; // 數字越大滾越快 (0.5 代表每幀移動 0.5px)
+
+  function startAutoScroll() {
+      const bgList = document.getElementById('grand-prize-bg-list');
+      // 如果沒有容器、使用者正在操作，或是已經到底了，就暫停捲動
+      if (!bgList || isUserInteracting) return;
+      if (bgList.scrollTop + bgList.clientHeight >= bgList.scrollHeight - 1) return;
+
+      // 亞像素捲動累加器，確保慢速捲動依然絲滑
+      scrollAccumulator += AUTO_SCROLL_SPEED;
+      if (scrollAccumulator >= 1) {
+          bgList.scrollTop += Math.floor(scrollAccumulator);
+          scrollAccumulator -= Math.floor(scrollAccumulator);
+      }
+      autoScrollRAF = requestAnimationFrame(startAutoScroll);
+  }
+
+  function handleUserInteraction() {
+      isUserInteracting = true;
+      cancelAnimationFrame(autoScrollRAF);
+      clearTimeout(resumeScrollTimeout);
+
+      // ★ 核心解法：只要偵測到滑鼠/觸控互動，立刻強制縮小，不依賴捲動軸！
+      const container = document.querySelector('.slot-machine-container');
+      if (container && !container.classList.contains('minimized')) {
+          container.classList.add('minimized');
+      }
+
+      // 3秒沒有任何操作後，恢復自動捲動
+      resumeScrollTimeout = setTimeout(() => {
+          isUserInteracting = false;
+          startAutoScroll();
+      }, 3000);
+  }
+
+  // ★ 新增：專門給「隱藏按鈕」使用的控制功能
+  function toggleSlotMinimize(e) {
+      if(e) e.stopPropagation(); // 防止點擊事件往上傳遞，造成點完立刻又還原
+      const container = document.querySelector('.slot-machine-container');
+      container.classList.add('minimized');
+  }
+
+  function resetAutoScroll() {
+      cancelAnimationFrame(autoScrollRAF);
+      clearTimeout(resumeScrollTimeout);
+      isUserInteracting = false;
+      scrollAccumulator = 0;
+      const bgList = document.getElementById('grand-prize-bg-list');
+      if (bgList) bgList.scrollTop = 0;
+  }
+
+  // ================= 頭獎老虎機 - 全方位邏輯整合 =================
+  let currentGrandPrize = null;
+  let slotIntervals = [], slotCurrentReel = 0, slotLockedPrefix = "", slotMaxStr = "", slotDigitCount = 0;
+
+  // 1. 進入全螢幕舞台
+  function openGrandPrizeOverlay(prize) {
+      currentGrandPrize = prize;
+      const overlay = document.getElementById('grand-prize-overlay');
+      const title = document.getElementById('grand-prize-title');
+      const btnCancel = document.getElementById('btn-slot-cancel'); 
+      const bgList = document.getElementById('grand-prize-bg-list');
+
+      resetAutoScroll(); 
+      btnCancel.classList.remove('hidden'); 
+
+      let currentDrawn = drawResults[prize.name].main.length;
+      let totalNeeded = prize.count;
+      title.innerText = totalNeeded > 1 ? `👑 ${prize.name} (${currentDrawn + 1}/${totalNeeded}) 👑` : `👑 ${prize.name} 👑`;
+      
+      overlay.classList.remove('hidden');
+      overlay.style.display = 'flex';
+      
+      const container = document.querySelector('.slot-machine-container');
+      container.classList.remove('minimized');
+
+      bgList.innerHTML = "";
+
+      // ★ 初始化看板：上倖存者 / 下狀態
+      document.getElementById('macro-survivors').innerText = `🔥 決賽圈倖存者：${globalTicketsPool.length} 人`;
+      document.getElementById('macro-range').innerText = `✨ 狀態：等待洗牌，重新分發座號...`;
+      document.getElementById('macro-range').style.color = '#00d2ff';
+      document.getElementById('slot-micro-hint').innerHTML = ""; 
+      
+      document.getElementById('btn-slot-shuffle').classList.remove('hidden');
+      document.getElementById('btn-slot-shuffle').innerText = '🔀 執行決賽大洗牌';
+      document.getElementById('btn-slot-shuffle').disabled = false;
+      document.getElementById('btn-slot-shuffle').style.cursor = 'pointer';
+      document.getElementById('btn-slot-action').classList.add('hidden');
+
+      let poolSize = globalTicketsPool.length;
+      slotDigitCount = String(poolSize - 1).length;
+      const reelArea = document.getElementById('slot-reels-area');
+      reelArea.innerHTML = "";
+      for(let i=0; i < slotDigitCount; i++) { reelArea.innerHTML += `<div class="slot-reel" id="reel-${i}">?</div>`; }
+
+      bgList.onwheel = handleUserInteraction;
+      bgList.ontouchstart = handleUserInteraction;
+      bgList.ontouchmove = handleUserInteraction;
+      bgList.onmousedown = handleUserInteraction;
+      bgList.onscroll = function() { if (isUserInteracting && !container.classList.contains('minimized')) container.classList.add('minimized'); };
+      container.onclick = function() { if (this.classList.contains('minimized')) this.classList.remove('minimized'); };
+  }
+
+  // 2. 執行決賽圈大洗牌
+  function executeGrandPrizeShuffle() {
+      const btnShuffle = document.getElementById('btn-slot-shuffle');
+      btnShuffle.innerText = '⏳ 系統高速洗牌中...';
+      btnShuffle.disabled = true;
+      btnShuffle.style.cursor = 'wait';
+      
+      for (let i = globalTicketsPool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [globalTicketsPool[i], globalTicketsPool[j]] = [globalTicketsPool[j], globalTicketsPool[i]];
+      }
+      
+      setTimeout(() => {
+          btnShuffle.classList.add('hidden');
+          btnShuffle.style.cursor = 'pointer';
+          let maxIndex = String(globalTicketsPool.length - 1).padStart(slotDigitCount, '0');
+          let macroRange = document.getElementById('macro-range');
+          macroRange.innerText = `✅ 已徹底洗牌！分發決賽幸運碼：${'0'.padStart(slotDigitCount, '0')} ~ ${maxIndex}`;
+          macroRange.style.color = '#2ecc71';
+          
+          let btnAction = document.getElementById('btn-slot-action');
+          btnAction.classList.remove('hidden');
+          btnAction.innerText = "🎰 啟動老虎機";
+          btnAction.onclick = startSlotMachineProcess;
+      }, 1500);
+  }
+
+  // 3. 動態台詞劇本邏輯
+  function updateSlotHints(prefix) {
+      let poolSize = globalTicketsPool.length;
+      let maxIdxStr = String(poolSize - 1).padStart(slotDigitCount, '0');
+      let minFound = -1, maxFound = -1;
+      for(let i = 0; i < poolSize; i++) {
+          let idxStr = String(i).padStart(slotDigitCount, '0');
+          if (idxStr.startsWith(prefix)) {
+              if (minFound === -1) minFound = i;
+              maxFound = i;
+          }
+      }
+      let survivorsCount = (maxFound >= 0) ? (maxFound - minFound + 1) : 0;
+      let minStr = (minFound >= 0) ? String(minFound).padStart(slotDigitCount, '0') : "---";
+      let maxStr = (maxFound >= 0) ? String(maxFound).padStart(slotDigitCount, '0') : "---";
+      
+      document.getElementById('macro-survivors').innerText = `🔥 決賽圈倖存者：${survivorsCount} 人`;
+      let macroRange = document.getElementById('macro-range');
+      if (survivorsCount === 1) { macroRange.innerText = `👑 唯一鎖定！幸運兒即將誕生！`; macroRange.style.color = '#f1c40f'; }
+      else if (survivorsCount <= 30 && prefix !== "") { macroRange.innerText = `🚨 極限決賽圈！有效號碼圈：${minStr} ~ ${maxStr}`; macroRange.style.color = '#ff4757'; }
+      else if (prefix !== "") { macroRange.innerText = `🎯 範圍縮小！有效號碼圈：${minStr} ~ ${maxStr}`; macroRange.style.color = '#ffa502'; }
+
+      let microHint = document.getElementById('slot-micro-hint');
+      if (prefix.length < slotDigitCount) {
+          let currentReelIndex = prefix.length;
+          let maxAllowed = 9;
+          let currentMaxPrefix = maxIdxStr.substring(0, currentReelIndex);
+          if (prefix === currentMaxPrefix) maxAllowed = parseInt(maxIdxStr[currentReelIndex]);
+          microHint.innerHTML = maxAllowed === 0 ? `👉 準備鎖定第 ${currentReelIndex + 1} 碼 [ <span style="color:#ff4757;">🔒 系統唯一鎖定：0</span> ]` : `👉 準備鎖定第 ${currentReelIndex + 1} 碼 [ 🎲 亂數區間：0 ~ ${maxAllowed} ]`;
+      } else microHint.innerHTML = `<span style="color:#2ecc71;">🎉 鎖定完成！</span>`;
+  }
+
+  function updateCandidateHighlight(digit, isLocked) {
+      let candidates = document.querySelectorAll('.candidate-wrapper');
+      if (candidates.length > 10 && !isLocked) return;
+      candidates.forEach(el => {
+          if (el.getAttribute('data-digit') === String(digit)) {
+              el.classList.add('highlight-active');
+              if (isLocked) el.classList.add('highlight-locked');
+          } else { el.classList.remove('highlight-active'); el.classList.remove('highlight-locked'); }
+      });
+  }
+
+  function startSlotMachineProcess() {
+      let poolSize = globalTicketsPool.length;
+      document.getElementById('btn-slot-cancel').classList.add('hidden');
+      slotMaxStr = String(poolSize - 1).padStart(slotDigitCount, '0');
+      slotCurrentReel = 0;
+      slotLockedPrefix = "";
+      slotIntervals.forEach(id => clearInterval(id));
+      slotIntervals = [];
+      updateSlotHints("");
+      if (poolSize <= 1100) renderSlotBackground(""); 
+      else document.getElementById('grand-prize-bg-list').innerHTML = ""; 
+
+      for(let i=0; i < slotDigitCount; i++) {
+          let reel = document.getElementById(`reel-${i}`);
+          reel.classList.remove('locked');
+          reel.innerText = Math.floor(Math.random() * 10);
+          slotIntervals[i] = setInterval(() => {
+              let maxAllowed = 9;
+              let currentMaxPrefix = slotMaxStr.substring(0, slotCurrentReel);
+              if (slotLockedPrefix === currentMaxPrefix) maxAllowed = parseInt(slotMaxStr[slotCurrentReel]);
+              let cur = (parseInt(reel.innerText) || 0);
+              cur = (cur - 1 + (maxAllowed + 1)) % (maxAllowed + 1);
+              reel.innerText = cur;
+              if (i === slotCurrentReel) updateCandidateHighlight(cur, false);
+          }, 50);
+      }
+      let btn = document.getElementById('btn-slot-action');
+      btn.innerText = `👉 鎖定第 1 碼`;
+      btn.onclick = stopNextReel;
+  }
+
+  // 煞車與捕捉引擎
+  function stopNextReel() {
+      let btn = document.getElementById('btn-slot-action');
+      btn.disabled = true; btn.style.opacity = "0.5"; btn.innerText = `⏳ 鎖定中...`;
+      let maxAllowed = 9;
+      let currentMaxPrefix = slotMaxStr.substring(0, slotCurrentReel);
+      if (slotLockedPrefix === currentMaxPrefix) maxAllowed = parseInt(slotMaxStr[slotCurrentReel]);
+      let pickedDigit = Math.floor(Math.random() * (maxAllowed + 1));
+      clearInterval(slotIntervals[slotCurrentReel]);
+      let reel = document.getElementById(`reel-${slotCurrentReel}`);
+      let currentVisualDigit = parseInt(reel.innerText) || 0;
+      let currentDelay = 50, friction = 1.15, captureThreshold = 300, isCapturing = false;
+
+      function nextTick() {
+          currentVisualDigit = (currentVisualDigit - 1 + (maxAllowed + 1)) % (maxAllowed + 1);
+          reel.innerText = currentVisualDigit;
+          updateCandidateHighlight(currentVisualDigit, false);
+          if (!isCapturing) {
+              currentDelay *= friction;
+              if (currentDelay >= captureThreshold) isCapturing = true;
+              setTimeout(nextTick, currentDelay);
+          } else {
+              if (currentVisualDigit === pickedDigit) {
+                  reel.classList.add('locked');
+                  let candidates = document.querySelectorAll('.candidate-wrapper');
+                  let isFinal = (slotCurrentReel + 1 === slotDigitCount);
+                  if (candidates.length > 0) {
+                      if (isFinal) { updateCandidateHighlight(pickedDigit, true); finishLock(pickedDigit, isFinal); }
+                      else {
+                          let hasLosers = false;
+                          candidates.forEach(el => { if (el.getAttribute('data-digit') !== String(pickedDigit)) { el.classList.add('faded'); hasLosers = true; } });
+                          setTimeout(() => finishLock(pickedDigit, isFinal), hasLosers ? 600 : 0);
+                      }
+                  } else finishLock(pickedDigit, isFinal);
+              } else setTimeout(nextTick, currentDelay);
+          }
+      }
+      setTimeout(nextTick, currentDelay);
+  }
+
+  function finishLock(pickedDigit, isFinal) {
+      slotLockedPrefix += pickedDigit;
+      slotCurrentReel++;
+      let btn = document.getElementById('btn-slot-action');
+      btn.disabled = false; btn.style.opacity = "1";
+      updateSlotHints(slotLockedPrefix);
+      if (!isFinal) { renderSlotBackground(slotLockedPrefix); btn.innerText = `👉 鎖定第 ${slotCurrentReel + 1} 碼`; }
+      else { btn.innerText = `🎉 揭曉得獎者`; btn.onclick = finalizeGrandPrize; }
+  }
+
+  function renderSlotBackground(prefix) {
+      let filteredTickets = [], ticketToDigit = {}, ticketToSysIndex = {}, nextDigitIndex = prefix.length; 
+      for(let i=0; i < globalTicketsPool.length; i++) {
+          let idxStr = String(i).padStart(slotDigitCount, '0');
+          if(idxStr.startsWith(prefix)) {
+              filteredTickets.push(globalTicketsPool[i]);
+              ticketToSysIndex[globalTicketsPool[i].sysId] = idxStr; 
+              if (nextDigitIndex < slotDigitCount) ticketToDigit[globalTicketsPool[i].sysId] = idxStr[nextDigitIndex];
+          }
+      }
+      const bgList = document.getElementById('grand-prize-bg-list');
+      resetAutoScroll();
+      if (filteredTickets.length <= 100) {
+          let ticketSizeClass = filteredTickets.length <= 10 ? 'ticket-lg' : 'ticket-sm';
+          bgList.innerHTML = `<div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:15px; padding-bottom:120px; margin-top:20px;">
+              ${filteredTickets.map(t => {
+                  let nextDigit = ticketToDigit[t.sysId] || "0";
+                  let sysIdx = ticketToSysIndex[t.sysId];
+                  return `<div class="candidate-wrapper" data-digit="${nextDigit}">${generateTicketHTML(t, ticketSizeClass, false, currentGrandPrize.name, filteredTickets.length, sysIdx)}</div>`;
+              }).join('')}
+          </div>`;
+          setTimeout(startAutoScroll, 500);
+      } else {
+          bgList.innerHTML = `<div id="bg-text-container" class="bg-list-inner" style="padding-bottom:120px;"></div>`;
+          let container = document.getElementById('bg-text-container');
+          let names = filteredTickets.map(t => t.displayText), chunkSize = 500, currentIndex = 0, currentRenderId = Date.now();
+          bgList.dataset.renderId = currentRenderId;
+          function renderNextBatch() {
+              if (bgList.dataset.renderId != currentRenderId || currentIndex >= names.length) return; 
+              let chunk = names.slice(currentIndex, currentIndex + chunkSize);
+              container.appendChild(document.createTextNode((currentIndex > 0 ? '　　' : '') + chunk.join('　　')));
+              currentIndex += chunkSize; requestAnimationFrame(renderNextBatch); 
+          }
+          requestAnimationFrame(renderNextBatch); setTimeout(startAutoScroll, 500);
+      }
+  }
+
+  function finalizeGrandPrize() {
+      resetAutoScroll();
+      let winnerIndex = parseInt(slotLockedPrefix, 10);
+      let winner = globalTicketsPool[winnerIndex];
+      globalTicketsPool.splice(winnerIndex, 1);
+      drawResults[currentGrandPrize.name].main.push(winner);
+      document.getElementById('grand-prize-overlay').classList.add('hidden');
+      let currentDrawn = drawResults[currentGrandPrize.name].main.length, totalNeeded = currentGrandPrize.count;
+      document.getElementById("showcase-prize-name").innerText = `🎉 ${currentGrandPrize.name} 🎉`;
+      const area = document.getElementById("showcase-winner-result");
+      area.innerHTML = drawResults[currentGrandPrize.name].main.map(t => generateTicketHTML(t, totalNeeded > 10 ? 'ticket-sm' : 'ticket-lg', true, currentGrandPrize.name, totalNeeded)).join('');
+      if (currentDrawn < totalNeeded) {
+          let btn = document.getElementById("btn-main-action");
+          btn.innerText = `👉 繼續抽出下一位 (${currentDrawn + 1}/${totalNeeded})`;
+          btn.classList.remove("hidden");
+          document.getElementById("btn-fallback-blindbox").classList.remove("hidden");
+          document.getElementById("decision-buttons").classList.add("hidden");
+      } else {
+          document.getElementById("btn-main-action").classList.add("hidden");
+          document.getElementById("btn-fallback-blindbox").classList.add("hidden");
+          document.getElementById("decision-buttons").classList.remove("hidden");
+      }
+      updateStatusBar(); 
+  }
+
+  function executeBlindBoxFallback() {
+      const p = globalPrizes[currentPrizeIndex];
+      let currentDrawn = drawResults[p.name].main.length, remaining = p.count - currentDrawn;
+      if (!confirm(`確定要將剩餘的 ${remaining} 個名額轉為「盲盒解碼」抽取嗎？`)) return;
+      let winners = []; for(let i=0; i < remaining; i++) if(globalTicketsPool.length > 0) winners.push(globalTicketsPool.splice(Math.floor(Math.random()*globalTicketsPool.length),1)[0]);
+      drawResults[p.name].main = drawResults[p.name].main.concat(winners);
+      document.getElementById("btn-fallback-blindbox").classList.add("hidden");
+      document.getElementById("btn-main-action").classList.add("hidden");
+      renderBlindBoxDirectly(p.name, winners);
+  }
+
+  function renderBlindBoxDirectly(prizeName, newWinners) {
+      const p = globalPrizes.find(x => x.name === prizeName), area = document.getElementById("showcase-winner-result");
+      const fullList = drawResults[prizeName].main, ticketSize = p.count > 10 ? 'ticket-sm' : 'ticket-lg';
+      let mysteryBoxes = fullList.map(t => ({ revealed: !newWinners.find(nw => nw.sysId === t.sysId), winner: t }));
+      const genRandomCode = () => { const chars = '0123456789ABCDEF'; let code = ''; for(let i=0; i<4; i++) code += chars[Math.floor(Math.random() * chars.length)]; return code; };
+      const renderState = () => { area.innerHTML = mysteryBoxes.map(box => box.revealed ? generateTicketHTML(box.winner, ticketSize, true, prizeName, p.count) : `<span class="winner-ticket ${ticketSize} ticket-mystery"><span style="font-family:monospace; font-weight:bold;">${genRandomCode()}</span><div class="source-icon">🎲</div></span>`).join(''); };
+      let scramble = setInterval(renderState, 50), revealIdx = mysteryBoxes.findIndex(b => !b.revealed);
+      let revealInterval = setInterval(() => {
+          if (revealIdx === -1 || revealIdx >= mysteryBoxes.length) { clearInterval(revealInterval); clearInterval(scramble); renderState(); document.getElementById("decision-buttons").classList.remove("hidden"); updateStatusBar(); return; }
+          mysteryBoxes[revealIdx].revealed = true; revealIdx = mysteryBoxes.findIndex(b => !b.revealed);
+      }, 300);
+  }
 </script>
+<div id="grand-prize-overlay" class="modal-overlay hidden" style="z-index: 9999; background: radial-gradient(circle, #2c3e50 0%, #000000 100%); flex-direction: column; overflow: hidden; align-items: center; justify-content: center;">
+    
+    <div id="grand-prize-bg-list"></div>
+
+    <div class="slot-machine-container">
+        <button id="btn-slot-minimize" class="slot-minimize-btn" onclick="toggleSlotMinimize(event)" title="收起面板">
+            <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 9 12 17 20 9"></polyline>
+            </svg>
+        </button>
+
+        <h2 id="grand-prize-title" style="margin-bottom: 20px;">👑 壓軸大獎 👑</h2>
+        
+        <div id="slot-macro-board" class="macro-board">
+            <div id="macro-survivors" class="survivor-text">🔥 決賽圈倖存者：-- 人</div>
+            <div id="macro-range" class="range-text">✨ 狀態：等待洗牌，重新分發座號...</div>
+        </div>
+        
+        <div id="slot-reels-area">
+            <div class="slot-reel">0</div>
+            <div class="slot-reel">0</div>
+            <div class="slot-reel">0</div>
+        </div>
+
+        <div id="slot-micro-hint" class="micro-hint"></div>
+
+        <div class="slot-controls">
+            <button id="btn-slot-shuffle" class="btn-primary" style="font-size: 24px; padding: 15px 40px; border-radius: 50px; background-color:#8e44ad;" onclick="executeGrandPrizeShuffle()">🔀 執行決賽大洗牌</button>
+            <button id="btn-slot-action" class="btn-primary hidden" style="font-size: 24px; padding: 15px 40px; border-radius: 50px;">🎰 啟動老虎機</button>
+            <button id="btn-slot-cancel" class="btn-warning" style="font-size: 18px;" onclick="resetAutoScroll(); document.getElementById('grand-prize-overlay').classList.add('hidden')">🔙 返回主畫面</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>

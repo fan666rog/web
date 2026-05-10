@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券抽獎系統 V5.0.1</title>
+  <title>彩券抽獎系統 V5.0.2</title>
   <style>
     /* ================= 基礎樣式 ================= */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
@@ -283,7 +283,7 @@
         box-shadow: inset 0 0 20px rgba(241, 196, 15, 0.3), 0 10px 20px rgba(0,0,0,0.5);
     }
     
-    .slot-controls { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+    .slot-controls { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; position: relative; z-index: 100; }
 
     /* 老虎機縮小狀態 */
     .slot-machine-container.minimized {
@@ -391,7 +391,17 @@
         background: rgba(255, 56, 56, 0.1);
         animation: pulse-locked 1s infinite alternate;
         z-index: 60 !important; /* ★ 最終贏家絕對特權 */
+        pointer-events: none !important;
     }
+
+    .candidate-wrapper.ghost-mode {
+        opacity: 0.15 !important;
+        transform: scale(0.9) !important; /* 微微縮小，更有「沉退下去」的空間感 */
+        animation: none !important; /* 暫停紅光心跳 */
+        box-shadow: none !important; /* 移除深陰影 */
+        filter: grayscale(50%);
+    }
+
     /* 動態跳動也要把重陰影加進去 */
     @keyframes pulse-locked {
         0% { box-shadow: 0 0 20px rgba(255, 56, 56, 0.8), 0 20px 40px rgba(0,0,0,0.8); }
@@ -537,7 +547,7 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V5.0.1 (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V5.0.2 (點擊修改標題)</h1>
     
     <details class="instructions-panel">
       <summary>📖 點擊查看系統使用說明</summary>
@@ -2205,7 +2215,22 @@
       bgList.ontouchmove = handleUserInteraction;
       bgList.onmousedown = handleUserInteraction;
       bgList.onscroll = function() { if (isUserInteracting && !container.classList.contains('minimized')) container.classList.add('minimized'); };
-      container.onclick = function() { if (this.classList.contains('minimized')) this.classList.remove('minimized'); };
+      container.dataset.ghostToggleEnabled = "false"; // 初始狀態關閉透視權限
+      container.onclick = function() { 
+          if (this.classList.contains('minimized')) {
+              this.classList.remove('minimized'); 
+          } else if (this.dataset.ghostToggleEnabled === "true") {
+              // 尋找被鎖定的那張票，進行幽靈化切換
+              document.querySelectorAll('.candidate-wrapper.highlight-locked').forEach(t => {
+                  t.classList.toggle('ghost-mode');
+              });
+          }
+      };
+      
+      // ★ 防禦結界：保護操作按鈕區，避免點擊按鈕時不小心觸發面板的透視切換
+      document.querySelector('.slot-controls').onclick = function(e) {
+          e.stopPropagation();
+      };
   }
 
   // 2. 執行決賽圈大洗牌
@@ -2356,7 +2381,7 @@
       btn.disabled = false; btn.style.opacity = "1";
       updateSlotHints(slotLockedPrefix);
       if (!isFinal) { renderSlotBackground(slotLockedPrefix); btn.innerText = `👉 鎖定第 ${slotCurrentReel + 1} 碼`; }
-      else { btn.innerText = `🎉 揭曉得獎者`; btn.onclick = finalizeGrandPrize; }
+      else { btn.innerText = `🎉 揭曉得獎者`; btn.onclick = finalizeGrandPrize; document.querySelector('.slot-machine-container').dataset.ghostToggleEnabled = "true"; }
   }
 
   function renderSlotBackground(prefix) {

@@ -459,6 +459,49 @@
       .csv-step-header button, .csv-step-header .csv-btn-upload { width: 100%; margin-top: 5px; }
       #csv-preview-summary { width: 100%; text-align: right; margin-top: -5px; margin-bottom: 10px; }
     }
+
+      /* ================= 頭獎老虎機手機版 RWD ================= */
+      /* 1. 容器瘦身與防卡死機制 */
+      .slot-machine-container {
+          padding: 25px 15px; /* 大幅縮減原本 50px 的超厚內邊距 */
+          width: 95%; /* 盡可能利用手機螢幕寬度 */
+          max-height: 90vh; /* ★ 核心救援：限制面板最高只能佔螢幕的 90% */
+          overflow-y: auto; /* ★ 萬一內容真的太多，允許面板「內部上下滑動」，保證按鈕絕對按得到！ */
+          border-radius: 12px;
+      }
+      
+      /* 2. 標題與看板降級 */
+      #grand-prize-title { font-size: 28px; margin-bottom: 15px; letter-spacing: 2px; }
+      .macro-board { padding: 10px; margin-bottom: 15px; }
+      .macro-board .survivor-text { font-size: 20px; margin-bottom: 5px; }
+      .macro-board .range-text { font-size: 14px; }
+      
+      /* 3. 轉軸極限壓縮 (容納 5 碼萬人陣列) */
+      #slot-reels-area { gap: 6px; margin-bottom: 20px; }
+      .slot-reel {
+          width: 45px;   /* 寬度從 110px 狂砍到 45px */
+          height: 65px;  /* 高度從 150px 狂砍到 65px */
+          font-size: 40px; /* 字體縮小配合 */
+          border-width: 2px;
+          border-radius: 8px;
+      }
+      
+      .micro-hint { font-size: 15px; margin-bottom: 15px; height: auto; min-height: 24px; }
+      
+      /* 4. 按鈕改為「垂直疊羅漢」 */
+      .slot-controls {
+          flex-direction: column; /* 改為上下排列，不左右互擠 */
+          gap: 12px;
+      }
+      .slot-controls button {
+          width: 100%; /* 按鈕撐滿面板寬度，超好點擊 */
+          font-size: 18px !important; /* 強制覆蓋原本的 24px 巨無霸字體 */
+          padding: 12px !important;
+          margin: 0;
+      }
+      
+      /* 右上角縮小按鈕微調 */
+      .slot-minimize-btn { top: 10px; right: 10px; width: 36px; height: 36px; }
   </style>
 </head>
 <body>

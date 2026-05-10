@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券抽獎系統 V5.0</title>
+  <title>彩券抽獎系統 V5.0.1</title>
   <style>
     /* ================= 基礎樣式 ================= */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
@@ -227,7 +227,7 @@
     #grand-prize-bg-list {
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         padding: 40px; box-sizing: border-box;
-        overflow-y: auto; z-index: 1; pointer-events: auto;
+        overflow-y: auto; z-index: auto; pointer-events: auto;
     }
     
     /* 新增：專門負責分欄的內層容器，不限制高度 */
@@ -244,23 +244,34 @@
         #grand-prize-bg-list { padding: 20px; }
         .bg-list-inner { column-count: 2; font-size: 16px; } 
     }
+
     .slot-machine-container {
         position: relative; z-index: 10; text-align: center;
-        background: rgba(0, 0, 0, 0.6); padding: 50px; border-radius: 20px;
+        background: rgba(0, 0, 0, 0.6); 
+        padding: 30px 30px 30px 30px; 
+        border-radius: 20px;
         box-shadow: 0 0 40px rgba(255, 215, 0, 0.2); border: 1px solid rgba(255,215,0,0.3);
         backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-        width: 90%; max-width: 800px;
+        width: 80vw; max-width: 700px;
     }
 
-    #grand-prize-title { color: #f1c40f; font-size: 48px; margin-top: 0; margin-bottom: 40px; letter-spacing: 5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);}
+    #grand-prize-title { 
+        color: #f1c40f; 
+        font-size: clamp(32px, 5vw, 55px); 
+        margin-top: 0; margin-bottom: 30px; 
+        letter-spacing: 5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
     
     #slot-reels-area {
         display: flex; justify-content: center; gap: 20px; margin-bottom: 40px; flex-wrap: wrap;
     }
     
     .slot-reel {
-        width: 110px; height: 150px; background: #fff; color: #333;
-        font-size: 90px; font-weight: bold; border-radius: 15px;
+        width: clamp(60px, 9vw, 120px); 
+        height: clamp(85px, 13vw, 160px); 
+        font-size: clamp(50px, 8vw, 100px); 
+        background: #fff; color: #333;
+        font-weight: bold; border-radius: 15px;
         display: flex; justify-content: center; align-items: center;
         box-shadow: inset 0 10px 20px rgba(0,0,0,0.2), 0 10px 20px rgba(0,0,0,0.5);
         border: 4px solid #ccc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -347,7 +358,9 @@
 
     /* ================= 候選人高光與淘汰特效 ================= */
     .candidate-wrapper {
-        transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1); /* 平滑縮放與消失 */
+        position: relative; /* ★ 加入相對定位，這樣 z-index 才會生效 */
+        z-index: 1; /* 平常乖乖待在老虎機 (z-index:10) 的後面 */
+        transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); /* ★ 改為超 Q 彈的「彈簧轉場曲線」，讓跳出來的動態更有生命力 */
         border-radius: 12px;
         padding: 4px;
         border: 4px solid transparent;
@@ -362,31 +375,32 @@
         filter: grayscale(100%);
         pointer-events: none;
     }
-    /* 跑馬燈高光 (10人內專屬) */
+    /* 跑馬燈高光 (3D 躍出特效) */
     .candidate-wrapper.highlight-active {
         border-color: #f1c40f;
-        box-shadow: 0 0 25px rgba(241, 196, 15, 0.9);
-        transform: scale(1.15);
-        z-index: 10;
+        /* ★ 加上極深的黑色底陰影，拉開與背後老虎機的 Z 軸空間感 */
+        box-shadow: 0 0 25px rgba(241, 196, 15, 0.9), 0 20px 40px rgba(0,0,0,0.85) !important;
+        transform: scale(1.15) !important; /* ★ 依你的要求，精準控制在 1.15 倍 */
+        z-index: 50 !important; /* ★ 獲得最高圖層特權，直接壓過面板的 z-index: 10！ */
         background: rgba(241, 196, 15, 0.15);
     }
     /* 最終鎖定霸氣紅光 */
     .candidate-wrapper.highlight-locked {
         border-color: #ff3838;
-        box-shadow: 0 0 40px rgba(255, 56, 56, 1);
-        transform: scale(1.2);
+        transform: scale(1.15) !important; /* 鎖定時也保持 1.15 倍不失控 */
         background: rgba(255, 56, 56, 0.1);
         animation: pulse-locked 1s infinite alternate;
-        z-index: 20;
+        z-index: 60 !important; /* ★ 最終贏家絕對特權 */
     }
+    /* 動態跳動也要把重陰影加進去 */
     @keyframes pulse-locked {
-        0% { box-shadow: 0 0 20px rgba(255, 56, 56, 0.8); }
-        100% { box-shadow: 0 0 50px rgba(255, 56, 56, 1); }
+        0% { box-shadow: 0 0 20px rgba(255, 56, 56, 0.8), 0 20px 40px rgba(0,0,0,0.8); }
+        100% { box-shadow: 0 0 50px rgba(255, 56, 56, 1), 0 30px 50px rgba(0,0,0,0.95); }
     }
 
     /* ================= 頭獎老虎機 - 右上角收起按鈕 ================= */
     .slot-minimize-btn {
-        position: absolute; top: 20px; right: 20px;
+        position: absolute; bottom: 20px; right: 20px;
         width: 44px; height: 44px; /* 稍微放大一點點讓手感更好 */
         background: rgba(255, 255, 255, 0.15);
         border: 2px solid rgba(255, 255, 255, 0.3);
@@ -501,6 +515,9 @@
       
       /* 右上角縮小按鈕微調 */
       .slot-minimize-btn { top: 10px; right: 10px; width: 36px; height: 36px; }
+
+      /* 手機版直接隱藏縮小按鈕，靠點擊背景觸發即可 */
+      .slot-minimize-btn { display: none !important; }
     }
   </style>
 </head>
@@ -520,7 +537,7 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V5.0 (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V5.0.1 (點擊修改標題)</h1>
     
     <details class="instructions-panel">
       <summary>📖 點擊查看系統使用說明</summary>

@@ -1564,7 +1564,10 @@
           } 
           // 狀態 B：這個獎項完全還沒開始抽
           else {
-              fallbackBtn.classList.add("hidden");
+              // ★ 修正：一開始就給緊急逃生門！如果是頭獎(有特效)，直接顯示盲盒按鈕
+              if (p.effect) fallbackBtn.classList.remove("hidden"); 
+              else fallbackBtn.classList.add("hidden");
+
               btn.innerText = `👉 抽出正取：${p.name}`;
               document.getElementById("showcase-prize-name").innerText = `🎁 即將抽出：${p.name}`;
 

@@ -12,6 +12,7 @@
         }
         canvas {
             display: block;
+            touch-action: none; /* 關鍵修正：防止手機瀏覽器觸控時觸發上下捲動或重新整理 */
         }
         #controls-container {
             position: absolute;
@@ -129,7 +130,6 @@
         import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
         import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-        // --- 基本 Three.js 設定 ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x222222);
 
@@ -141,7 +141,7 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // --- 控制項（保持單一實例） ---
+        // --- 控制項 ---
         const controls = new TrackballControls(camera, renderer.domElement);
         controls.target.set(0, 0, 0);
         controls.noRotate = false;
@@ -150,10 +150,12 @@
         controls.staticMoving = true;
         controls.dynamicDampingFactor = 0.2;
         controls.rotateSpeed = 3.0;
+        
+        // 永遠保持開啟，避免 Three.js 內部遺失 pointerup 事件產生幽靈指標
+        controls.enabled = true; 
 
-        // 重新定義滑鼠按鍵對應：左鍵平移(已設noPan所以無效)、右鍵旋轉視角
         controls.mouseButtons = {
-            LEFT: THREE.MOUSE.PAN,
+            LEFT: THREE.MOUSE.PAN, 
             MIDDLE: THREE.MOUSE.ZOOM,
             RIGHT: THREE.MOUSE.ROTATE
         };
@@ -163,10 +165,7 @@
 
         function initGizmo() {
             const gizmoContainer = document.getElementById('gizmo-container');
-            if (!gizmoContainer) {
-                console.error("Gizmo container not found!");
-                return;
-            }
+            if (!gizmoContainer) return;
 
             gizmoRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
             gizmoRenderer.setSize(gizmoContainer.clientWidth, gizmoContainer.clientHeight);
@@ -192,9 +191,6 @@
             gizmoScene.add(gizmo);
 
             const axisLength = 1;
-            const headLength = 0.2;
-            const headWidth = 0.15;
-
             const axes = [
                 { dir: new THREE.Vector3(1, 0, 0), color: 0xff0000, name: 'X' },
                 { dir: new THREE.Vector3(-1, 0, 0), color: 0x880000, name: '-X' },
@@ -206,14 +202,11 @@
 
             axes.forEach(axisInfo => {
                 const isPositive = !axisInfo.name.startsWith('-');
-
                 if (isPositive) {
-                    const arrow = new THREE.ArrowHelper(axisInfo.dir, new THREE.Vector3(0,0,0), axisLength, axisInfo.color, headLength, headWidth);
+                    const arrow = new THREE.ArrowHelper(axisInfo.dir, new THREE.Vector3(0,0,0), axisLength, axisInfo.color, 0.2, 0.15);
                     gizmo.add(arrow);
                 } else {
-                    const dotGeom = new THREE.SphereGeometry(0.05, 16, 16);
-                    const dotMat = new THREE.MeshBasicMaterial({ color: axisInfo.color });
-                    const dot = new THREE.Mesh(dotGeom, dotMat);
+                    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 16), new THREE.MeshBasicMaterial({ color: axisInfo.color }));
                     dot.position.copy(axisInfo.dir).multiplyScalar(axisLength);
                     gizmo.add(dot);
                 }
@@ -230,17 +223,14 @@
                 label.position.copy(axisInfo.dir).multiplyScalar(axisLength * 1.25);
                 gizmo.add(label);
 
-                let hitbox;
+                let hitbox = new THREE.Mesh(
+                    isPositive ? new THREE.CylinderGeometry(0.15, 0.15, axisLength, 8) : new THREE.SphereGeometry(0.18, 16, 16),
+                    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0 })
+                );
                 if (isPositive) {
-                    const hitboxGeom = new THREE.CylinderGeometry(0.15, 0.15, axisLength, 8);
-                    const hitboxMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0 });
-                    hitbox = new THREE.Mesh(hitboxGeom, hitboxMat);
                     hitbox.position.copy(axisInfo.dir).multiplyScalar(axisLength / 2);
                     hitbox.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axisInfo.dir.clone().normalize());
                 } else {
-                    const hitboxGeom = new THREE.SphereGeometry(0.18, 16, 16);
-                    const hitboxMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0 });
-                    hitbox = new THREE.Mesh(hitboxGeom, hitboxMat);
                     hitbox.position.copy(axisInfo.dir).multiplyScalar(axisLength);
                 }
                 hitbox.name = axisInfo.name;
@@ -253,7 +243,6 @@
 
         function onGizmoClick(event) {
             if (isAnimating) return;
-
             const gizmoBounds = gizmoRenderer.domElement.getBoundingClientRect();
             const gizmoMouse = new THREE.Vector2();
             gizmoMouse.x = ((event.clientX - gizmoBounds.left) / gizmoBounds.width) * 2 - 1;
@@ -261,32 +250,24 @@
             
             gizmoRaycaster.setFromCamera(gizmoMouse, gizmoCamera);
             const intersects = gizmoRaycaster.intersectObjects(gizmo.children, true);
-
             if (intersects.length > 0) {
                 const hit = intersects.find(i => i.object.name);
-                if (hit) {
-                    snapCameraToView(hit.object.name);
-                }
+                if (hit) snapCameraToView(hit.object.name);
             }
         }
 
         let cameraAnimationId = null;
         function animateCamera(targetPosition, targetUp) {
-            if (cameraAnimationId) {
-                cancelAnimationFrame(cameraAnimationId);
-            }
+            if (cameraAnimationId) cancelAnimationFrame(cameraAnimationId);
             setControlsEnabled(false);
 
             const startPosition = camera.position.clone();
             const startUp = camera.up.clone();
-            const duration = 500;
-            const startTime = performance.now();
+            const duration = 500, startTime = performance.now();
 
-            let n1 = startPosition.clone().normalize();
-            let n2 = targetPosition.clone().normalize();
+            let n1 = startPosition.clone().normalize(), n2 = targetPosition.clone().normalize();
             let pDot = n1.dot(n2);
-            let posAxis = new THREE.Vector3();
-            let posMaxAngle = Math.acos(Math.max(-1, Math.min(1, pDot)));
+            let posAxis = new THREE.Vector3(), posMaxAngle = Math.acos(Math.max(-1, Math.min(1, pDot)));
 
             if (Math.abs(pDot + 1) < 0.001) { 
                 posAxis.set(0, 1, 0); 
@@ -296,33 +277,22 @@
                 posAxis.crossVectors(n1, n2).normalize();
             }
 
-            let u1 = startUp.clone().normalize();
-            let u2 = targetUp.clone().normalize();
+            let u1 = startUp.clone().normalize(), u2 = targetUp.clone().normalize();
             let uDot = u1.dot(u2);
-            let upAxis = new THREE.Vector3();
-            let upMaxAngle = Math.acos(Math.max(-1, Math.min(1, uDot)));
+            let upAxis = new THREE.Vector3(), upMaxAngle = Math.acos(Math.max(-1, Math.min(1, uDot)));
 
-            if (Math.abs(uDot + 1) < 0.001) { 
-                upAxis.copy(startPosition).normalize().negate();
-            } else {
-                upAxis.crossVectors(u1, u2).normalize();
-            }
+            if (Math.abs(uDot + 1) < 0.001) upAxis.copy(startPosition).normalize().negate();
+            else upAxis.crossVectors(u1, u2).normalize();
 
             function animate() {
                 const t = Math.min(1, (performance.now() - startTime) / duration);
                 const easedT = 0.5 * (1 - Math.cos(t * Math.PI)); 
 
-                if (posMaxAngle > 0) {
-                    camera.position.copy(startPosition).applyAxisAngle(posAxis, posMaxAngle * easedT);
-                } else {
-                    camera.position.copy(targetPosition);
-                }
+                if (posMaxAngle > 0) camera.position.copy(startPosition).applyAxisAngle(posAxis, posMaxAngle * easedT);
+                else camera.position.copy(targetPosition);
 
-                if (upMaxAngle > 0) {
-                    camera.up.copy(startUp).applyAxisAngle(upAxis, upMaxAngle * easedT).normalize();
-                } else {
-                    camera.up.copy(targetUp).normalize();
-                }
+                if (upMaxAngle > 0) camera.up.copy(startUp).applyAxisAngle(upAxis, upMaxAngle * easedT).normalize();
+                else camera.up.copy(targetUp).normalize();
 
                 camera.lookAt(0, 0, 0);
                 camera.updateMatrixWorld();
@@ -334,10 +304,7 @@
                     camera.up.copy(targetUp).normalize();
                     camera.lookAt(0, 0, 0);
                     camera.updateMatrixWorld();
-
-                    controls.enabled = true;
                     controls.update(); 
-                    
                     cameraAnimationId = null;
                     setControlsEnabled(true);
                 }
@@ -348,39 +315,18 @@
         function snapCameraToView(axis) {
             const distance = camera.position.length();
             let position, up;
-
             switch (axis) {
-                case 'X': 
-                    position = new THREE.Vector3(distance, 0, 0);
-                    up = new THREE.Vector3(0, 1, 0);
-                    break;
-                case '-X': 
-                     position = new THREE.Vector3(-distance, 0, 0);
-                     up = new THREE.Vector3(0, 1, 0);
-                     break;
-                case 'Y': 
-                    position = new THREE.Vector3(0, distance, 0);
-                    up = new THREE.Vector3(0, 0, -1);
-                    break;
-                case '-Y':
-                    position = new THREE.Vector3(0, -distance, 0);
-                    up = new THREE.Vector3(0, 0, 1);
-                    break;
-                case 'Z': 
-                    position = new THREE.Vector3(0, 0, distance);
-                    up = new THREE.Vector3(0, 1, 0);
-                    break;
-                case '-Z':
-                    position = new THREE.Vector3(0, 0, -distance);
-                    up = new THREE.Vector3(0, 1, 0);
-                    break;
+                case 'X': position = new THREE.Vector3(distance, 0, 0); up = new THREE.Vector3(0, 1, 0); break;
+                case '-X': position = new THREE.Vector3(-distance, 0, 0); up = new THREE.Vector3(0, 1, 0); break;
+                case 'Y': position = new THREE.Vector3(0, distance, 0); up = new THREE.Vector3(0, 0, -1); break;
+                case '-Y': position = new THREE.Vector3(0, -distance, 0); up = new THREE.Vector3(0, 0, 1); break;
+                case 'Z': position = new THREE.Vector3(0, 0, distance); up = new THREE.Vector3(0, 1, 0); break;
+                case '-Z': position = new THREE.Vector3(0, 0, -distance); up = new THREE.Vector3(0, 1, 0); break;
             }
-            if (position) {
-                animateCamera(position, up);
-            }
+            if (position) animateCamera(position, up);
         }
 
-        // --- UI 按鈕 ---
+        // --- UI & 光源 & 方塊初始化 ---
         const scrambleBtn = document.getElementById('scramble-btn');
         const resetBtn = document.getElementById('reset-btn');
         const undoBtn = document.getElementById('undo-btn');
@@ -388,74 +334,42 @@
         const invertViewBtn = document.getElementById('invert-view-btn');
         const rotateViewBtn = document.getElementById('rotate-view-btn');
 
-        // --- 光源 ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-        scene.add(ambientLight);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
         directionalLight.position.set(5, 10, 7.5);
         scene.add(directionalLight);
 
-        // --- 魔術方塊 ---
         const rubiksCube = new THREE.Group();
-        const CUBIE_SIZE = 1;
-        const CUBIE_GAP = 0.1;
-        const positionOffset = CUBIE_SIZE + CUBIE_GAP;
+        const CUBIE_SIZE = 1, CUBIE_GAP = 0.1, positionOffset = CUBIE_SIZE + CUBIE_GAP;
 
-        // 電流內部材質
         const insideMaterial = new THREE.ShaderMaterial({
             side: THREE.DoubleSide,
-            uniforms: {
-                u_time: { value: 0.0 },
-            },
-            vertexShader: `
-                varying vec2 vUv;
-                void main() {
-                    vUv = uv;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `,
+            uniforms: { u_time: { value: 0.0 } },
+            vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
             fragmentShader: `
-                uniform float u_time;
-                varying vec2 vUv;
-
-                float random(vec2 st) {
-                    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
-                }
-
+                uniform float u_time; varying vec2 vUv;
+                float random(vec2 st) { return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123); }
                 float noise(vec2 st) {
-                    vec2 i = floor(st);
-                    vec2 f = fract(st);
-                    float a = random(i);
-                    float b = random(i + vec2(1.0, 0.0));
-                    float c = random(i + vec2(0.0, 1.0));
-                    float d = random(i + vec2(1.0, 1.0));
+                    vec2 i = floor(st), f = fract(st);
+                    float a = random(i), b = random(i + vec2(1.0, 0.0)), c = random(i + vec2(0.0, 1.0)), d = random(i + vec2(1.0, 1.0));
                     vec2 u = f * f * (3.0 - 2.0 * f);
                     return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.y * u.x;
                 }
-
                 void main() {
-                    vec2 st = vUv * 5.0; 
-                    st.x += u_time * 0.4;
+                    vec2 st = vUv * 5.0; st.x += u_time * 0.4;
                     float n = noise(st * vec2(1.0, 3.0) + vec2(0.0, u_time * 0.8));
                     float intensity = pow(n, 20.0);
-                    vec3 color1 = vec3(0.1, 0.0, 0.3);
-                    vec3 color2 = vec3(0.8, 0.5, 1.0);
-                    vec3 finalColor = mix(color1, color2, intensity);
-                    float flash = sin(u_time * 3.0) * 0.5 + 0.5;
-                    finalColor *= 0.5 + (flash * intensity * 1.5);
+                    vec3 finalColor = mix(vec3(0.1, 0.0, 0.3), vec3(0.8, 0.5, 1.0), intensity);
+                    finalColor *= 0.5 + ((sin(u_time * 3.0) * 0.5 + 0.5) * intensity * 1.5);
                     gl_FragColor = vec4(finalColor, 1.0);
                 }
             `
         });
 
         const materials = {
-            right: new THREE.MeshStandardMaterial({ color: 0xff0000 }), 
-            left: new THREE.MeshStandardMaterial({ color: 0xffa500 }), 
-            top: new THREE.MeshStandardMaterial({ color: 0xffffff }), 
-            bottom: new THREE.MeshStandardMaterial({ color: 0xffff00 }), 
-            front: new THREE.MeshStandardMaterial({ color: 0x0000ff }), 
-            back: new THREE.MeshStandardMaterial({ color: 0x008000 }), 
-            inside: insideMaterial 
+            right: new THREE.MeshStandardMaterial({ color: 0xff0000 }), left: new THREE.MeshStandardMaterial({ color: 0xffa500 }), 
+            top: new THREE.MeshStandardMaterial({ color: 0xffffff }), bottom: new THREE.MeshStandardMaterial({ color: 0xffff00 }), 
+            front: new THREE.MeshStandardMaterial({ color: 0x0000ff }), back: new THREE.MeshStandardMaterial({ color: 0x008000 }), inside: insideMaterial 
         };
 
         const cubies = [];
@@ -463,16 +377,11 @@
             for (let y = -1; y <= 1; y++) {
                 for (let z = -1; z <= 1; z++) {
                     if (x === 0 && y === 0 && z === 0) continue;
-                    const cubieGeometry = new THREE.BoxGeometry(CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE);
-                    const cubieMaterials = [
-                        x === 1 ? materials.right : materials.inside,
-                        x === -1 ? materials.left : materials.inside,
-                        y === 1 ? materials.top : materials.inside,
-                        y === -1 ? materials.bottom : materials.inside,
-                        z === 1 ? materials.front : materials.inside,
-                        z === -1 ? materials.back : materials.inside
-                    ];
-                    const cubie = new THREE.Mesh(cubieGeometry, cubieMaterials);
+                    const cubie = new THREE.Mesh(new THREE.BoxGeometry(CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE), [
+                        x === 1 ? materials.right : materials.inside, x === -1 ? materials.left : materials.inside,
+                        y === 1 ? materials.top : materials.inside, y === -1 ? materials.bottom : materials.inside,
+                        z === 1 ? materials.front : materials.inside, z === -1 ? materials.back : materials.inside
+                    ]);
                     cubie.position.set(x * positionOffset, y * positionOffset, z * positionOffset);
                     rubiksCube.add(cubie);
                     cubies.push(cubie);
@@ -481,7 +390,7 @@
         }
         scene.add(rubiksCube);
 
-        // --- 旋轉與歷史紀錄邏輯 ---
+        // --- 核心互動修正區 ---
         let moveHistory = [];
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
@@ -490,7 +399,8 @@
 
         function setControlsEnabled(enabled) {
             isAnimating = !enabled;
-            if (controls) controls.enabled = enabled;
+            // 關鍵修正：不再開關 enabled，而是透過 noRotate 阻止鏡頭轉動，維持事件傾聽不斷線
+            if (controls) controls.noRotate = !enabled; 
             scrambleBtn.disabled = !enabled;
             resetBtn.disabled = !enabled;
             undoBtn.disabled = !enabled || moveHistory.length === 0;
@@ -502,31 +412,37 @@
         function onPointerDown(event) {
             if (isAnimating) return;
             
-            // 嚴格限制：滑鼠操作只有左鍵能轉動單層方塊
+            // PC: 嚴格限制只有左鍵能選取方塊
             if (event.pointerType === 'mouse' && event.button !== 0) return;
+            
+            // 手機: 確保只有第一根手指能轉方塊，多指手勢交給 Trackball 處理
+            if (event.pointerType === 'touch' && !event.isPrimary) return;
 
             const gizmoContainer = document.getElementById('gizmo-container');
-            if (gizmoContainer && gizmoContainer.contains(event.target)) {
-                return;
-            }
-            const pointer = (event.touches) ? event.touches[0] : event;
-            mouse.x = (pointer.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(pointer.clientY / window.innerHeight) * 2 + 1;
+            if (gizmoContainer && gizmoContainer.contains(event.target)) return;
+
+            // 修正：統一透過 event 讀取座標，不再誤用 touches 陣列
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(cubies);
+            
             if (intersects.length > 0) {
-                // 不再強制禁用 controls，視角操作由右鍵獨立接管
                 selectedCubie = intersects[0].object;
                 selectedFaceNormal = intersects[0].face.normal.clone();
                 isDragging = true;
                 dragStartPoint.set(mouse.x, mouse.y);
+                
+                // 抓到方塊的瞬間，動態鎖定相機旋轉，這樣滑鼠/手指滑動時就不會拉扯到整顆魔方
+                if (controls) controls.noRotate = true; 
             }
         }
 
         function onPointerMove(event) {
             if (!isDragging || isAnimating) return;
-            const pointer = (event.touches) ? event.touches[0] : event;
-            const currentPoint = new THREE.Vector2((pointer.clientX / window.innerWidth) * 2 - 1, -(pointer.clientY / window.innerHeight) * 2 + 1);
+            
+            const currentPoint = new THREE.Vector2((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
             const dragVector = currentPoint.clone().sub(dragStartPoint);
 
             if (dragVector.length() > 0.05) {
@@ -536,6 +452,7 @@
                 const cameraUp = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
                 const dragDir3D = cameraRight.clone().multiplyScalar(dragVector.x).add(cameraUp.clone().multiplyScalar(dragVector.y));
                 const rotationAxis = new THREE.Vector3().crossVectors(worldNormal, dragDir3D).normalize();
+                
                 let mainAxis = 'x', maxDot = 0;
                 ['x', 'y', 'z'].forEach(axis => {
                     const axisVec = new THREE.Vector3(axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
@@ -543,30 +460,36 @@
                     if (dot > maxDot) { maxDot = dot; mainAxis = axis; }
                 });
                 const direction = Math.sign(new THREE.Vector3(mainAxis === 'x' ? 1 : 0, mainAxis === 'y' ? 1 : 0, mainAxis === 'z' ? 1 : 0).dot(rotationAxis));
+                
                 rotateLayer({ pivot: selectedCubie.position.clone(), axis: mainAxis, direction: direction }, true);
             }
         }
 
-        // 獨立出的狀態重置函數
         function resetPointerState() {
-            if (controls && !isAnimating) controls.enabled = true;
+            // 只要手放開/滑出，且不是在動畫中，就立刻解鎖相機旋轉
+            if (controls && !isAnimating) {
+                controls.noRotate = false;
+            }
             isDragging = false;
+            selectedCubie = null;
         }
 
+        // --- 旋轉動畫 ---
         function rotateLayer(move, recordMove = false) {
             return new Promise(resolve => {
-                if (recordMove) {
-                    moveHistory.push(move);
-                }
-                setControlsEnabled(false);
+                if (recordMove) moveHistory.push(move);
+                setControlsEnabled(false); // 這邊會設定 isAnimating = true, noRotate = true
+                
                 const { pivot: pivotPoint, axis, direction } = move;
                 const layer = cubies.filter(c => Math.abs(c.position[axis] - pivotPoint[axis]) < 0.5);
                 const pivot = new THREE.Object3D();
                 scene.add(pivot);
                 layer.forEach(c => pivot.attach(c));
+                
                 const targetAngle = (Math.PI / 2) * direction;
                 const rotationAxisVec = new THREE.Vector3(axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
                 const animationDuration = 300, startTime = performance.now();
+                
                 const animateRotation = (time) => {
                     const t = Math.min(1, (time - startTime) / animationDuration);
                     const easedT = 1 - Math.pow(1 - t, 3);
@@ -584,7 +507,7 @@
                             c.position.copy(worldPos).divideScalar(positionOffset).round().multiplyScalar(positionOffset);
                             c.quaternion.copy(worldQuat);
                         });
-                        setControlsEnabled(true);
+                        setControlsEnabled(true); // 動畫結束，解除鎖定
                         resolve();
                     }
                 };
@@ -592,18 +515,16 @@
             });
         }
 
-        // --- 按鈕功能 ---
+        // --- 其餘按鈕邏輯 ---
         async function scrambleCube() {
             setControlsEnabled(false);
             moveHistory = []; 
-            const moves = 25, axes = ['x', 'y', 'z'], layers = [-1, 0, 1];
-            for (let i = 0; i < moves; i++) {
+            const axes = ['x', 'y', 'z'], layers = [-1, 0, 1];
+            for (let i = 0; i < 25; i++) {
                 const axis = axes[Math.floor(Math.random() * 3)];
-                const layerIndex = layers[Math.floor(Math.random() * 3)];
-                const direction = Math.random() < 0.5 ? 1 : -1;
                 const pivotPoint = new THREE.Vector3();
-                pivotPoint[axis] = layerIndex * positionOffset;
-                await rotateLayer({ pivot: pivotPoint, axis: axis, direction: direction }, false);
+                pivotPoint[axis] = layers[Math.floor(Math.random() * 3)] * positionOffset;
+                await rotateLayer({ pivot: pivotPoint, axis: axis, direction: Math.random() < 0.5 ? 1 : -1 }, false);
             }
             setControlsEnabled(true);
         }
@@ -611,37 +532,13 @@
         async function undoMove() {
             if (moveHistory.length === 0) return;
             const lastMove = moveHistory.pop();
-            const reversedMove = {
-                pivot: lastMove.pivot,
-                axis: lastMove.axis,
-                direction: -lastMove.direction
-            };
-            await rotateLayer(reversedMove, false);
+            await rotateLayer({ pivot: lastMove.pivot, axis: lastMove.axis, direction: -lastMove.direction }, false);
         }
 
-        function resetCameraOrientation() {
-            animateCamera(new THREE.Vector3(4, 4, 6), new THREE.Vector3(0, 1, 0));
-        }
-
-        function invertCamera() {
-            const newUp = camera.up.clone().negate();
-            animateCamera(camera.position.clone(), newUp);
-        }
-
-        function rotateCameraView() {
-            const lookDirection = new THREE.Vector3();
-            camera.getWorldDirection(lookDirection);
-            const quaternion = new THREE.Quaternion().setFromAxisAngle(lookDirection, -Math.PI / 2);
-            const newUp = camera.up.clone().applyQuaternion(quaternion);
-            animateCamera(camera.position.clone(), newUp);
-        }
-
-        // --- 事件監聽 ---
+        // --- 事件綁定 ---
         renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
         renderer.domElement.addEventListener('pointerdown', onPointerDown);
         renderer.domElement.addEventListener('pointermove', onPointerMove);
-        
-        // 確保各種中斷都能重置狀態防卡死
         renderer.domElement.addEventListener('pointerup', resetPointerState);
         renderer.domElement.addEventListener('pointerleave', resetPointerState);
         renderer.domElement.addEventListener('pointercancel', resetPointerState);
@@ -649,55 +546,47 @@
         scrambleBtn.addEventListener('click', scrambleCube);
         resetBtn.addEventListener('click', () => { window.location.reload(); });
         undoBtn.addEventListener('click', undoMove);
-        if(resetViewBtn) resetViewBtn.addEventListener('click', resetCameraOrientation);
-        if(invertViewBtn) invertViewBtn.addEventListener('click', invertCamera);
-        if(rotateViewBtn) rotateViewBtn.addEventListener('click', rotateCameraView);
+        if(resetViewBtn) resetViewBtn.addEventListener('click', () => animateCamera(new THREE.Vector3(4, 4, 6), new THREE.Vector3(0, 1, 0)));
+        if(invertViewBtn) invertViewBtn.addEventListener('click', () => animateCamera(camera.position.clone(), camera.up.clone().negate()));
+        if(rotateViewBtn) {
+            rotateViewBtn.addEventListener('click', () => {
+                const lookDir = new THREE.Vector3(); camera.getWorldDirection(lookDir);
+                animateCamera(camera.position.clone(), camera.up.clone().applyQuaternion(new THREE.Quaternion().setFromAxisAngle(lookDir, -Math.PI / 2)));
+            });
+        }
 
-        // --- 動畫循環 ---
+        // --- 渲染迴圈 ---
         const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);
-            const elapsedTime = clock.getElapsedTime();
-            insideMaterial.uniforms.u_time.value = elapsedTime;
-            
+            insideMaterial.uniforms.u_time.value = clock.getElapsedTime();
             if (controls) controls.update(); 
-            
             if (gizmoRenderer) {
                 gizmo.quaternion.copy(camera.quaternion).invert();
                 gizmoRenderer.render(gizmoScene, gizmoCamera);
                 labelRenderer.render(gizmoScene, gizmoCamera);
             }
-            
             renderer.render(scene, camera);
         }
 
-        // --- 處理視窗大小變更 ---
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
             if (controls) controls.handleResize();
-
             if (gizmoRenderer) {
-                const gizmoContainer = document.getElementById('gizmo-container');
-                gizmoCamera.aspect = gizmoContainer.clientWidth / gizmoContainer.clientHeight;
+                const container = document.getElementById('gizmo-container');
+                gizmoCamera.aspect = container.clientWidth / container.clientHeight;
                 gizmoCamera.updateProjectionMatrix();
-                gizmoRenderer.setSize(gizmoContainer.clientWidth, gizmoContainer.clientHeight);
-                labelRenderer.setSize(gizmoContainer.clientWidth, gizmoContainer.clientHeight);
+                gizmoRenderer.setSize(container.clientWidth, container.clientHeight);
+                labelRenderer.setSize(container.clientWidth, container.clientHeight);
             }
         });
 
-        // --- 初始化執行 ---
         setControlsEnabled(true);
         initGizmo();
         animate();
-
-        const yearSpan = document.getElementById('copyright-year');
-        if (yearSpan) {
-            yearSpan.textContent = new Date().getFullYear();
-        }
-
-        window.camera = camera;
+        if (document.getElementById('copyright-year')) document.getElementById('copyright-year').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>

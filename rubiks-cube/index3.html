@@ -137,24 +137,19 @@
         camera.position.set(4, 4, 6);
         camera.lookAt(scene.position);
 
-        // --- 控制項 ---
-        let controls;
-        function initControls() {
-            if (controls) controls.dispose();
-            controls = new TrackballControls(camera, renderer.domElement);
-            controls.target.set(0, 0, 0); // 強制鎖定相機目標點在方塊中心
-            controls.noRotate = false;
-            controls.noPan = true;
-            controls.noZoom = true;
-            controls.staticMoving = true;
-            controls.dynamicDampingFactor = 0.2;
-            controls.rotateSpeed = 3.0;
-        }
-
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-        initControls();
+
+        // --- 控制項（保持單一實例） ---
+        const controls = new TrackballControls(camera, renderer.domElement);
+        controls.target.set(0, 0, 0);
+        controls.noRotate = false;
+        controls.noPan = true;
+        controls.noZoom = true;
+        controls.staticMoving = true;
+        controls.dynamicDampingFactor = 0.2;
+        controls.rotateSpeed = 3.0;
 
         // --- Gizmo 設定 ---
         let gizmoRenderer, labelRenderer, gizmoScene, gizmoCamera, gizmo, gizmoRaycaster;
@@ -275,46 +270,73 @@
             }
             setControlsEnabled(false);
 
-            // 紀錄起始狀態
             const startPosition = camera.position.clone();
-            const startQuaternion = camera.quaternion.clone();
-            const distance = startPosition.length();
-
-            // 透過虛擬 Object3D 預先算出目標狀態下的完美四元數（包含正確的 lookAt 朝向）
-            const dummy = new THREE.Object3D();
-            dummy.position.copy(targetPosition);
-            dummy.up.copy(targetUp).normalize();
-            dummy.lookAt(0, 0, 0);
-            dummy.updateMatrixWorld();
-            const targetQuaternion = dummy.quaternion.clone();
-
+            const startUp = camera.up.clone();
             const duration = 500;
             const startTime = performance.now();
 
+            // 1. 計算位置移動的旋轉軸與最大角度 (處理 180 度大範圍軌道繞行)
+            let n1 = startPosition.clone().normalize();
+            let n2 = targetPosition.clone().normalize();
+            let pDot = n1.dot(n2);
+            let posAxis = new THREE.Vector3();
+            let posMaxAngle = Math.acos(Math.max(-1, Math.min(1, pDot)));
+
+            if (Math.abs(pDot + 1) < 0.001) { // 剛好正反面 180 度切換
+                posAxis.set(0, 1, 0); // 預設繞 Y 軸轉
+                if (Math.abs(n1.y) > 0.9) posAxis.set(1, 0, 0); // 如果本來就在頂部，改繞 X 軸轉
+                posAxis.projectOnPlane(n1).normalize();
+            } else {
+                posAxis.crossVectors(n1, n2).normalize();
+            }
+
+            // 2. 計算 Up 向量的旋轉軸與最大角度 (完美處理 90 度與 180 度的畫面自由滾轉)
+            let u1 = startUp.clone().normalize();
+            let u2 = targetUp.clone().normalize();
+            let uDot = u1.dot(u2);
+            let upAxis = new THREE.Vector3();
+            let upMaxAngle = Math.acos(Math.max(-1, Math.min(1, uDot)));
+
+            if (Math.abs(uDot + 1) < 0.001) { // 180 度上下顛倒
+                // 核心關鍵：沿著相機當前的視線軸（Look Direction）進行滾轉，不牽動位置
+                upAxis.copy(startPosition).normalize().negate();
+            } else {
+                upAxis.crossVectors(u1, u2).normalize();
+            }
+
             function animate() {
                 const t = Math.min(1, (performance.now() - startTime) / duration);
-                const easedT = 0.5 * (1 - Math.cos(t * Math.PI)); // Ease-in-out
+                const easedT = 0.5 * (1 - Math.cos(t * Math.PI)); // 經典平滑 Ease-in-out
 
-                // 核心修正：使用四元數球面線性內插（Slerp）進行平滑旋轉過渡
-                camera.quaternion.copy(startQuaternion).slerp(targetQuaternion, easedT);
+                // 內插相機位置 (沿球面完美前進)
+                if (posMaxAngle > 0) {
+                    camera.position.copy(startPosition).applyAxisAngle(posAxis, posMaxAngle * easedT);
+                } else {
+                    camera.position.copy(targetPosition);
+                }
 
-                // 從目前過渡中的四元數，完美還原相機在球面軌道上的三維座標與向上向量
-                camera.position.set(0, 0, distance).applyQuaternion(camera.quaternion);
-                camera.up.set(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
-                
-                // 注意：此處絕不調用 camera.lookAt()，避免觸發向量外積對極點跳動的Bug
+                // 內插 Up 向量 (純原地滾轉，不產生內翻錯覺)
+                if (upMaxAngle > 0) {
+                    camera.up.copy(startUp).applyAxisAngle(upAxis, upMaxAngle * easedT).normalize();
+                } else {
+                    camera.up.copy(targetUp).normalize();
+                }
+
+                camera.lookAt(0, 0, 0);
                 camera.updateMatrixWorld();
 
                 if (t < 1) {
                     cameraAnimationId = requestAnimationFrame(animate);
                 } else {
-                    // 確保最終狀態絕對精準
-                    camera.quaternion.copy(targetQuaternion);
+                    // 強制設定最終狀態，抹除浮點數誤差
                     camera.position.copy(targetPosition);
                     camera.up.copy(targetUp).normalize();
+                    camera.lookAt(0, 0, 0);
                     camera.updateMatrixWorld();
-                    
-                    initControls(); // 重新綁定控制器，無縫接手滑鼠拖曳
+
+                    // 核心修正：先啟用控制項，並立刻主動更新一次，完美杜絕滑鼠觸碰跳動 Bug
+                    controls.enabled = true;
+                    controls.update(); 
                     
                     cameraAnimationId = null;
                     setControlsEnabled(true);
@@ -601,7 +623,6 @@
             animateCamera(camera.position.clone(), newUp);
         }
 
-        // 旋轉相機視角
         function rotateCameraView() {
             const lookDirection = new THREE.Vector3();
             camera.getWorldDirection(lookDirection);

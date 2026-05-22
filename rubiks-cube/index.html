@@ -151,6 +151,13 @@
         controls.dynamicDampingFactor = 0.2;
         controls.rotateSpeed = 3.0;
 
+        // 重新定義滑鼠按鍵對應：左鍵平移(已設noPan所以無效)、右鍵旋轉視角
+        controls.mouseButtons = {
+            LEFT: THREE.MOUSE.PAN,
+            MIDDLE: THREE.MOUSE.ZOOM,
+            RIGHT: THREE.MOUSE.ROTATE
+        };
+
         // --- Gizmo 設定 ---
         let gizmoRenderer, labelRenderer, gizmoScene, gizmoCamera, gizmo, gizmoRaycaster;
 
@@ -275,30 +282,27 @@
             const duration = 500;
             const startTime = performance.now();
 
-            // 1. 計算位置移動的旋轉軸與最大角度 (處理 180 度大範圍軌道繞行)
             let n1 = startPosition.clone().normalize();
             let n2 = targetPosition.clone().normalize();
             let pDot = n1.dot(n2);
             let posAxis = new THREE.Vector3();
             let posMaxAngle = Math.acos(Math.max(-1, Math.min(1, pDot)));
 
-            if (Math.abs(pDot + 1) < 0.001) { // 剛好正反面 180 度切換
-                posAxis.set(0, 1, 0); // 預設繞 Y 軸轉
-                if (Math.abs(n1.y) > 0.9) posAxis.set(1, 0, 0); // 如果本來就在頂部，改繞 X 軸轉
+            if (Math.abs(pDot + 1) < 0.001) { 
+                posAxis.set(0, 1, 0); 
+                if (Math.abs(n1.y) > 0.9) posAxis.set(1, 0, 0); 
                 posAxis.projectOnPlane(n1).normalize();
             } else {
                 posAxis.crossVectors(n1, n2).normalize();
             }
 
-            // 2. 計算 Up 向量的旋轉軸與最大角度 (完美處理 90 度與 180 度的畫面自由滾轉)
             let u1 = startUp.clone().normalize();
             let u2 = targetUp.clone().normalize();
             let uDot = u1.dot(u2);
             let upAxis = new THREE.Vector3();
             let upMaxAngle = Math.acos(Math.max(-1, Math.min(1, uDot)));
 
-            if (Math.abs(uDot + 1) < 0.001) { // 180 度上下顛倒
-                // 核心關鍵：沿著相機當前的視線軸（Look Direction）進行滾轉，不牽動位置
+            if (Math.abs(uDot + 1) < 0.001) { 
                 upAxis.copy(startPosition).normalize().negate();
             } else {
                 upAxis.crossVectors(u1, u2).normalize();
@@ -306,16 +310,14 @@
 
             function animate() {
                 const t = Math.min(1, (performance.now() - startTime) / duration);
-                const easedT = 0.5 * (1 - Math.cos(t * Math.PI)); // 經典平滑 Ease-in-out
+                const easedT = 0.5 * (1 - Math.cos(t * Math.PI)); 
 
-                // 內插相機位置 (沿球面完美前進)
                 if (posMaxAngle > 0) {
                     camera.position.copy(startPosition).applyAxisAngle(posAxis, posMaxAngle * easedT);
                 } else {
                     camera.position.copy(targetPosition);
                 }
 
-                // 內插 Up 向量 (純原地滾轉，不產生內翻錯覺)
                 if (upMaxAngle > 0) {
                     camera.up.copy(startUp).applyAxisAngle(upAxis, upMaxAngle * easedT).normalize();
                 } else {
@@ -328,13 +330,11 @@
                 if (t < 1) {
                     cameraAnimationId = requestAnimationFrame(animate);
                 } else {
-                    // 強制設定最終狀態，抹除浮點數誤差
                     camera.position.copy(targetPosition);
                     camera.up.copy(targetUp).normalize();
                     camera.lookAt(0, 0, 0);
                     camera.updateMatrixWorld();
 
-                    // 核心修正：先啟用控制項，並立刻主動更新一次，完美杜絕滑鼠觸碰跳動 Bug
                     controls.enabled = true;
                     controls.update(); 
                     
@@ -501,6 +501,10 @@
 
         function onPointerDown(event) {
             if (isAnimating) return;
+            
+            // 嚴格限制：滑鼠操作只有左鍵能轉動單層方塊
+            if (event.pointerType === 'mouse' && event.button !== 0) return;
+
             const gizmoContainer = document.getElementById('gizmo-container');
             if (gizmoContainer && gizmoContainer.contains(event.target)) {
                 return;
@@ -511,7 +515,7 @@
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(cubies);
             if (intersects.length > 0) {
-                if (controls) controls.enabled = false;
+                // 不再強制禁用 controls，視角操作由右鍵獨立接管
                 selectedCubie = intersects[0].object;
                 selectedFaceNormal = intersects[0].face.normal.clone();
                 isDragging = true;
@@ -543,7 +547,8 @@
             }
         }
 
-        function onPointerUp() {
+        // 獨立出的狀態重置函數
+        function resetPointerState() {
             if (controls && !isAnimating) controls.enabled = true;
             isDragging = false;
         }
@@ -632,9 +637,15 @@
         }
 
         // --- 事件監聽 ---
+        renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
         renderer.domElement.addEventListener('pointerdown', onPointerDown);
         renderer.domElement.addEventListener('pointermove', onPointerMove);
-        renderer.domElement.addEventListener('pointerup', onPointerUp);
+        
+        // 確保各種中斷都能重置狀態防卡死
+        renderer.domElement.addEventListener('pointerup', resetPointerState);
+        renderer.domElement.addEventListener('pointerleave', resetPointerState);
+        renderer.domElement.addEventListener('pointercancel', resetPointerState);
+
         scrambleBtn.addEventListener('click', scrambleCube);
         resetBtn.addEventListener('click', () => { window.location.reload(); });
         undoBtn.addEventListener('click', undoMove);

@@ -60,6 +60,9 @@
             color: #aaa; padding: 0.6rem 1.5rem; border-radius: 30px; font-size: 1rem; cursor: pointer;
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: all 0.3s ease; font-family: inherit;
         }
+        .filter-btn .count-num {
+            opacity: 0.85; font-size: 0.9em; margin-left: 2px;
+        }
         .filter-btn:hover { color: #fff; border-color: rgba(0, 191, 255, 0.5); background: rgba(0, 191, 255, 0.05); }
         .filter-btn.active {
             color: #fff; background: rgba(0, 191, 255, 0.15); border-color: var(--primary-glow-color);
@@ -67,7 +70,7 @@
         }
 
         /* ==========================================
-           全新 3D 全息輪播展示區 (Holographic Carousel) 
+           3D 全息輪播展示區 (Holographic Carousel) 
            ========================================== */
         .carousel-scene {
             width: 100%; height: 500px; 
@@ -214,9 +217,9 @@
         </header>
 
         <div class="filter-container">
-            <button class="filter-btn active" data-filter="all">全部作品</button>
-            <button class="filter-btn" data-filter="tool">🛠️ 實用工具</button>
-            <button class="filter-btn" data-filter="game">🎮 趣味遊戲</button>
+            <button class="filter-btn active" data-filter="all">全部作品 (<span class="count-num">0</span>)</button>
+            <button class="filter-btn" data-filter="tool">🛠️ 實用工具 (<span class="count-num">0</span>)</button>
+            <button class="filter-btn" data-filter="game">🎮 趣味遊戲 (<span class="count-num">0</span>)</button>
         </div>
 
         <div class="carousel-scene">
@@ -300,6 +303,16 @@
                     <p>一個經典的復古打磚塊遊戲，支援使用鍵盤或觸控來控制球拍，挑戰你的反應速度！(共3關)</p>
                     <a href="./brick-breaker/index.html" target="_blank">V2.6 挑戰</a>
                 </div>
+
+                <!-- 新增：俄羅斯方塊 -->
+                <div class="project-card" data-category="game">
+                    <div class="project-title">
+                        <h2>俄羅斯方塊</h2>
+                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                    </div>
+                    <p>經典的俄羅斯方塊遊戲，具備下落、旋轉與消除整行等玩法，考驗你的反應能力與空間佈局技巧！</p>
+                    <a href="./tetris/tetris.html" target="_blank">V1.0 遊玩</a>
+                </div>
                 
                 <div class="project-card" data-category="tool">
                     <div class="project-title">
@@ -315,7 +328,7 @@
     <footer id="main-footer">
         <div class="footer-content">
             <div class="copyright">
-                &copy; 2026/0522
+                &copy; 2026/0722
                 <a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer" class="github-link">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
                     fan666rog
@@ -434,14 +447,13 @@
 
             function assignImagesToHexes() {
                 if (window.innerWidth <= 768) {
-                  imageHexes = []; // 清空陣列，確保乾淨
-                  return;          // 手機版面提早結束函數，把 CPU 算力還給開場動畫！
+                  imageHexes = [];
+                  return;
                 }
                 
                 imageHexes = [];
                 if(loadedImages.length === 0 || hexCenters.length === 0) return;
 
-                // 取得各個需要避開的區塊範圍
                 const carouselScene = document.querySelector('.carousel-scene');
                 let carouselRect = { left: 0, right: 0, top: 0, bottom: 0 };
                 if (carouselScene) {
@@ -463,7 +475,6 @@
                     footerRect = { left: bounds.left - 30, right: bounds.right + 30, top: bounds.top - 30, bottom: bounds.bottom + 50 };
                 }
 
-                // 過濾掉所有重疊區域
                 let validCenters = hexCenters.filter(c => {
                     let inCarousel = c.x > carouselRect.left && c.x < carouselRect.right && c.y > carouselRect.top && c.y < carouselRect.bottom;
                     let inHeader = c.x > headerRect.left && c.x < headerRect.right && c.y > headerRect.top && c.y < headerRect.bottom;
@@ -471,13 +482,11 @@
                     return !(inCarousel || inHeader || inFooter);
                 });
 
-                // 將畫面分左右，強制平衡分佈
                 let leftCenters = validCenters.filter(c => c.x < width / 2).sort(() => 0.5 - Math.random());
                 let rightCenters = validCenters.filter(c => c.x >= width / 2).sort(() => 0.5 - Math.random());
                 let selectedCenters = [];
                 const minDistanceSq = (hexRadius * 3.5) ** 2;
 
-                // 輔助函式：挑選符合安全距離的點
                 function pickValidCenter(pool) {
                     for (let i = 0; i < pool.length; i++) {
                         let candidate = pool[i];
@@ -498,15 +507,12 @@
                     return null;
                 }
 
-                // 目標：左邊一半，右邊一半
                 let targetLeft = Math.ceil(loadedImages.length / 2);
                 let targetRight = loadedImages.length - targetLeft;
 
                 for(let i=0; i<targetLeft; i++) { let c = pickValidCenter(leftCenters); if(c) selectedCenters.push(c); }
                 for(let i=0; i<targetRight; i++) { let c = pickValidCenter(rightCenters); if(c) selectedCenters.push(c); }
 
-                // 【修改重點】：溫和的防呆機制。如果左右分不滿，把剩下的空間混在一起再找一次，
-                // 但「絕對堅持安全距離」。如果還是找不到足夠的位置，就放棄剩下的圖片，寧缺勿濫。
                 if (selectedCenters.length < loadedImages.length) {
                     let remainingPool = [...leftCenters, ...rightCenters].sort(() => 0.5 - Math.random());
                     let needed = loadedImages.length - selectedCenters.length;
@@ -534,15 +540,14 @@
                         ctx.closePath();
                         ctx.clip(); 
                         
-                        // 滑鼠 Hover 距離判斷
                         let dx = mouseX - item.x;
                         let dy = mouseY - item.y;
                         let distance = Math.sqrt(dx*dx + dy*dy);
                         
                         if (distance < hexRadius) {
-                            ctx.globalAlpha = 0.9; // 滑鼠移入時亮度提高
+                            ctx.globalAlpha = 0.9;
                         } else {
-                            ctx.globalAlpha = 0.35; // 預設微透明科技感
+                            ctx.globalAlpha = 0.35;
                         }
                         
                         let imgSize = hexRadius * 2; 
@@ -601,6 +606,23 @@
             const carousel = document.querySelector('.carousel-container');
             const allCards = Array.from(document.querySelectorAll('.project-card'));
             
+            // 自動計算各分類數量並更新按鈕顯示
+            const updateCategoryCounts = () => {
+                const totalCount = allCards.length;
+                const toolCount = allCards.filter(card => card.getAttribute('data-category') === 'tool').length;
+                const gameCount = allCards.filter(card => card.getAttribute('data-category') === 'game').length;
+
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    const filter = btn.getAttribute('data-filter');
+                    const numSpan = btn.querySelector('.count-num');
+                    if (!numSpan) return;
+                    if (filter === 'all') numSpan.textContent = totalCount;
+                    else if (filter === 'tool') numSpan.textContent = toolCount;
+                    else if (filter === 'game') numSpan.textContent = gameCount;
+                });
+            };
+            updateCategoryCounts();
+
             let currentAngle = 0;
             let radius = 0;
             let theta = 0;

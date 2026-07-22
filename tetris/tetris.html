@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Cyber Tetris</title>
+  <title>Cyber Tetris 街機版</title>
   <style>
     :root {
       --bg-color: #0f172a;
@@ -31,68 +31,80 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 8px 10px 12px 10px;
+      padding: 10px;
       overflow: hidden;
     }
 
+    /* 全域遊戲外框 */
     .game-wrapper {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
       height: 100%;
-      max-width: 420px;
       width: 100%;
-      gap: 8px;
+      max-width: 420px; /* 手機預設寬度 */
+      gap: 10px;
+      transition: max-width 0.3s ease;
     }
 
-    /* 頂部極簡 HUD (固定高度) */
-    .top-hud {
+    /* 遊戲核心區 (畫布 + 資訊欄) */
+    .game-container {
       display: flex;
+      flex-direction: column;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      gap: 10px;
+    }
+
+    /* 資訊面板 (手機: 頂部橫排 / PC: 右側邊欄) */
+    .info-panel {
+      display: flex;
+      flex-direction: row;
       justify-content: space-between;
       align-items: center;
       width: 100%;
       background: var(--card-bg);
       backdrop-filter: blur(12px);
-      padding: 6px 14px;
+      padding: 8px 14px;
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
       flex-shrink: 0;
     }
 
-    .hud-item {
+    .hud-card {
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
     .hud-label {
-      font-size: 0.6rem;
+      font-size: 0.65rem;
       color: #94a3b8;
       letter-spacing: 1px;
       font-weight: 700;
     }
 
     .hud-value {
-      font-size: 1rem;
+      font-size: 1.1rem;
       font-weight: 800;
       color: #38bdf8;
     }
 
-    .next-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
     canvas#next {
       background: rgba(15, 23, 42, 0.6);
-      border-radius: 4px;
+      border-radius: 6px;
       margin-top: 2px;
     }
 
-    /* 畫布區域（彈性自適應且鎖定 1:2 比例不變形） */
+    /* PC 專用按鍵指引 (手機預設隱藏) */
+    .pc-controls-guide {
+      display: none;
+    }
+
+    /* 中間畫布區域 */
     .canvas-container {
       position: relative;
       flex: 1;
@@ -112,9 +124,9 @@
       justify-content: center;
       align-items: center;
       background: rgba(2, 6, 23, 0.95);
-      border-radius: 12px;
+      border-radius: 14px;
       border: 2px solid rgba(56, 189, 248, 0.4);
-      box-shadow: 0 0 20px rgba(56, 189, 248, 0.15);
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);
       overflow: hidden;
       cursor: pointer;
     }
@@ -139,7 +151,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       z-index: 10;
       transition: opacity 0.2s ease;
     }
@@ -150,7 +162,7 @@
     }
 
     .overlay-title {
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       font-weight: 900;
       letter-spacing: 2px;
       background: linear-gradient(135deg, #38bdf8, #818cf8);
@@ -159,17 +171,17 @@
     }
 
     .overlay-subtitle {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       color: #94a3b8;
-      margin-top: -6px;
+      margin-top: -8px;
     }
 
     .btn {
       background: linear-gradient(135deg, #0284c7, #2563eb);
       color: white;
       border: none;
-      padding: 10px 24px;
-      font-size: 0.95rem;
+      padding: 10px 26px;
+      font-size: 1rem;
       font-weight: 700;
       border-radius: 25px;
       cursor: pointer;
@@ -180,7 +192,7 @@
       transform: scale(0.92);
     }
 
-    /* 5 按鈕一字排開（掌機優化：左移動最左、右移動最右） */
+    /* 5 按鈕手機控制器 */
     .touch-controls {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -215,65 +227,160 @@
       margin-top: 2px;
     }
 
-    .controls-hint {
-      font-size: 0.65rem;
-      color: #64748b;
-      text-align: center;
-      flex-shrink: 0;
-    }
+    /* -------------------------------------------------------------
+       💻 PC 寬螢幕媒體查詢 (RWD 街機雙欄 Layout)
+    ------------------------------------------------------------- */
+    @media (min-width: 768px) {
+      .game-wrapper {
+        max-width: 800px;
+        justify-content: center;
+      }
 
-    @media (max-width: 480px) {
-      .controls-hint { display: none; }
+      .game-container {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 35px;
+        height: 75vh;
+        max-height: 720px;
+      }
+
+      /* 左側：巨大畫布 */
+      .canvas-container {
+        height: 100%;
+        width: auto;
+        flex: initial;
+      }
+
+      .canvas-border {
+        height: 100%;
+        border-width: 3px;
+        box-shadow: 0 0 35px rgba(56, 189, 248, 0.25);
+      }
+
+      /* 右側：側邊資訊欄 */
+      .info-panel {
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: stretch;
+        width: 220px;
+        height: 100%;
+        padding: 20px;
+        gap: 16px;
+        border-radius: 16px;
+      }
+
+      .hud-card {
+        background: rgba(15, 23, 42, 0.6);
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .hud-value {
+        font-size: 1.4rem;
+      }
+
+      /* 顯示 PC 鍵盤操作說明 */
+      .pc-controls-guide {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: rgba(15, 23, 42, 0.6);
+        padding: 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        margin-top: auto;
+      }
+
+      .guide-title {
+        font-size: 0.75rem;
+        color: #38bdf8;
+        font-weight: bold;
+        letter-spacing: 1px;
+        margin-bottom: 2px;
+      }
+
+      .guide-item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: #94a3b8;
+      }
+
+      .guide-item span {
+        color: #f1f5f9;
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 1px 6px;
+        border-radius: 4px;
+      }
+
+      /* PC 端隱藏手機虛擬按鈕 */
+      .touch-controls {
+        display: none !important;
+      }
     }
   </style>
 </head>
 <body>
 
   <div class="game-wrapper">
-    <!-- 頂部 HUD -->
-    <div class="top-hud">
-      <div class="hud-item">
-        <span class="hud-label">SCORE</span>
-        <span id="score" class="hud-value">0</span>
-      </div>
-      <div class="hud-item">
-        <span class="hud-label">LINES</span>
-        <span id="lines" class="hud-value">0</span>
-      </div>
-      <div class="hud-item">
-        <span class="hud-label">HIGH</span>
-        <span id="highscore" class="hud-value">0</span>
-      </div>
-      <div class="next-box">
-        <span class="hud-label">NEXT</span>
-        <canvas id="next" width="40" height="40"></canvas>
-      </div>
-    </div>
-
-    <!-- 中間大畫布 (保持完美 1:2 正方形網格) -->
-    <div class="canvas-container">
-      <div class="canvas-border" id="canvas-area">
-        <canvas id="tetris" width="300" height="600"></canvas>
-        
-        <div id="overlay" class="overlay">
-          <div class="overlay-title" id="overlay-title">TETRIS</div>
-          <div class="overlay-subtitle" id="overlay-sub">點擊畫面可隨時暫停</div>
-          <button id="overlay-btn" class="btn">開始遊戲</button>
+    <!-- 遊戲核心區 -->
+    <div class="game-container">
+      
+      <!-- 畫布區域 (PC 端位於左側) -->
+      <div class="canvas-container">
+        <div class="canvas-border" id="canvas-area">
+          <canvas id="tetris" width="300" height="600"></canvas>
+          
+          <div id="overlay" class="overlay">
+            <div class="overlay-title" id="overlay-title">TETRIS</div>
+            <div class="overlay-subtitle" id="overlay-sub">點擊畫面可隨時暫停</div>
+            <button id="overlay-btn" class="btn">開始遊戲</button>
+          </div>
         </div>
       </div>
+
+      <!-- 資訊面板 (手機上橫排 / PC 右側欄) -->
+      <div class="info-panel">
+        <div class="hud-card">
+          <span class="hud-label">SCORE</span>
+          <span id="score" class="hud-value">0</span>
+        </div>
+        <div class="hud-card">
+          <span class="hud-label">LINES</span>
+          <span id="lines" class="hud-value">0</span>
+        </div>
+        <div class="hud-card">
+          <span class="hud-label">HIGH</span>
+          <span id="highscore" class="hud-value">0</span>
+        </div>
+        <div class="hud-card">
+          <span class="hud-label">NEXT</span>
+          <canvas id="next" width="50" height="50"></canvas>
+        </div>
+
+        <!-- PC 端專屬鍵盤說明 -->
+        <div class="pc-controls-guide">
+          <div class="guide-title">⌨️ 鍵盤操控</div>
+          <div class="guide-item">移動 <span>← →</span></div>
+          <div class="guide-item">旋轉 <span>↑ / Z</span></div>
+          <div class="guide-item">軟落 <span>↓</span></div>
+          <div class="guide-item">直落 <span>Space</span></div>
+          <div class="guide-item">暫停 <span>P / 點畫布</span></div>
+        </div>
+      </div>
+
     </div>
 
-    <!-- 底部單排 5 按鈕控制器 (左移在最左，右移在最右) -->
+    <!-- 手機觸控控制器 (PC 端自動隱藏) -->
     <div class="touch-controls">
       <div class="t-btn" id="btn-left">◄<span>左移</span></div>
       <div class="t-btn" id="btn-down">▼<span>軟落</span></div>
       <div class="t-btn" id="btn-drop">⚡<span>直落</span></div>
       <div class="t-btn" id="btn-rotate">↻<span>旋轉</span></div>
       <div class="t-btn" id="btn-right">►<span>右移</span></div>
-    </div>
-
-    <div class="controls-hint">
-      PC 控制：← → 移動｜↑ / Z 旋轉｜↓ 軟落｜Space 直落｜P / 點畫布 暫停
     </div>
   </div>
 
@@ -288,7 +395,7 @@
     const BLOCK_SIZE = 30;
 
     ctx.scale(BLOCK_SIZE, BLOCK_SIZE);
-    nextCtx.scale(10, 10);
+    nextCtx.scale(12.5, 12.5); // 50 / 4
 
     const SHAPES = [
       [],
@@ -581,7 +688,7 @@
       }
     }
 
-    // 點擊畫布區域切換暫停
+    // 點擊畫布暫停
     document.getElementById('canvas-area').addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') return;
       if (gameStarted && !gameOver) {
@@ -616,7 +723,7 @@
       draw();
     });
 
-    // 綁定 5 個觸控按鈕
+    // 手機按鈕綁定
     function bindTouchBtn(id, action) {
       const btn = document.getElementById(id);
       btn.addEventListener('pointerdown', (e) => {

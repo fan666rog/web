@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Cyber Tetris 大螢幕版</title>
+  <title>Cyber Tetris</title>
   <style>
     :root {
       --bg-color: #0f172a;
@@ -26,13 +26,13 @@
       background-image: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
       color: var(--text-color);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      min-height: 100vh;
+      /* 關鍵：使用 100svh 解決手機網址列動態吃空間的問題 */
       height: 100vh;
+      height: 100svh;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      justify-content: space-between;
-      padding: 10px 10px 15px 10px;
+      padding: 8px 10px 12px 10px;
       overflow: hidden;
     }
 
@@ -42,12 +42,12 @@
       align-items: center;
       justify-content: space-between;
       height: 100%;
-      max-width: 450px;
+      max-width: 420px;
       width: 100%;
       gap: 8px;
     }
 
-    /* 頂部極簡 HUD 資訊列 */
+    /* 頂部極簡 HUD (固定高度，不搶空間) */
     .top-hud {
       display: flex;
       justify-content: space-between;
@@ -55,10 +55,11 @@
       width: 100%;
       background: var(--card-bg);
       backdrop-filter: blur(12px);
-      padding: 8px 12px;
+      padding: 6px 14px;
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
     }
 
     .hud-item {
@@ -68,14 +69,14 @@
     }
 
     .hud-label {
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       color: #94a3b8;
       letter-spacing: 1px;
-      font-weight: 600;
+      font-weight: 700;
     }
 
     .hud-value {
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: 800;
       color: #38bdf8;
     }
@@ -88,31 +89,31 @@
 
     canvas#next {
       background: rgba(15, 23, 42, 0.6);
-      border-radius: 6px;
+      border-radius: 4px;
       margin-top: 2px;
     }
 
-    /* 畫布區域放大 */
+    /* 畫布區域（彈性自適應，填滿剩餘高度） */
     .canvas-container {
       position: relative;
       flex: 1;
+      min-height: 0; /* 讓 flex 項目可自由縮小 */
       display: flex;
       justify-content: center;
       align-items: center;
       width: 100%;
-      max-height: min(58vh, 560px);
     }
 
     .canvas-border {
       position: relative;
       height: 100%;
-      aspect-ratio: 1 / 2;
+      aspect-ratio: 1 / 2; /* 強制維持 1:2 正統比例 */
       background: rgba(2, 6, 23, 0.95);
       border-radius: 12px;
       border: 2px solid rgba(56, 189, 248, 0.4);
-      box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.15);
       overflow: hidden;
-      cursor: pointer; /* 提示點擊可暫停 */
+      cursor: pointer;
     }
 
     canvas#tetris {
@@ -121,7 +122,7 @@
       display: block;
     }
 
-    /* 畫布覆蓋層（開始 / 暫停 / 結束選單） */
+    /* 畫布中央覆蓋層 */
     .overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -131,7 +132,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       z-index: 10;
       transition: opacity 0.2s ease;
     }
@@ -142,56 +143,54 @@
     }
 
     .overlay-title {
-      font-size: 1.8rem;
+      font-size: 1.6rem;
       font-weight: 900;
       letter-spacing: 2px;
       background: linear-gradient(135deg, #38bdf8, #818cf8);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
     }
 
     .overlay-subtitle {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: #94a3b8;
-      margin-top: -10px;
+      margin-top: -6px;
     }
 
-    /* 按鈕樣式 */
     .btn {
       background: linear-gradient(135deg, #0284c7, #2563eb);
       color: white;
       border: none;
-      padding: 12px 28px;
-      font-size: 1rem;
+      padding: 10px 24px;
+      font-size: 0.95rem;
       font-weight: 700;
-      border-radius: 30px;
+      border-radius: 25px;
       cursor: pointer;
       box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
-      transition: all 0.15s ease;
     }
 
     .btn:active {
       transform: scale(0.92);
     }
 
-    /* 手機觸控控制器 */
+    /* 5 按鈕一字排開單排控制器 (固定高度) */
     .touch-controls {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
       width: 100%;
-      max-width: 380px;
+      flex-shrink: 0;
     }
 
     .t-btn {
       background: rgba(30, 41, 59, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.15);
       color: var(--text-color);
-      font-size: 1.3rem;
-      padding: 15px 0;
-      border-radius: 12px;
+      font-size: 1.2rem;
+      padding: 12px 0;
+      border-radius: 10px;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       cursor: pointer;
@@ -203,17 +202,17 @@
       border-color: var(--accent-color);
     }
 
-    .t-btn.wide {
-      grid-column: span 3;
-      background: linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(99, 102, 241, 0.3));
-      font-size: 0.95rem;
-      font-weight: bold;
+    .t-btn span {
+      font-size: 0.6rem;
+      color: #94a3b8;
+      margin-top: 2px;
     }
 
     .controls-hint {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       color: #64748b;
       text-align: center;
+      flex-shrink: 0;
     }
 
     @media (max-width: 480px) {
@@ -224,7 +223,7 @@
 <body>
 
   <div class="game-wrapper">
-    <!-- 頂部一字排開 HUD (無開始按鈕，極大化空間) -->
+    <!-- 頂部 HUD -->
     <div class="top-hud">
       <div class="hud-item">
         <span class="hud-label">SCORE</span>
@@ -240,16 +239,15 @@
       </div>
       <div class="next-box">
         <span class="hud-label">NEXT</span>
-        <canvas id="next" width="48" height="48"></canvas>
+        <canvas id="next" width="40" height="40"></canvas>
       </div>
     </div>
 
-    <!-- 中間大畫布與中央覆蓋選單 -->
+    <!-- 中間大畫布 (自動彈性縮放) -->
     <div class="canvas-container">
       <div class="canvas-border" id="canvas-area">
         <canvas id="tetris" width="300" height="600"></canvas>
         
-        <!-- 中央 Overlay 選單 -->
         <div id="overlay" class="overlay">
           <div class="overlay-title" id="overlay-title">TETRIS</div>
           <div class="overlay-subtitle" id="overlay-sub">點擊畫面可隨時暫停</div>
@@ -258,18 +256,17 @@
       </div>
     </div>
 
-    <!-- 底部手機觸控控制器 -->
+    <!-- 底部單排 5 按鈕控制器 -->
     <div class="touch-controls">
-      <div class="t-btn" id="btn-rotate">↻</div>
-      <div class="t-btn" id="btn-up">▲ (旋轉)</div>
-      <div class="t-btn" id="btn-drop">⚡ (直落)</div>
-      <div class="t-btn" id="btn-left">◄</div>
-      <div class="t-btn" id="btn-down">▼</div>
-      <div class="t-btn" id="btn-right">►</div>
+      <div class="t-btn" id="btn-left">◄<span>左移</span></div>
+      <div class="t-btn" id="btn-right">►<span>右移</span></div>
+      <div class="t-btn" id="btn-down">▼<span>軟落</span></div>
+      <div class="t-btn" id="btn-drop">⚡<span>直落</span></div>
+      <div class="t-btn" id="btn-rotate">↻<span>旋轉</span></div>
     </div>
 
     <div class="controls-hint">
-      PC 快捷鍵：← → 移動｜↑ / Z 旋轉｜↓ 軟落｜Space 直落｜P / 點畫布 暫停
+      PC 控制：← → 移動｜↑ / Z 旋轉｜↓ 軟落｜Space 直落｜P / 點畫布 暫停
     </div>
   </div>
 
@@ -281,10 +278,10 @@
 
     const COLS = 10;
     const ROWS = 20;
-    const BLOCK_SIZE = 30; // 高解析度尺寸 (300 / 10)
+    const BLOCK_SIZE = 30;
 
     ctx.scale(BLOCK_SIZE, BLOCK_SIZE);
-    nextCtx.scale(12, 12); // 48 / 4
+    nextCtx.scale(10, 10); // 40 / 4
 
     const SHAPES = [
       [],
@@ -306,7 +303,7 @@
     let score = 0;
     let lines = 0;
     let highscore = localStorage.getItem('tetris_highscore') || 0;
-    let gameOver = true; // 初始未開始
+    let gameOver = true;
     let isPaused = false;
     let gameStarted = false;
     let gameLoopId = null;
@@ -469,7 +466,6 @@
       ctx.fillStyle = '#020617';
       ctx.fillRect(0, 0, COLS, ROWS);
 
-      // 繪製背景線條
       ctx.lineWidth = 0.03;
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       for (let i = 0; i < COLS; i++) ctx.strokeRect(i, 0, 1, ROWS);
@@ -580,15 +576,12 @@
 
     // 點擊畫布區域切換暫停
     document.getElementById('canvas-area').addEventListener('click', (e) => {
-      // 避免點到 Overlay 裡面的按鈕時重複觸發
       if (e.target.tagName === 'BUTTON') return;
-      
       if (gameStarted && !gameOver) {
         togglePause();
       }
     });
 
-    // Overlay 中央按鈕點擊事件
     document.getElementById('overlay-btn').addEventListener('click', () => {
       if (!gameStarted || gameOver) {
         startGame();
@@ -599,7 +592,7 @@
 
     // 鍵盤控制
     document.addEventListener('keydown', event => {
-      if (event.keyCode === 80) { // P 鍵暫停
+      if (event.keyCode === 80) {
         togglePause();
         return;
       }
@@ -616,7 +609,7 @@
       draw();
     });
 
-    // 綁定手機觸控按鈕
+    // 綁定 5 個手機觸控按鈕
     function bindTouchBtn(id, action) {
       const btn = document.getElementById(id);
       btn.addEventListener('pointerdown', (e) => {
@@ -629,9 +622,8 @@
     bindTouchBtn('btn-left', () => playerMove(-1));
     bindTouchBtn('btn-right', () => playerMove(1));
     bindTouchBtn('btn-down', () => playerDrop());
-    bindTouchBtn('btn-rotate', () => playerRotate(1));
-    bindTouchBtn('btn-up', () => playerRotate(1));
     bindTouchBtn('btn-drop', () => playerHardDrop());
+    bindTouchBtn('btn-rotate', () => playerRotate(1));
 
     draw();
   </script>

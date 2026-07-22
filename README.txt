@@ -14,6 +14,7 @@ game-snake / 貪食蛇小遊戲
 rubiks-cube / 3D魔術方塊模擬器
 brick-breaker / 打磚塊小遊戲
 104_87key_test / 鍵盤測試小程式
+tetris / 俄羅斯方塊小遊戲
 
 若要直接觀看以上展示項目請前往
 https://fan666rog.github.io/web/

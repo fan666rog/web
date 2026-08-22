@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>大型團戰頻道導覽 (Demo 演示版)</title>
+    <title>大型團戰公會頻道導覽 (Demo 演示版)</title>
     <style>
         :root {
             --bg-color: #0d1117;
@@ -14,6 +14,7 @@
             --accent-gold-hover: #f3d699;
             --accent-gold-dim: rgba(229, 192, 123, 0.15);
             --accent-cyan: #56b6c2;
+            --accent-purple: #c678dd;
             --text-main: #f0f4f8;
             --text-sub: #94a3b8;
             --border-color: #30363d;
@@ -24,6 +25,8 @@
             --badge-text: #61afef;
             --badge-count-bg: rgba(229, 192, 123, 0.12);
             --badge-count-text: #e5c07b;
+            --video-box-bg: #0b0f14;
+            --video-border: #232c3b;
         }
 
         * {
@@ -42,7 +45,7 @@
         }
 
         .container {
-            max-width: 1100px;
+            max-width: 1120px;
             margin: 0 auto;
         }
 
@@ -162,7 +165,7 @@
             border: 1px solid var(--border-color);
             overflow: hidden;
             box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-            transition: transform 0.15s ease, border-color 0.15s ease;
+            transition: border-color 0.15s ease;
         }
 
         .guild-card:hover {
@@ -220,7 +223,7 @@
 
         .guild-table th {
             background-color: rgba(13, 17, 23, 0.5);
-            padding: 10px 20px;
+            padding: 11px 20px;
             font-weight: 600;
             font-size: 12.5px;
             color: var(--text-sub);
@@ -236,16 +239,16 @@
             vertical-align: middle;
         }
 
-        .guild-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .guild-table tbody tr {
+        .member-row {
             transition: background-color 0.15s;
         }
 
-        .guild-table tbody tr:hover {
+        .member-row:hover {
             background-color: var(--card-hover);
+        }
+
+        .member-row.has-expanded {
+            background-color: rgba(33, 40, 54, 0.6);
         }
 
         /* 成員欄位樣式 */
@@ -282,6 +285,44 @@
             font-size: 13px;
         }
 
+        /* 精選戰局切換按鈕 */
+        .btn-video-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background-color: rgba(198, 120, 221, 0.12);
+            color: #d19a66;
+            border: 1px solid rgba(209, 154, 102, 0.35);
+            padding: 5px 9px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 6px;
+        }
+
+        .btn-video-toggle:hover {
+            background-color: rgba(198, 120, 221, 0.2);
+            border-color: #d19a66;
+            color: #e5c07b;
+        }
+
+        .btn-video-toggle.active {
+            background-color: #d19a66;
+            color: #0d1117;
+            border-color: #d19a66;
+        }
+
+        .btn-video-toggle .arrow-icon {
+            transition: transform 0.2s;
+        }
+
+        .btn-video-toggle.active .arrow-icon {
+            transform: rotate(180deg);
+        }
+
+        /* 動作按鈕 */
         .btn-link {
             display: inline-flex;
             align-items: center;
@@ -320,6 +361,91 @@
             border-color: #484f58;
         }
 
+        /* 展開之精選影片子區塊 */
+        .video-expand-row {
+            display: none;
+            background-color: var(--video-box-bg);
+        }
+
+        .video-expand-row.open {
+            display: table-row;
+        }
+
+        .video-expand-cell {
+            padding: 12px 20px 16px 20px !important;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .video-list-box {
+            background-color: rgba(22, 27, 34, 0.85);
+            border: 1px solid var(--video-border);
+            border-left: 3px solid #d19a66;
+            border-radius: 8px;
+            padding: 12px 16px;
+        }
+
+        .video-list-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #d19a66;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .video-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .video-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background-color: rgba(13, 17, 23, 0.6);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            gap: 12px;
+        }
+
+        .video-item:hover {
+            border-color: #3b4252;
+            background-color: rgba(13, 17, 23, 0.9);
+        }
+
+        .video-title-text {
+            font-size: 13.5px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .video-btn-play {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background-color: #2b3342;
+            color: var(--text-main);
+            text-decoration: none;
+            padding: 5px 11px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid #3e485b;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .video-btn-play:hover {
+            background-color: #d19a66;
+            color: #0d1117;
+            border-color: #d19a66;
+        }
+
         .no-result {
             padding: 50px 20px;
             text-align: center;
@@ -330,24 +456,125 @@
             font-size: 15px;
         }
 
-        /* 底部新增說明 */
-        .footer-tips {
-            margin-top: 25px;
-            padding: 18px 22px;
-            background-color: rgba(22, 27, 34, 0.6);
-            border-radius: 8px;
-            border: 1px dashed var(--border-color);
-            color: var(--text-sub);
-            font-size: 13px;
-            line-height: 1.8;
+        /* 底部完整說明（收合式摺疊卡片） */
+        .instructions-details {
+            margin-top: 30px;
+            background-color: rgba(22, 27, 34, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            transition: border-color 0.2s;
         }
 
-        .footer-tips code {
-            background-color: var(--bg-color);
-            padding: 2px 6px;
-            border-radius: 4px;
+        .instructions-details:hover {
+            border-color: #3b4252;
+        }
+
+        .instructions-summary {
+            padding: 16px 20px;
+            font-size: 14.5px;
+            font-weight: 600;
             color: var(--accent-gold);
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--card-bg);
+            transition: background-color 0.2s;
+        }
+
+        .instructions-summary:hover {
+            background-color: #1c232d;
+        }
+
+        .instructions-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .summary-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .summary-arrow {
             font-size: 12px;
+            color: var(--text-sub);
+            transition: transform 0.25s ease;
+        }
+
+        .instructions-details[open] .summary-arrow {
+            transform: rotate(180deg);
+        }
+
+        .instructions-body {
+            padding: 22px 24px;
+            color: var(--text-main);
+            font-size: 13.5px;
+            line-height: 1.8;
+            border-top: 1px solid var(--border-color);
+            background-color: rgba(13, 17, 23, 0.4);
+        }
+
+        .instructions-section {
+            margin-bottom: 20px;
+        }
+
+        .instructions-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-heading {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: var(--accent-gold);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .instructions-body ul {
+            padding-left: 20px;
+            margin-bottom: 10px;
+        }
+
+        .instructions-body li {
+            margin-bottom: 6px;
+            color: #cbd5e1;
+        }
+
+        .instructions-body li strong {
+            color: var(--text-main);
+        }
+
+        .instructions-body code {
+            background-color: #0b0f14;
+            padding: 2px 7px;
+            border-radius: 4px;
+            color: var(--accent-cyan);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 12.5px;
+            border: 1px solid rgba(86, 182, 194, 0.2);
+        }
+
+        .code-block {
+            background-color: #0b0f14;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 12.5px;
+            color: #e6edf3;
+            overflow-x: auto;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+
+        .code-comment {
+            color: #7d8799;
         }
 
         /* Toast 提示 */
@@ -391,6 +618,9 @@
             .hide-mobile {
                 display: none;
             }
+            .instructions-body {
+                padding: 16px 18px;
+            }
         }
     </style>
 </head>
@@ -399,8 +629,8 @@
 <div class="container">
     <header>
         <div class="demo-badge">TEMPLATE / DEMO VERSION</div>
-        <h1>大型團戰頻道導覽DEMO</h1>
-        <p>公會陣容觀摩 · 排兵佈陣 · 視角覆盤導覽</p>
+        <h1>大型團戰公會頻道導覽</h1>
+        <p>公會陣容觀摩 · 排兵佈陣 · 視角覆盤與精選戰局</p>
     </header>
 
     <div class="controls">
@@ -409,27 +639,99 @@
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" id="searchInput" placeholder="搜尋公會、遊戲ID、頻道ID、頻道名或備註..." autofocus>
+            <input type="text" id="searchInput" placeholder="搜尋公會、遊戲ID、頻道ID、精選戰局標題或備註..." autofocus>
         </div>
         <div class="stats-badge" id="statsBadge">
-            <!-- 統計文字由 JS 動態生成 -->
+            <!-- 統計由 JS 生成 -->
         </div>
     </div>
 
-    <!-- 公會分組區塊容器 -->
+    <!-- 公會分組容器 -->
     <div id="guildGroupsContainer" class="guild-groups-container">
-        <!-- 內容由 JS 動態渲染 -->
+        <!-- 由 JS 動態生成 -->
     </div>
 
     <div id="noResult" class="no-result" style="display: none;">
-        查無相符的公會或頻道資料
+        查無相符的公會、頻道或戰局資料
     </div>
 
-    <div class="footer-tips">
-        <strong>💡 如何新增 / 維護正式資料？</strong><br>
-        直接用「記事本」或代碼編輯器打開此 <code>.html</code> 檔，將底部的 <code>guildData</code> 陣列替換為你的真實公會資料即可。系統會<b>自動將同公會歸類合併</b>：<br>
-        <code>{ guild: "公會名稱", gameId: "遊戲ID", channelId: "頻道ID", channelName: "頻道名(可選)", url: "頻道網址", note: "戰術/備註" },</code>
-    </div>
+    <!-- 底部完整維護指南（預設收合） -->
+    <details class="instructions-details">
+        <summary class="instructions-summary">
+            <div class="summary-title">
+                <span>💡</span>
+                <span>點擊展開：完整資料維護與代碼填寫說明指南</span>
+            </div>
+            <span class="summary-arrow">▼</span>
+        </summary>
+        <div class="instructions-body">
+            <div class="instructions-section">
+                <div class="section-heading">📌 1. 如何編輯與新增資料？</div>
+                <ul>
+                    <li>直接使用「<strong>記事本</strong>」或代碼編輯器打開此 <code>.html</code> 檔案，找到下方的 <code>const guildData = [...]</code> 區塊。</li>
+                    <li><strong>同公會自動聚合</strong>：只要 <code>guild</code> 填寫相同公會名稱，系統會<strong>自動合併</strong>在同一張公會卡片下，你無需手動尋找位置插入，隨意貼在陣列最下方即可！</li>
+                </ul>
+            </div>
+
+            <div class="instructions-section">
+                <div class="section-heading">📋 2. 欄位格式詳細說明</div>
+                <ul>
+                    <li><code>guild</code> (字串)：公會 / 幫會名稱（如 <code>"天外飛仙閣"</code>）。</li>
+                    <li><code>gameId</code> (字串)：遊戲內玩家角色 ID（如 <code>"劍舞九天"</code>）。</li>
+                    <li><code>channelId</code> (字串)：頻道 帳號代號 / 頻道 ID（如 <code>"flying_sword_master"</code>）。</li>
+                    <li><code>channelName</code> (字串，選填)：頻道 顯示名稱。若與頻道 ID 相同可留空 <code>""</code>；若不同會自動在下方以括號呈現。</li>
+                    <li><code>url</code> (字串)：頻道首頁網址（供直接跳轉與一鍵複製）。</li>
+                    <li><code>note</code> (字串，選填)：備註 / 觀察重點 / 戰術定位（若無可填 <code>"n/a"</code> 或 <code>""</code>）。</li>
+                    <li><code>videos</code> (陣列，選填)：精選戰局與重點影片清單。包含 <code>title</code>（戰局說明）與 <code>url</code>（具體影片網址）。若無特別推薦影片，可填 <code>videos: []</code> 或省略。</li>
+                </ul>
+            </div>
+
+            <div class="instructions-section">
+                <div class="section-heading">🔍 3. 搜尋穿透與智慧統計</div>
+                <ul>
+                    <li>搜尋列支援<strong>全欄位即時比對</strong>：包含公會名稱、遊戲內 ID、頻道 ID、頻道名稱、備註，以及<strong>精選戰局影片標題</strong>。</li>
+                    <li>搜尋若命中特定影片標題，系統會<strong>自動展開</strong>該成員的精選戰局清單。</li>
+                    <li>頂部指示器會即時呈現「公會總數」、「視角總數」與「精選戰局總數」。</li>
+                </ul>
+            </div>
+
+            <div class="instructions-section">
+                <div class="section-heading">📝 4. 資料複製模板（直接複製修改）</div>
+                <div class="code-block">
+<span class="code-comment">// 範例 1：含精選戰局的成員</span>
+{
+    guild: "公會名稱",
+    gameId: "遊戲內ID",
+    channelId: "頻道ID",
+    channelName: "頻道名稱(若相同可留空)",
+    url: "https://www.youtube.com/@頻道網址",
+    note: "總指揮視角 / 戰術覆盤",
+    videos: [
+        {
+            title: "8/22 逆風翻盤關鍵戰局（旗點調度）",
+            url: "https://www.youtube.com/watch?v=影片ID_1"
+        },
+        {
+            title: "雙刀流派配隊思路與第一視角突進破陣",
+            url: "https://www.youtube.com/watch?v=影片ID_2"
+        }
+    ]
+},
+
+<span class="code-comment">// 範例 2：無精選戰局的一般成員</span>
+{
+    guild: "公會名稱",
+    gameId: "遊戲內ID",
+    channelId: "頻道ID",
+    channelName: "",
+    url: "https://www.youtube.com/@頻道網址",
+    note: "n/a",
+    videos: []
+},
+                </div>
+            </div>
+        </div>
+    </details>
 </div>
 
 <div id="toast">✅ 已複製頻道連結至剪貼簿！</div>
@@ -438,12 +740,13 @@
 /**
  * 演示用公會頻道資料清單 (Mock Test Data)
  * 欄位說明：
- * - guild: 公會名稱 (同公會可分散填寫，系統會自動分組聚合)
+ * - guild: 公會名稱 (自動聚合分組)
  * - gameId: 遊戲內玩家 ID
- * - channelId: YouTube 帳號代號 / 頻道 ID (如 @demo_commander)
- * - channelName: YouTube 顯示名稱 (若與 ID 相同可留空或填 "")
- * - url: 頻道連結網址
- * - note: 備註/觀察重點 (選填，無筆記可填 "n/a" 或 "")
+ * - channelId: YouTube 帳號代號 / 頻道 ID
+ * - channelName: YouTube 顯示名稱 (選填)
+ * - url: 頻道首頁連結
+ * - note: 備註/觀察重點 (選填)
+ * - videos: 精選戰局影片清單 [{ title: "標題說明", url: "影片連結" }] (選填)
  */
 const guildData = [
     {
@@ -452,7 +755,17 @@ const guildData = [
         channelId: "flying_sword_master",
         channelName: "飛仙劍神",
         url: "https://www.youtube.com",
-        note: "公會總指揮視角 / 雙劍突進"
+        note: "總指揮視角 / 雙劍切入",
+        videos: [
+            {
+                title: "8/20 旗點拉扯與逆風翻盤關鍵戰局",
+                url: "https://www.youtube.com"
+            },
+            {
+                title: "雙刀突進破陣與後排切入思路",
+                url: "https://www.youtube.com"
+            }
+        ]
     },
     {
         guild: "天外飛仙閣",
@@ -460,7 +773,8 @@ const guildData = [
         channelId: "moonlight_gamer",
         channelName: "月下客",
         url: "https://www.youtube.com",
-        note: "主坦牽制 / 陣型分割"
+        note: "主坦牽制 / 陣型分割",
+        videos: []
     },
     {
         guild: "天外飛仙閣",
@@ -468,7 +782,8 @@ const guildData = [
         channelId: "healer_fairy",
         channelName: "妙手回春",
         url: "https://www.youtube.com",
-        note: "後排輔助支援 / 範圍治療"
+        note: "後排輔助 / 範圍治療支援",
+        videos: []
     },
     {
         guild: "逍遙遊",
@@ -476,7 +791,13 @@ const guildData = [
         channelId: "kun_gamer_tw",
         channelName: "大魚大肉",
         url: "https://www.youtube.com",
-        note: "側翼刺客切入 / 專切後排"
+        note: "側翼刺客視角",
+        videos: [
+            {
+                title: "百業戰正面陣地戰與三塔防守調度",
+                url: "https://www.youtube.com"
+            }
+        ]
     },
     {
         guild: "逍遙遊",
@@ -484,7 +805,8 @@ const guildData = [
         channelId: "wind_walker_live",
         channelName: "御風者",
         url: "https://www.youtube.com",
-        note: "遠程牽制 / 弓箭輸出"
+        note: "遠程牽制 / 弓箭輸出",
+        videos: []
     },
     {
         guild: "聽雨樓",
@@ -492,7 +814,8 @@ const guildData = [
         channelId: "rainy_night_yt",
         channelName: "聽雨客",
         url: "https://www.youtube.com",
-        note: "正面主力團戰視角"
+        note: "主力團戰視角",
+        videos: []
     },
     {
         guild: "風雲再起",
@@ -500,7 +823,8 @@ const guildData = [
         channelId: "fengyun_leader",
         channelName: "",
         url: "https://www.youtube.com",
-        note: "戰術覆盤精華"
+        note: "戰術覆盤精華",
+        videos: []
     },
     {
         guild: "清風明月堂",
@@ -508,7 +832,8 @@ const guildData = [
         channelId: "breeze_moon",
         channelName: "清風徐來",
         url: "https://www.youtube.com",
-        note: "n/a"
+        note: "n/a",
+        videos: []
     }
 ];
 
@@ -534,7 +859,7 @@ function parseChannelInfo(item) {
     return { primary: "-", secondary: "" };
 }
 
-// 將資料依「公會名稱」自動分組
+// 依公會分組
 function groupDataByGuild(items) {
     const map = new Map();
     items.forEach(item => {
@@ -547,52 +872,91 @@ function groupDataByGuild(items) {
     return map;
 }
 
-// 取得全庫統計
+// 取得總統計（公會數、視角數、精選影片數）
 function getTotalStats() {
     const totalGuilds = new Set(guildData.map(d => (d.guild || "未分類").trim())).size;
     const totalPOVs = guildData.length;
-    return { totalGuilds, totalPOVs };
+    let totalVideos = 0;
+    guildData.forEach(d => {
+        if (Array.isArray(d.videos)) totalVideos += d.videos.length;
+    });
+    return { totalGuilds, totalPOVs, totalVideos };
 }
 
-// 更新統計指示器
-function updateStatsBadge(groupedData, isFiltering, totalPOVsFiltered) {
-    const { totalGuilds, totalPOVs } = getTotalStats();
+// 更新統計資訊
+function updateStatsBadge(groupedData, isFiltering, totalPOVsFiltered, totalVideosFiltered) {
+    const { totalGuilds, totalPOVs, totalVideos } = getTotalStats();
     const visibleGuilds = groupedData.size;
 
     if (!isFiltering) {
         statsBadge.innerHTML = `
             👥 共 <span class="highlight">${totalGuilds}</span> 間公會
             <span class="divider">|</span>
-            📹 收錄 <span class="highlight">${totalPOVs}</span> 個觀戰視角
+            📹 <span class="highlight">${totalPOVs}</span> 個視角
+            <span class="divider">|</span>
+            🎬 收錄 <span class="highlight">${totalVideos}</span> 支精選戰局
         `;
     } else {
         statsBadge.innerHTML = `
-            🔍 顯示 <span class="highlight">${visibleGuilds}</span> 間公會（<span class="highlight">${totalPOVsFiltered}</span> 個視角）
+            🔍 顯示 <span class="highlight">${visibleGuilds}</span> 間公會（<span class="highlight">${totalPOVsFiltered}</span> 視角 / <span class="highlight">${totalVideosFiltered}</span> 戰局）
             <span class="divider">/</span>
-            全庫共 ${totalGuilds} 間（${totalPOVs} 個視角）
+            全庫共 ${totalGuilds} 間（${totalPOVs} 視角）
         `;
     }
 }
 
-// 渲染分組卡片
-function renderGuildGroups(data, isFiltering = false) {
+// 記錄當前展開狀態 (以 memberUid 為 key)
+const expandedState = new Set();
+
+function getMemberUid(item) {
+    return `${item.guild}_${item.gameId}_${item.channelId}`.replace(/[^a-zA-Z0-9_一-龥]/g, "");
+}
+
+// 切換展開/收合
+function toggleVideoExpand(uid) {
+    const expandRow = document.getElementById(`expand-${uid}`);
+    const toggleBtn = document.getElementById(`btn-toggle-${uid}`);
+    const memberRow = document.getElementById(`row-${uid}`);
+
+    if (!expandRow) return;
+
+    if (expandRow.classList.contains("open")) {
+        expandRow.classList.remove("open");
+        toggleBtn.classList.remove("active");
+        memberRow.classList.remove("has-expanded");
+        expandedState.delete(uid);
+    } else {
+        expandRow.classList.add("open");
+        toggleBtn.classList.add("active");
+        memberRow.classList.add("has-expanded");
+        expandedState.add(uid);
+    }
+}
+
+// 渲染分組清單
+function renderGuildGroups(data, isFiltering = false, keyword = "") {
     container.innerHTML = "";
     
     if (data.length === 0) {
         noResultEl.style.display = "block";
-        updateStatsBadge(new Map(), isFiltering, 0);
+        updateStatsBadge(new Map(), isFiltering, 0, 0);
         return;
     }
     noResultEl.style.display = "none";
 
     const grouped = groupDataByGuild(data);
-    updateStatsBadge(grouped, isFiltering, data.length);
+    
+    let filteredVideoCount = 0;
+    data.forEach(d => {
+        if (Array.isArray(d.videos)) filteredVideoCount += d.videos.length;
+    });
+
+    updateStatsBadge(grouped, isFiltering, data.length, filteredVideoCount);
 
     grouped.forEach((members, guildName) => {
         const card = document.createElement("div");
         card.className = "guild-card";
 
-        // 卡片標頭
         const povBadgeText = members.length > 1 ? `${members.length} 個視角` : `1 個視角`;
         
         let tableRowsHtml = "";
@@ -600,10 +964,61 @@ function renderGuildGroups(data, isFiltering = false) {
             const channel = parseChannelInfo(item);
             const gameId = item.gameId || item.ingameId || "-";
             const note = item.note || "-";
+            const videos = Array.isArray(item.videos) ? item.videos : [];
+            const uid = getMemberUid(item);
+
+            // 判斷搜尋時是否命中影片標題，若命中則自動展開
+            const hasVideoMatch = keyword && videos.some(v => v.title.toLowerCase().includes(keyword));
+            const isAutoOpen = hasVideoMatch || expandedState.has(uid);
+
+            let videoToggleBtnHtml = "";
+            let videoExpandRowHtml = "";
+
+            if (videos.length > 0) {
+                videoToggleBtnHtml = `
+                    <button id="btn-toggle-${uid}" class="btn-video-toggle ${isAutoOpen ? 'active' : ''}" onclick="toggleVideoExpand('${uid}')" title="點擊展開精選戰局">
+                        🎬 精選戰局 (${videos.length})
+                        <svg class="arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                `;
+
+                let videoItemsHtml = "";
+                videos.forEach((vid, vIdx) => {
+                    videoItemsHtml += `
+                        <div class="video-item">
+                            <div class="video-title-text">
+                                <span style="color: #d19a66; font-weight: bold;">#${vIdx + 1}</span>
+                                <span>${escapeHtml(vid.title)}</span>
+                            </div>
+                            <a href="${escapeHtml(vid.url)}" target="_blank" rel="noopener noreferrer" class="video-btn-play">
+                                ▶ 觀看影片
+                            </a>
+                        </div>
+                    `;
+                });
+
+                videoExpandRowHtml = `
+                    <tr id="expand-${uid}" class="video-expand-row ${isAutoOpen ? 'open' : ''}">
+                        <td colspan="4" class="video-expand-cell">
+                            <div class="video-list-box">
+                                <div class="video-list-title">
+                                    <span>🎬</span>
+                                    <span>推薦觀摩戰局清單</span>
+                                </div>
+                                <div class="video-items">
+                                    ${videoItemsHtml}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
 
             tableRowsHtml += `
-                <tr>
-                    <td style="width: 22%;">
+                <tr id="row-${uid}" class="member-row ${isAutoOpen ? 'has-expanded' : ''}">
+                    <td style="width: 20%;">
                         <span class="game-id">${escapeHtml(gameId)}</span>
                     </td>
                     <td style="width: 32%;">
@@ -612,11 +1027,12 @@ function renderGuildGroups(data, isFiltering = false) {
                             ${channel.secondary ? `<span class="channel-title">(${escapeHtml(channel.secondary)})</span>` : ''}
                         </div>
                     </td>
-                    <td class="hide-mobile" style="width: 24%;">
+                    <td class="hide-mobile" style="width: 26%;">
                         <span class="note-text">${escapeHtml(note)}</span>
+                        ${videoToggleBtnHtml ? `<div>${videoToggleBtnHtml}</div>` : ''}
                     </td>
                     <td style="width: 22%; text-align: right; white-space: nowrap;">
-                        <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="btn-link" title="以新分頁開啟 YouTube 頻道">
+                        <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="btn-link" title="以新分頁開啟 YouTube 頻道主頁">
                             前往頻道
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
@@ -624,11 +1040,12 @@ function renderGuildGroups(data, isFiltering = false) {
                                 <line x1="10" y1="14" x2="21" y2="3"></line>
                             </svg>
                         </a>
-                        <button class="btn-copy" onclick="copyToClipboard('${escapeHtml(item.url)}')" title="複製連結">
+                        <button class="btn-copy" onclick="copyToClipboard('${escapeHtml(item.url)}')" title="複製頻道連結">
                             複製
                         </button>
                     </td>
                 </tr>
+                ${videoExpandRowHtml}
             `;
         });
 
@@ -645,8 +1062,8 @@ function renderGuildGroups(data, isFiltering = false) {
                     <tr>
                         <th>遊戲內 ID</th>
                         <th>頻道 ID / 頻道名</th>
-                        <th class="hide-mobile">備註 / 重點</th>
-                        <th style="text-align: right;">操作</th>
+                        <th class="hide-mobile">備註 / 戰局</th>
+                        <th style="text-align: right;">頻道連結</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -659,11 +1076,11 @@ function renderGuildGroups(data, isFiltering = false) {
     });
 }
 
-// 搜尋過濾
+// 搜尋過濾 (包含影片標題穿透)
 searchInput.addEventListener("input", (e) => {
     const keyword = e.target.value.trim().toLowerCase();
     if (!keyword) {
-        renderGuildGroups(guildData, false);
+        renderGuildGroups(guildData, false, "");
         return;
     }
 
@@ -672,8 +1089,15 @@ searchInput.addEventListener("input", (e) => {
         const gameId = (item.gameId || item.ingameId || "").toLowerCase();
         const channelId = (item.channelId || item.id || "").toLowerCase();
         const channelName = (item.channelName || item.name || "").toLowerCase();
-        const note = (item.note || "").toLowerCase();
-        const url = (item.url || "").toLowerCase();
+
+        // 忽略 n/a 與 - 等佔位字串
+        const rawNote = (item.note || "").toLowerCase().trim();
+        const note = ["n/a", "na", "-", "none"].includes(rawNote) ? "" : rawNote;
+
+        // 檢查精選影片標題
+        const hasVideoMatch = Array.isArray(item.videos) && item.videos.some(v => 
+            (v.title || "").toLowerCase().includes(keyword)
+        );
 
         return (
             guild.includes(keyword) ||
@@ -681,11 +1105,11 @@ searchInput.addEventListener("input", (e) => {
             channelId.includes(keyword) ||
             channelName.includes(keyword) ||
             note.includes(keyword) ||
-            url.includes(keyword)
+            hasVideoMatch
         );
     });
 
-    renderGuildGroups(filtered, true);
+    renderGuildGroups(filtered, true, keyword);
 });
 
 // 複製連結小工具
@@ -721,7 +1145,7 @@ function escapeHtml(str) {
 }
 
 // 初始化渲染
-renderGuildGroups(guildData, false);
+renderGuildGroups(guildData, false, "");
 </script>
 
 </body>

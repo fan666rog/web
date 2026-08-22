@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大型團戰頻道導覽 (Demo 演示版)</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --card-header-bg: #1f2937;
+            --card-hover: #212836;
+            --accent-gold: #e5c07b;
+            --accent-gold-hover: #f3d699;
+            --accent-gold-dim: rgba(229, 192, 123, 0.15);
+            --accent-cyan: #56b6c2;
+            --text-main: #f0f4f8;
+            --text-sub: #94a3b8;
+            --border-color: #30363d;
+            --border-subtle: #21262d;
+            --btn-bg: #21262d;
+            --btn-hover: #30363d;
+            --badge-bg: #162c3d;
+            --badge-text: #61afef;
+            --badge-count-bg: rgba(229, 192, 123, 0.12);
+            --badge-count-text: #e5c07b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 30px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header .demo-badge {
+            display: inline-block;
+            background-color: var(--accent-gold-dim);
+            color: var(--accent-gold);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(229, 192, 123, 0.3);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent-gold);
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: var(--text-sub);
+            font-size: 14px;
+        }
+
+        /* 搜尋與控制區 */
+        .controls {
+            background-color: var(--card-bg);
+            padding: 18px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px 12px 42px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(229, 192, 123, 0.15);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-sub);
+            pointer-events: none;
+        }
+
+        /* 統計指示器 */
+        .stats-badge {
+            background-color: var(--bg-color);
+            padding: 10px 18px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            font-size: 13.5px;
+            color: var(--text-sub);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .stats-badge .highlight {
+            color: var(--accent-gold);
+            font-weight: 700;
+            font-size: 14.5px;
+        }
+
+        .stats-badge .divider {
+            color: var(--border-color);
+            margin: 0 4px;
+        }
+
+        /* 公會分組卡片清單 */
+        .guild-groups-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .guild-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+
+        .guild-card:hover {
+            border-color: #3b4252;
+        }
+
+        /* 卡片標頭：公會名稱與視角統計 */
+        .guild-header {
+            background-color: var(--card-header-bg);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .guild-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .guild-icon {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--accent-gold);
+            box-shadow: 0 0 8px rgba(229, 192, 123, 0.6);
+        }
+
+        .guild-name-text {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: 0.5px;
+        }
+
+        .guild-pov-count {
+            background-color: var(--badge-count-bg);
+            color: var(--badge-count-text);
+            font-size: 12.5px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(229, 192, 123, 0.25);
+        }
+
+        /* 視角成員表格 */
+        .guild-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .guild-table th {
+            background-color: rgba(13, 17, 23, 0.5);
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 12.5px;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .guild-table td {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 14.5px;
+            vertical-align: middle;
+        }
+
+        .guild-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .guild-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+        .guild-table tbody tr:hover {
+            background-color: var(--card-hover);
+        }
+
+        /* 成員欄位樣式 */
+        .game-id {
+            display: inline-block;
+            background-color: var(--badge-bg);
+            color: var(--badge-text);
+            padding: 3px 9px;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid rgba(97, 175, 239, 0.25);
+        }
+
+        .channel-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .channel-id {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        .channel-title {
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .note-text {
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        .btn-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background-color: var(--accent-gold);
+            color: #0d1117;
+            text-decoration: none;
+            padding: 7px 13px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-link:hover {
+            background-color: var(--accent-gold-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(229, 192, 123, 0.35);
+        }
+
+        .btn-copy {
+            background-color: var(--btn-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-sub);
+            padding: 7px 11px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            margin-left: 6px;
+        }
+
+        .btn-copy:hover {
+            background-color: var(--btn-hover);
+            color: var(--text-main);
+            border-color: #484f58;
+        }
+
+        .no-result {
+            padding: 50px 20px;
+            text-align: center;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            color: var(--text-sub);
+            font-size: 15px;
+        }
+
+        /* 底部新增說明 */
+        .footer-tips {
+            margin-top: 25px;
+            padding: 18px 22px;
+            background-color: rgba(22, 27, 34, 0.6);
+            border-radius: 8px;
+            border: 1px dashed var(--border-color);
+            color: var(--text-sub);
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .footer-tips code {
+            background-color: var(--bg-color);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-gold);
+            font-size: 12px;
+        }
+
+        /* Toast 提示 */
+        #toast {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background-color: var(--card-bg);
+            color: var(--text-main);
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--accent-gold);
+            box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+        }
+
+        #toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px 10px;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .guild-table th, .guild-table td {
+                padding: 10px 12px;
+            }
+            .hide-mobile {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="demo-badge">TEMPLATE / DEMO VERSION</div>
+        <h1>大型團戰頻道導覽DEMO</h1>
+        <p>公會陣容觀摩 · 排兵佈陣 · 視角覆盤導覽</p>
+    </header>
+
+    <div class="controls">
+        <div class="search-box">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="searchInput" placeholder="搜尋公會、遊戲ID、頻道ID、頻道名或備註..." autofocus>
+        </div>
+        <div class="stats-badge" id="statsBadge">
+            <!-- 統計文字由 JS 動態生成 -->
+        </div>
+    </div>
+
+    <!-- 公會分組區塊容器 -->
+    <div id="guildGroupsContainer" class="guild-groups-container">
+        <!-- 內容由 JS 動態渲染 -->
+    </div>
+
+    <div id="noResult" class="no-result" style="display: none;">
+        查無相符的公會或頻道資料
+    </div>
+
+    <div class="footer-tips">
+        <strong>💡 如何新增 / 維護正式資料？</strong><br>
+        直接用「記事本」或代碼編輯器打開此 <code>.html</code> 檔，將底部的 <code>guildData</code> 陣列替換為你的真實公會資料即可。系統會<b>自動將同公會歸類合併</b>：<br>
+        <code>{ guild: "公會名稱", gameId: "遊戲ID", channelId: "頻道ID", channelName: "頻道名(可選)", url: "頻道網址", note: "戰術/備註" },</code>
+    </div>
+</div>
+
+<div id="toast">✅ 已複製頻道連結至剪貼簿！</div>
+
+<script>
+/**
+ * 演示用公會頻道資料清單 (Mock Test Data)
+ * 欄位說明：
+ * - guild: 公會名稱 (同公會可分散填寫，系統會自動分組聚合)
+ * - gameId: 遊戲內玩家 ID
+ * - channelId: YouTube 帳號代號 / 頻道 ID (如 @demo_commander)
+ * - channelName: YouTube 顯示名稱 (若與 ID 相同可留空或填 "")
+ * - url: 頻道連結網址
+ * - note: 備註/觀察重點 (選填，無筆記可填 "n/a" 或 "")
+ */
+const guildData = [
+    {
+        guild: "天外飛仙閣",
+        gameId: "劍舞九天",
+        channelId: "flying_sword_master",
+        channelName: "飛仙劍神",
+        url: "https://www.youtube.com",
+        note: "公會總指揮視角 / 雙劍突進"
+    },
+    {
+        guild: "天外飛仙閣",
+        gameId: "月下獨酌",
+        channelId: "moonlight_gamer",
+        channelName: "月下客",
+        url: "https://www.youtube.com",
+        note: "主坦牽制 / 陣型分割"
+    },
+    {
+        guild: "天外飛仙閣",
+        gameId: "靈丹妙手",
+        channelId: "healer_fairy",
+        channelName: "妙手回春",
+        url: "https://www.youtube.com",
+        note: "後排輔助支援 / 範圍治療"
+    },
+    {
+        guild: "逍遙遊",
+        gameId: "北冥有魚",
+        channelId: "kun_gamer_tw",
+        channelName: "大魚大肉",
+        url: "https://www.youtube.com",
+        note: "側翼刺客切入 / 專切後排"
+    },
+    {
+        guild: "逍遙遊",
+        gameId: "乘風歸去",
+        channelId: "wind_walker_live",
+        channelName: "御風者",
+        url: "https://www.youtube.com",
+        note: "遠程牽制 / 弓箭輸出"
+    },
+    {
+        guild: "聽雨樓",
+        gameId: "夜雨寄北",
+        channelId: "rainy_night_yt",
+        channelName: "聽雨客",
+        url: "https://www.youtube.com",
+        note: "正面主力團戰視角"
+    },
+    {
+        guild: "風雲再起",
+        gameId: "雄霸天下",
+        channelId: "fengyun_leader",
+        channelName: "",
+        url: "https://www.youtube.com",
+        note: "戰術覆盤精華"
+    },
+    {
+        guild: "清風明月堂",
+        gameId: "明月照大江",
+        channelId: "breeze_moon",
+        channelName: "清風徐來",
+        url: "https://www.youtube.com",
+        note: "n/a"
+    }
+];
+
+// DOM 元素
+const container = document.getElementById("guildGroupsContainer");
+const searchInput = document.getElementById("searchInput");
+const statsBadge = document.getElementById("statsBadge");
+const noResultEl = document.getElementById("noResult");
+const toast = document.getElementById("toast");
+
+// 解析頻道資訊
+function parseChannelInfo(item) {
+    const id = item.channelId || item.id || "";
+    const name = item.channelName || item.name || "";
+    
+    if (id && name && id !== name) {
+        return { primary: id, secondary: name };
+    } else if (id) {
+        return { primary: id, secondary: "" };
+    } else if (name) {
+        return { primary: name, secondary: "" };
+    }
+    return { primary: "-", secondary: "" };
+}
+
+// 將資料依「公會名稱」自動分組
+function groupDataByGuild(items) {
+    const map = new Map();
+    items.forEach(item => {
+        const guildName = (item.guild || "未分類公會").trim();
+        if (!map.has(guildName)) {
+            map.set(guildName, []);
+        }
+        map.get(guildName).push(item);
+    });
+    return map;
+}
+
+// 取得全庫統計
+function getTotalStats() {
+    const totalGuilds = new Set(guildData.map(d => (d.guild || "未分類").trim())).size;
+    const totalPOVs = guildData.length;
+    return { totalGuilds, totalPOVs };
+}
+
+// 更新統計指示器
+function updateStatsBadge(groupedData, isFiltering, totalPOVsFiltered) {
+    const { totalGuilds, totalPOVs } = getTotalStats();
+    const visibleGuilds = groupedData.size;
+
+    if (!isFiltering) {
+        statsBadge.innerHTML = `
+            👥 共 <span class="highlight">${totalGuilds}</span> 間公會
+            <span class="divider">|</span>
+            📹 收錄 <span class="highlight">${totalPOVs}</span> 個觀戰視角
+        `;
+    } else {
+        statsBadge.innerHTML = `
+            🔍 顯示 <span class="highlight">${visibleGuilds}</span> 間公會（<span class="highlight">${totalPOVsFiltered}</span> 個視角）
+            <span class="divider">/</span>
+            全庫共 ${totalGuilds} 間（${totalPOVs} 個視角）
+        `;
+    }
+}
+
+// 渲染分組卡片
+function renderGuildGroups(data, isFiltering = false) {
+    container.innerHTML = "";
+    
+    if (data.length === 0) {
+        noResultEl.style.display = "block";
+        updateStatsBadge(new Map(), isFiltering, 0);
+        return;
+    }
+    noResultEl.style.display = "none";
+
+    const grouped = groupDataByGuild(data);
+    updateStatsBadge(grouped, isFiltering, data.length);
+
+    grouped.forEach((members, guildName) => {
+        const card = document.createElement("div");
+        card.className = "guild-card";
+
+        // 卡片標頭
+        const povBadgeText = members.length > 1 ? `${members.length} 個視角` : `1 個視角`;
+        
+        let tableRowsHtml = "";
+        members.forEach(item => {
+            const channel = parseChannelInfo(item);
+            const gameId = item.gameId || item.ingameId || "-";
+            const note = item.note || "-";
+
+            tableRowsHtml += `
+                <tr>
+                    <td style="width: 22%;">
+                        <span class="game-id">${escapeHtml(gameId)}</span>
+                    </td>
+                    <td style="width: 32%;">
+                        <div class="channel-info">
+                            <span class="channel-id">${escapeHtml(channel.primary)}</span>
+                            ${channel.secondary ? `<span class="channel-title">(${escapeHtml(channel.secondary)})</span>` : ''}
+                        </div>
+                    </td>
+                    <td class="hide-mobile" style="width: 24%;">
+                        <span class="note-text">${escapeHtml(note)}</span>
+                    </td>
+                    <td style="width: 22%; text-align: right; white-space: nowrap;">
+                        <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="btn-link" title="以新分頁開啟 YouTube 頻道">
+                            前往頻道
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                        <button class="btn-copy" onclick="copyToClipboard('${escapeHtml(item.url)}')" title="複製連結">
+                            複製
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        card.innerHTML = `
+            <div class="guild-header">
+                <div class="guild-title-wrap">
+                    <span class="guild-icon"></span>
+                    <span class="guild-name-text">${escapeHtml(guildName)}</span>
+                </div>
+                <span class="guild-pov-count">${povBadgeText}</span>
+            </div>
+            <table class="guild-table">
+                <thead>
+                    <tr>
+                        <th>遊戲內 ID</th>
+                        <th>頻道 ID / 頻道名</th>
+                        <th class="hide-mobile">備註 / 重點</th>
+                        <th style="text-align: right;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRowsHtml}
+                </tbody>
+            </table>
+        `;
+
+        container.appendChild(card);
+    });
+}
+
+// 搜尋過濾
+searchInput.addEventListener("input", (e) => {
+    const keyword = e.target.value.trim().toLowerCase();
+    if (!keyword) {
+        renderGuildGroups(guildData, false);
+        return;
+    }
+
+    const filtered = guildData.filter(item => {
+        const guild = (item.guild || "").toLowerCase();
+        const gameId = (item.gameId || item.ingameId || "").toLowerCase();
+        const channelId = (item.channelId || item.id || "").toLowerCase();
+        const channelName = (item.channelName || item.name || "").toLowerCase();
+        const note = (item.note || "").toLowerCase();
+        const url = (item.url || "").toLowerCase();
+
+        return (
+            guild.includes(keyword) ||
+            gameId.includes(keyword) ||
+            channelId.includes(keyword) ||
+            channelName.includes(keyword) ||
+            note.includes(keyword) ||
+            url.includes(keyword)
+        );
+    });
+
+    renderGuildGroups(filtered, true);
+});
+
+// 複製連結小工具
+function copyToClipboard(text) {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+        showToast("已複製頻道連結至剪貼簿！");
+    }).catch(() => {
+        showToast("複製失敗，請手動複製");
+    });
+}
+
+function showToast(msg) {
+    toast.textContent = "✅ " + msg;
+    toast.classList.add("show");
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 2000);
+}
+
+// 簡易防 XSS
+function escapeHtml(str) {
+    if (!str) return "";
+    return String(str).replace(/[&<>"']/g, function(m) {
+        return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        }[m];
+    });
+}
+
+// 初始化渲染
+renderGuildGroups(guildData, false);
+</script>
+
+</body>
+</html>

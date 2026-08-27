@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FB 留言萃取演算法獨立測試工作站 V3.3.0</title>
+  <style>
+    body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #1c1e21; margin: 0; padding: 20px; }
+    .container { max-width: 1050px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    h1 { color: #1877f2; margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 24px; border-bottom: 2px solid #e4e6eb; padding-bottom: 12px; }
+    
+    .panel { background: #f7f8fa; border: 1px solid #dddfe2; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+    .helper-panel { background: #eef5ff; border: 1.5px dashed #1877f2; border-radius: 8px; padding: 15px 18px; margin-bottom: 15px; }
+    
+    .setting-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; font-size: 14px; }
+    .setting-row:last-child { margin-bottom: 0; }
+    .setting-row label { display: inline-flex; align-items: center; gap: 6px; font-weight: bold; cursor: pointer; }
+    input[type="text"], input[type="number"] { padding: 6px 10px; border: 1px solid #ccd0d5; border-radius: 4px; font-size: 14px; }
+    
+    button { padding: 10px 18px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; }
+    .btn-primary { background: #1877f2; color: white; }
+    .btn-primary:hover { background: #166fe5; }
+    .btn-danger { background: #e41e3f; color: white; }
+    .btn-copy { background: #42b72a; color: white; }
+    
+    .bookmarklet-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #1877f2, #0d54b8);
+      color: #fff !important;
+      padding: 9px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 14px;
+      box-shadow: 0 2px 6px rgba(24, 119, 242, 0.35);
+      cursor: grab;
+      border: 1px solid #0d54b8;
+    }
+    .bookmarklet-btn:hover { background: #166fe5; transform: translateY(-1px); }
+    .btn-secondary { background: #e4e6eb; color: #050505; }
+    .btn-secondary:hover { background: #d8dadf; }
+
+    #fb-inputArea { height: 200px; border: 2px dashed #1877f2; padding: 12px; overflow-y: auto; background: #fff; border-radius: 6px; word-break: break-word; }
+    #fb-inputArea:empty:before { content: attr(data-placeholder); color: #8a8d91; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+
+    .stats-bar { display: flex; gap: 20px; background: #e7f3ff; border-left: 5px solid #1877f2; padding: 12px 20px; border-radius: 6px; margin: 15px 0; font-weight: bold; font-size: 15px; flex-wrap: wrap; }
+    .stats-highlight { color: #1877f2; font-size: 18px; }
+
+    details { background: white; border: 1px solid #ccd0d5; border-radius: 6px; margin-bottom: 10px; }
+    summary { padding: 10px 15px; cursor: pointer; font-weight: bold; background: #f7f8fa; border-radius: 6px; user-select: none; }
+    .details-body { padding: 12px; max-height: 250px; overflow-y: auto; font-family: monospace; font-size: 13px; line-height: 1.5; word-break: break-all; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    th, td { border: 1px solid #dddfe2; padding: 8px 10px; text-align: left; }
+    th { background: #f0f2f5; }
+    .badge-ok { background: #e7f3ff; color: #1877f2; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    .badge-fail { background: #ffebe8; color: #e41e3f; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    .badge-reply { background: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 4px; }
+    .badge-main { background: #d4edda; color: #155724; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 4px; }
+    .badge-author { background: #d63031; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 4px; font-weight: bold; }
+    .badge-reaction { background: #6c5ce7; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 4px; }
+    
+    .guide-step { margin-bottom: 6px; font-size: 13.5px; line-height: 1.5; color: #333; }
+    .guide-step b { color: #1877f2; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📥 FB 留言抓取獨立測試工作站 V3.3.0</h1>
+
+  <!-- 前置自動展開工具區塊 -->
+  <div class="helper-panel">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+      <h3 style="margin: 0; color: #1877f2; font-size: 16px; display: flex; align-items: center; gap: 6px;">
+        🚀 前置工具：FB 留言自動展開助手 (書籤小工具)
+      </h3>
+      <div style="display: flex; gap: 8px;">
+        <a class="bookmarklet-btn" id="bookmarkletLink" href='javascript:(function(){if(window.__fbExpanderTimer){clearInterval(window.__fbExpanderTimer);}window.__fbExpanderRunning=true;let count=0,bottomWait=0,lastArtCount=0,stopped=false;const oldBox=document.getElementById("fb-expand-box");if(oldBox)oldBox.remove();const box=document.createElement("div");box.id="fb-expand-box";box.style.cssText="position:fixed;top:20px;right:20px;z-index:9999999;background:#1877f2;color:#fff;padding:12px 20px;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.3);font-family:sans-serif;font-size:14px;font-weight:bold;cursor:pointer;user-select:none;line-height:1.4;";box.innerHTML="🚀 FB 留言展開中... (已點擊 0 次)<br><span style=\"font-size:12px;opacity:0.8;\">👉 點擊此處可強制停止</span>";document.body.appendChild(box);box.onclick=function(){stopped=true;box.style.background="#e41e3f";box.innerText="🛑 已手動停止！";setTimeout(()=>{box.remove();},1200);window.__fbExpanderRunning=false;clearInterval(window.__fbExpanderTimer);};function fireFullClick(el){["pointerdown","mousedown","pointerup","mouseup","click"].forEach(type=>{const evt=new MouseEvent(type,{bubbles:true,cancelable:true,view:window,buttons:1});el.dispatchEvent(evt);});if(typeof el.click==="function")el.click();}function getActiveRoot(){const dialogs=Array.from(document.querySelectorAll("[role=\x22dialog\x22], [aria-modal=\x22true\x22]")).filter(d=>{const r=d.getBoundingClientRect();return r.width>300&&r.height>300;});return dialogs.length>0?dialogs[dialogs.length-1]:document.body;}function getScrollContainer(root){const arts=root.querySelectorAll("[role=\x22article\x22]");if(arts.length>0){let p=arts[arts.length-1].parentElement;while(p&&p!==root&&p!==document.body){if(p.scrollHeight>p.clientHeight&&p.clientHeight>150){return p;}p=p.parentElement;}}if(root!==document.body&&root.scrollHeight>root.clientHeight){return root;}return null;}const reg=/(查看|檢視|載入|顯示|另外).*(則|条)?(回覆|留言)|查看更多|View.*(replies|comments)|(Previous|Load|More).*(replies|comments)|View more/i;window.__fbExpanderTimer=setInterval(()=>{if(stopped){clearInterval(window.__fbExpanderTimer);return;}const root=getActiveRoot();const arts=root.querySelectorAll("[role=\x22article\x22]");const curArtCount=arts.length;const now=Date.now();const buttons=Array.from(root.querySelectorAll("div[role=\x22button\x22], span[role=\x22button\x22]")).filter(btn=>{const r=btn.getBoundingClientRect();if(r.width===0||r.height===0)return false;const txt=btn.textContent.trim();if(!reg.test(txt))return false;if(txt.startsWith("回覆")||txt.includes("推薦")||txt.includes("分享")||txt.includes("貼文")||txt.includes("隱藏")||txt.includes("收回"))return false;if(btn.dataset.lastClickedText===txt&&(now-Number(btn.dataset.lastClickedTime||0))<2500){return false;}return true;});if(buttons.length>0){bottomWait=0;const target=buttons[0];const targetTxt=target.textContent.trim();target.dataset.lastClickedText=targetTxt;target.dataset.lastClickedTime=String(Date.now());try{target.scrollIntoView({behavior:"smooth",block:"center"});}catch(e){}fireFullClick(target);count++;box.innerHTML=`🚀 展開留言中... (已點擊 ${count} 次)<br><span style="font-size:12px;opacity:0.9;">💬 已載入 ${curArtCount} 則留言</span>`;}else{const scroller=getScrollContainer(root);let moved=false;if(scroller){const before=scroller.scrollTop;scroller.scrollTop+=400;scroller.dispatchEvent(new Event("scroll",{bubbles:true}));scroller.dispatchEvent(new WheelEvent("wheel",{deltaY:400,bubbles:true,cancelable:true}));moved=(scroller.scrollTop>before);}else if(root===document.body){const before=window.scrollY;window.scrollBy(0,400);moved=(window.scrollY>before);}if(moved||curArtCount!==lastArtCount){bottomWait=0;box.innerHTML=`⏩ 巡航搜尋中... (已點擊 ${count} 次)<br><span style="font-size:12px;opacity:0.9;">💬 已載入 ${curArtCount} 則留言</span>`;}else{bottomWait++;box.innerHTML=`⏳ 等待伺服器載入更多... (${bottomWait}/16)<br><span style="font-size:12px;opacity:0.9;">💬 目前共 ${curArtCount} 則留言</span>`;if(bottomWait>=16){clearInterval(window.__fbExpanderTimer);box.style.background="#42b72a";box.innerHTML=`✅ 全部展開完成！(共點擊 ${count} 次，共 ${curArtCount} 則)<br><span style="font-size:12px;">現在可以開始複製囉</span>`;setTimeout(()=>{box.remove();},4000);window.__fbExpanderRunning=false;}}}lastArtCount=curArtCount;},450);})();' title="拖曳至瀏覽器書籤列">
+          📥 拖曳我到書籤列 (FB留言自動展開)
+        </a>
+        <button type="button" class="btn-secondary" onclick="copyBookmarkletCode()">📋 複製書籤代碼</button>
+      </div>
+    </div>
+    
+    <details>
+      <summary style="background: transparent; padding: 4px 0; font-size: 13.5px; color: #1877f2;">
+        📖 點此查看【如何使用書籤小工具自動展開 FB 留言】圖文說明
+      </summary>
+      <div style="padding-top: 10px; border-top: 1px solid #d0e1fd; margin-top: 8px;">
+        <div class="guide-step"><b>步驟 1 (安裝)：</b> 按住上方藍色按鈕 <span style="background:#1877f2;color:#fff;padding:2px 6px;border-radius:3px;font-size:12px;">📥 拖曳我到書籤列</span>，直接<b>拖曳至瀏覽器上方的「書籤列」</b>。（若無法拖曳，可點擊「複製書籤代碼」，在瀏覽器書籤列按右鍵「新增網頁/書籤」並貼於網址處）。</div>
+        <div class="guide-step"><b>步驟 2 (自動展開)：</b> 前往目標 FB 貼文，將留言排序切換為「<b>所有留言</b>」(部分瀏覽器不會出現該選項)，點擊書籤列的「<b>FB留言自動展開</b>」。右上角會出現藍色提示框，自動點擊展開所有樓中樓並巡航滾動。</div>
+        <div class="guide-step"><b>步驟 3 (複製與分析)：</b> 待右上角跳出「✅ 全部展開完成」後，注意留言最底部有無出現「查看隱藏留言」字樣，若有請手動點擊載入(通常只有少數幾則)。在 FB 頁面用滑鼠拖曳反白選取所有留言區塊按 Ctrl+C 複製，回到本頁貼在下方輸入區即可開始分析！</div>
+      </div>
+    </details>
+  </div>
+
+  <!-- 原有過濾條件設定面板 (完全保留) -->
+  <div class="panel">
+    <div class="setting-row">
+      <label><input type="checkbox" id="includeRepliesCheck" checked> 納入「樓中樓回覆」參加抽獎</label>
+      <label style="margin-left: 15px;"><input type="checkbox" id="excludeAuthorCheck" checked> 自動排除「發文者/作者本人」</label>
+      <span style="font-weight:bold; margin-left: 10px;">🚫 手動排除：</span>
+      <input type="text" id="manualExclusions" placeholder="填寫人名，多筆用逗號隔開" style="flex-grow: 1;">
+    </div>
+    <div class="setting-row">
+      <label><input type="checkbox" id="keywordEnable" onchange="toggleKeywordInput()"> 啟用通關密語</label>
+      <input type="text" id="keywordInput" disabled placeholder="指定字串，多組請用逗號隔開" style="flex-grow: 1;">
+    </div>
+    <div class="setting-row">
+      <label><input type="checkbox" id="tagEnable" onchange="toggleTagInput()"> 啟用標記朋友</label>
+      <span>至少標記 <input type="number" id="tagCountInput" value="1" min="1" disabled style="width: 50px; text-align:center;"> 人</span>
+      <span style="color: #65676b; font-size: 13px;">(樓中樓系統預設標記之原留言者已自動扣除，不佔用有效標記額度)</span>
+    </div>
+  </div>
+
+  <h4 style="margin: 10px 0;">貼上複製的 FB 留言 (Ctrl+V)</h4>
+  <div id="fb-inputArea" contenteditable="true" data-placeholder="請在 FB 網頁版用滑鼠拖曳反白選取留言區塊（包含樓中樓），Ctrl+C 複製後在此處 Ctrl+V 貼上..."></div>
+
+  <div style="margin-top: 12px; display: flex; gap: 10px;">
+    <button class="btn-primary" onclick="runExtraction()">⚡ 開始萃取分析</button>
+    <button class="btn-copy" onclick="copyResult()">📋 複製合格名單</button>
+    <button class="btn-danger" onclick="clearAll()">🧹 清空重來</button>
+  </div>
+
+  <div id="statsBar" class="stats-bar" style="display: none;">
+    <div>📌 總留言區塊：<span id="statTotal" class="stats-highlight">0</span></div>
+    <div>💬 主留言：<span id="statMainCount" class="stats-highlight">0</span></div>
+    <div>↳ 樓中樓：<span id="statReplyCount" class="stats-highlight">0</span></div>
+    <div>✅ 合格人數：<span id="statValid" class="stats-highlight" style="color: #42b72a;">0</span></div>
+    <div>❌ 排除/不符：<span id="statFiltered" class="stats-highlight" style="color: #e41e3f;">0</span></div>
+  </div>
+
+  <div id="debugLogs" style="display: none; margin-top: 15px;">
+    <details open>
+      <summary>📋 最終合格名單預覽 (格式化輸出)</summary>
+      <div class="details-body" id="outValidList" style="color: #2b542c; font-weight: bold;"></div>
+    </details>
+
+    <details open>
+      <summary>🔍 逐筆詳細審查記錄 (除錯表格)</summary>
+      <div class="details-body">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 45px;">序號</th>
+              <th style="width: 140px;">層級與標籤</th>
+              <th style="width: 130px;">留言者</th>
+              <th style="width: 120px;">辨識 ID</th>
+              <th>提取留言內文 (已轉 Emoji)</th>
+              <th style="width: 65px;">標記數</th>
+              <th style="width: 120px;">審查狀態</th>
+            </tr>
+          </thead>
+          <tbody id="outDebugTableBody"></tbody>
+        </table>
+      </div>
+    </details>
+
+    <details>
+      <summary>🗑️ 排除與不符資格明細</summary>
+      <div class="details-body" id="outFailDetails" style="color: #d9534f;"></div>
+    </details>
+  </div>
+</div>
+
+<script>
+  function copyBookmarkletCode() {
+    const code = document.getElementById('bookmarkletLink').getAttribute('href');
+    navigator.clipboard.writeText(code).then(() => {
+      alert("✅ 已複製書籤代碼！\n\n您可以在瀏覽器書籤列點右鍵「新增網頁/新增書籤」，名稱自訂，並將網址/URL處貼上即可！");
+    }).catch(() => {
+      alert("複製失敗，請手動選取複製！");
+    });
+  }
+
+  function toggleKeywordInput() {
+    const chk = document.getElementById('keywordEnable').checked;
+    document.getElementById('keywordInput').disabled = !chk;
+  }
+
+  function toggleTagInput() {
+    const chk = document.getElementById('tagEnable').checked;
+    document.getElementById('tagCountInput').disabled = !chk;
+    if (chk) {
+      document.getElementById('keywordEnable').checked = true;
+      document.getElementById('keywordInput').disabled = false;
+    }
+  }
+
+  function clearAll() {
+    document.getElementById('fb-inputArea').innerHTML = '';
+    document.getElementById('statsBar').style.display = 'none';
+    document.getElementById('debugLogs').style.display = 'none';
+  }
+
+  function extractUserId(href) {
+    if (!href) return "unknown";
+    try {
+      let urlObj = href.startsWith('http') ? new URL(href) : new URL(href, 'https://www.facebook.com');
+      if (urlObj.pathname.includes('/profile.php')) return urlObj.searchParams.get('id') || "unknown";
+      if (urlObj.pathname.includes('/groups/') && urlObj.pathname.includes('/user/')) {
+        let segments = urlObj.pathname.split('/').filter(p => p !== "");
+        let idx = segments.indexOf('user');
+        if (idx !== -1 && segments.length > idx + 1) return segments[idx + 1];
+      }
+      let pathSegments = urlObj.pathname.split('/').filter(p => p !== "");
+      if (pathSegments.length > 0 && !pathSegments[0].includes("groups")) return pathSegments[0];
+      return "unknown";
+    } catch (e) {
+      return "unknown";
+    }
+  }
+
+  function runExtraction() {
+    const inputArea = document.getElementById('fb-inputArea');
+    const includeReplies = document.getElementById('includeRepliesCheck').checked;
+    const keywordActive = document.getElementById('keywordEnable').checked;
+    const kwInput = document.getElementById('keywordInput').value.trim();
+    const tagActive = document.getElementById('tagEnable').checked;
+    const minTags = parseInt(document.getElementById('tagCountInput').value) || 1;
+    const excludeAuthor = document.getElementById('excludeAuthorCheck').checked;
+    const manualExcludes = document.getElementById('manualExclusions').value.split(/[，,；;]+/).map(s => s.trim()).filter(Boolean);
+    const keywords = kwInput.split(/[，,；;]+/).map(k => k.replace(/\s+/g, '').toLowerCase()).filter(Boolean);
+
+    let articles = Array.from(inputArea.querySelectorAll('[role="article"]'));
+    if (articles.length === 0) {
+      articles = Array.from(inputArea.children).filter(el => el.querySelector('a[role="link"], a[href*="facebook.com"]'));
+    }
+
+    if (articles.length === 0) {
+      alert("⚠️ 未偵測到任何留言區塊，請確認是否有正確複製 FB 貼文留言！");
+      return;
+    }
+
+    let parsedList = [];
+    let mainCount = 0;
+    let replyCount = 0;
+
+    articles.forEach((art, index) => {
+      const authorLink = art.querySelector('a[role="link"], a[href*="facebook.com"], a');
+      if (!authorLink) return;
+
+      const commenterName = authorLink.textContent.trim();
+      const commenterHref = authorLink.getAttribute('href') || "";
+      const commenterId = extractUserId(commenterHref);
+
+      const ariaLabel = art.getAttribute('aria-label') || "";
+      const replyMatch = ariaLabel.match(/^(.+?)回覆(.+?)的留言/);
+      const isReply = !!replyMatch;
+      const repliedTarget = isReply ? replyMatch[2].trim() : "";
+
+      if (isReply) replyCount++; else mainCount++;
+
+      const isAuthor = Array.from(art.querySelectorAll('span')).some(span => {
+        return span.children.length === 0 && span.textContent.trim() === "作者";
+      });
+
+      const hasAuthorReaction = art.innerText.includes("來自作者");
+
+      const clone = art.cloneNode(true);
+      
+      clone.querySelectorAll('img').forEach(img => {
+        const alt = img.getAttribute('alt');
+        if (alt) img.replaceWith(document.createTextNode(alt));
+      });
+
+      let tags = new Set();
+      clone.querySelectorAll('a').forEach((a, aIdx) => {
+        if (aIdx === 0) return;
+        const text = a.textContent.trim();
+        if (isReply && text === repliedTarget) return;
+
+        const href = a.getAttribute('href') || "";
+        const isHashtag = text.startsWith("#") || href.includes("/hashtag/");
+        const isPost = href.includes("/posts/") || href.includes("/share/");
+        const isExternal = href.includes("l.facebook.com") || (!href.includes("facebook.com") && href.startsWith("http"));
+        const targetId = extractUserId(href);
+
+        if (!isHashtag && !isPost && !isExternal && targetId !== "unknown" && targetId !== commenterId) {
+          tags.add(targetId);
+        }
+      });
+
+      const firstA = clone.querySelector('a');
+      if (firstA) firstA.remove();
+      clone.querySelectorAll('[role="button"], li, svg').forEach(el => el.remove());
+      
+      let contentText = clone.textContent.replace(/\s+/g, ' ').trim();
+      if (isReply && repliedTarget && contentText.startsWith(repliedTarget)) {
+        contentText = contentText.substring(repliedTarget.length).trim();
+      }
+
+      parsedList.push({
+        index: index + 1,
+        isReply: isReply,
+        repliedTarget: repliedTarget,
+        name: commenterName,
+        userId: commenterId,
+        content: contentText,
+        tagsCount: tags.size,
+        isAuthor: isAuthor,
+        hasAuthorReaction: hasAuthorReaction,
+        isManual: manualExcludes.includes(commenterName)
+      });
+    });
+
+    let userMap = new Map();
+    let qualifiedList = [];
+    let failLogs = [];
+    let tableRowsHtml = "";
+
+    parsedList.forEach(item => {
+      let status = "合格";
+      let statusClass = "badge-ok";
+      let failReason = "";
+
+      if (!includeReplies && item.isReply) {
+        status = "略過 (樓中樓)";
+        statusClass = "badge-fail";
+        failReason = "設定未包含樓中樓回覆";
+      } else if (excludeAuthor && item.isAuthor) {
+        status = "排除 (作者)";
+        statusClass = "badge-fail";
+        failReason = "發文者身分 (作者本人)";
+      } else if (item.isManual) {
+        status = "排除 (手動)";
+        statusClass = "badge-fail";
+        failReason = "名列手動排除名單";
+      } else if (keywordActive && keywords.length > 0) {
+        const cleanText = item.content.replace(/\s+/g, '').toLowerCase();
+        const hitKeyword = keywords.some(k => cleanText.includes(k));
+        if (!hitKeyword) {
+          status = "不符 (密語錯誤)";
+          statusClass = "badge-fail";
+          failReason = "未包含指定通關密語";
+        }
+      }
+
+      if (status === "合格" && tagActive && item.tagsCount < minTags) {
+        status = "不符 (標記不足)";
+        statusClass = "badge-fail";
+        failReason = `標記人數不足 (有效標記: ${item.tagsCount}/${minTags})`;
+      }
+
+      if (status === "合格") {
+        if (userMap.has(item.name)) {
+          let ids = userMap.get(item.name);
+          if (ids.has(item.userId)) {
+            status = "排除 (重複)";
+            statusClass = "badge-fail";
+            failReason = "同一用戶重複留言";
+          } else {
+            ids.add(item.userId);
+            qualifiedList.push({ name: item.name, id: item.userId, isSameName: true });
+          }
+        } else {
+          userMap.set(item.name, new Set([item.userId]));
+          qualifiedList.push({ name: item.name, id: item.userId, isSameName: false });
+        }
+      }
+
+      if (status !== "合格") {
+        failLogs.push(`[${item.name}${item.isReply ? ' (樓中樓)' : ''}]：${failReason} (留言: "${item.content.substring(0, 30)}...")`);
+      }
+
+      let layerBadge = item.isReply ? `<span class="badge-reply">↳ 樓中樓</span>` : `<span class="badge-main">💬 主留言</span>`;
+      if (item.isAuthor) layerBadge += `<span class="badge-author">作者本人</span>`;
+      if (item.hasAuthorReaction) layerBadge += `<span class="badge-reaction">🌟 來自作者</span>`;
+
+      tableRowsHtml += `
+        <tr>
+          <td>${item.index}</td>
+          <td>${layerBadge}</td>
+          <td><b>${item.name}</b></td>
+          <td><code>${item.userId}</code></td>
+          <td>${item.content || '<i style="color:#aaa;">(純表情/GIF/圖片)</i>'}</td>
+          <td>${item.tagsCount}</td>
+          <td><span class="${statusClass}">${status}</span></td>
+        </tr>`;
+    });
+
+    document.getElementById('statTotal').innerText = parsedList.length;
+    document.getElementById('statMainCount').innerText = mainCount;
+    document.getElementById('statReplyCount').innerText = replyCount;
+    document.getElementById('statValid').innerText = qualifiedList.length;
+    document.getElementById('statFiltered').innerText = parsedList.length - qualifiedList.length;
+    document.getElementById('statsBar').style.display = 'flex';
+
+    const finalFormatted = qualifiedList.map((u, i) => {
+      const serial = `F-${String(i + 1).padStart(3, '0')}`;
+      return u.isSameName ? `${serial} ${u.name} (@${u.id})` : `${serial} ${u.name}`;
+    });
+
+    document.getElementById('outValidList').innerHTML = finalFormatted.join('<br>') || '無合格名單';
+    document.getElementById('outDebugTableBody').innerHTML = tableRowsHtml;
+    document.getElementById('outFailDetails').innerHTML = failLogs.join('<br>') || '無任何被排除之留言';
+    document.getElementById('debugLogs').style.display = 'block';
+  }
+
+  function copyResult() {
+    const listText = document.getElementById('outValidList').innerText;
+    if (!listText || listText === "無合格名單") return alert("目前無合格名單可複製！");
+    navigator.clipboard.writeText(listText).then(() => alert("✅ 已成功複製合格名單！"));
+  }
+</script>
+
+</body>
+</html>

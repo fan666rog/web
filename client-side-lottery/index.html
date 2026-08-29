@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券摸彩箱抽獎程式 V5.0.3 | 支援FB留言抽獎、線上線下混抽、個資隱碼保護</title>
+  <title>彩券摸彩箱抽獎程式 V5.1.0 | 支援FB留言抽獎、線上線下混抽、個資隱碼保護</title>
   <meta name="description" content="免費實用的網頁抽獎程式！支援實體摸彩券與數位名單雙軌混抽，一鍵智慧萃取 FB 留言，內建隱碼保護功能、頭獎老虎機動效。無須下載，點開即用。">
   <meta name="keywords" content="免費抽獎程式,FB留言抽獎,抽獎系統,線上抽獎,摸彩券程式">
   <style>
@@ -108,18 +108,67 @@
     .tooltip-bottom .tooltip-text::after { top: auto; bottom: 100%; border-color: transparent transparent #444 transparent; }
 
     
-    /* ================= FB 萃取器專屬進階樣式 (進化版方案 C) ================= */
-    .fb-settings-panel { background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; }
-    .fb-setting-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 14px; }
-    .fb-option-group { display: flex; align-items: center; gap: 6px; font-weight: bold; color: #444; cursor: pointer; }
+    /* ================= FB 萃取器 3.3.2 專屬樣式 ================= */
+    .fb-helper-panel { background: #eef5ff; border: 1.5px dashed #1877f2; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; }
+    .fb-bookmarklet-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #1877f2, #0d54b8); color: #fff !important;
+      padding: 8px 14px; border-radius: 6px; text-decoration: none;
+      font-weight: bold; font-size: 13px; box-shadow: 0 2px 5px rgba(24, 119, 242, 0.3);
+      cursor: grab; border: 1px solid #0d54b8;
+    }
+    .fb-bookmarklet-btn:hover { background: #166fe5; transform: translateY(-1px); }
+    .fb-guide-step { margin-bottom: 6px; font-size: 13px; line-height: 1.5; color: #333; }
+    .fb-guide-step b { color: #1877f2; }
     
-    .fb-stats-panel { background-color: #eef7e8; border-left: 5px solid #4CAF50; padding: 15px; border-radius: 4px; margin-bottom: 15px; font-size: 14px; line-height: 1.6; display: none; }
-    .fb-stats-panel details { margin-top: 8px; background: white; border-radius: 4px; border: 1px solid #ddd; }
-    .fb-stats-panel summary { padding: 8px 12px; cursor: pointer; font-weight: bold; color: #555; background: #fdfdfd; user-select: none; transition: background 0.2s; }
-    .fb-stats-panel summary:hover { background: #f4f4f4; }
-    .fb-stats-panel .details-content { padding: 10px; max-height: 120px; overflow-y: auto; font-family: monospace; color: #d9534f; word-break: break-all; font-size: 13px; border-top: 1px solid #eee; }
-    /* FB 貼上區提示字 */
-    #fb-inputArea:empty:before { content: attr(data-placeholder); color: #adb5bd; font-size: 14px; line-height: 1.6; white-space: pre-wrap; pointer-events: none; display: block; }
+    /* ================= FB 萃取器設定卡片 (2x2 對稱網格) ================= */
+    .fb-settings-panel { 
+      background-color: #f8f9fa; 
+      border: 1px solid #dee2e6; 
+      border-radius: 8px; 
+      padding: 12px 15px; 
+      margin-bottom: 15px; 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 10px 16px; 
+    }
+    .fb-setting-col { 
+      display: flex; 
+      align-items: center; 
+      gap: 6px; 
+      font-size: 14px; 
+      min-width: 0; 
+    }
+    .fb-setting-col label { 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 6px; 
+      font-weight: bold; 
+      cursor: pointer; 
+      color: #333; 
+      white-space: nowrap; 
+    }
+    .fb-setting-col input[type="text"] { 
+      flex: 1; 
+      width: 100%; 
+      padding: 5px 8px; 
+      font-size: 13px; 
+      box-sizing: border-box; 
+    }
+    
+    /* 手機版自動切換為單欄 */
+    @media (max-width: 768px) {
+      .fb-settings-panel { grid-template-columns: 1fr; gap: 10px; }
+    }    
+    .fb-stats-bar { display: flex; gap: 15px; background: #e7f3ff; border-left: 5px solid #1877f2; padding: 10px 16px; border-radius: 6px; margin-bottom: 15px; font-weight: bold; font-size: 14px; flex-wrap: wrap; }
+    .fb-stats-val { color: #1877f2; font-size: 16px; }
+
+    #fb-inputArea { height: 160px; border: 2px dashed #1877f2; padding: 10px; overflow-y: auto; background: #fff; border-radius: 6px; word-break: break-word; box-sizing: border-box; }
+    #fb-inputArea:empty:before { content: attr(data-placeholder); color: #8a8d91; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; pointer-events: none; display: block; }
+    
+    .fb-details-box { background: white; border: 1px solid #ccd0d5; border-radius: 6px; margin-top: 10px; }
+    .fb-details-box summary { padding: 8px 12px; cursor: pointer; font-weight: bold; background: #f7f8fa; border-radius: 6px; user-select: none; font-size: 13.5px; }
+    .fb-details-content { padding: 10px; max-height: 180px; overflow-y: auto; font-family: monospace; font-size: 12.5px; line-height: 1.5; word-break: break-all; }
 
     /* 拖曳排序 UI 樣式 */
     .drag-row { cursor: grab; transition: background-color 0.2s; }
@@ -549,7 +598,7 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V5.0.3 (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V5.1.0 (點擊修改標題)</h1>
     
     <details class="instructions-panel">
       <summary>📖 點擊查看系統使用說明</summary>
@@ -777,94 +826,90 @@
 </div>
 
 <div id="modal-fb-extract" class="modal-overlay hidden">
-  <div class="modal-content">
-    <h2 style="margin-top:0; color:#1877f2; display: flex; align-items: center; gap: 10px;">
-      📥 FB 留言智慧萃取工作站
+  <div class="modal-content" style="max-width: 850px;">
+    <h2 style="margin-top:0; color:#1877f2; display: flex; justify-content: space-between; align-items: center;">
+      <span>📥 FB 留言智慧萃取工作站 V3.3.2</span>
+      <button onclick="document.getElementById('modal-fb-extract').classList.add('hidden')" style="background:none; border:none; font-size:24px; cursor:pointer; color:#999; padding:0 5px;">&times;</button>
     </h2>
-    
-    <div style="background:#f4f4f9; padding:15px; border-radius:8px; margin-bottom:15px;">
-        <div style="display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 15px;">
-          <button onclick="runFBExtraction()" style="background:#008CBA; color:white; font-weight:bold; padding:10px; flex: 1;">⚡ 2. 開始資料審核</button>
-          <button onclick="importFBToList()" style="background:#28a745; color:white; font-weight:bold; padding:10px; flex: 1;">✅ 3. 將合格名單加入抽獎池</button>
-          <button onclick="document.getElementById('modal-fb-extract').classList.add('hidden')" style="background:#6c757d; color:white; padding:10px;">取消</button>
-        </div>
 
-        <div class="fb-settings-panel">
-            <div class="fb-setting-row">
-                <label class="fb-option-group">
-                    <input type="checkbox" id="excludeAuthorCheck" checked> 自動排除「作者」
-                    <span class="tooltip" tabindex="0">?
-                        <span class="tooltip-text">程式依賴「作者」標籤辨識。若偵測失敗請使用旁邊的手動排除。</span>
-                    </span>
-                </label>
-                <div style="flex-grow: 1; display: flex; align-items: center; gap: 8px;">
-                  <span style="font-weight:bold;">🚫 手動排除：</span>
-                  <input type="text" id="manualExclusions" placeholder="排除人名，多筆請用「逗號」隔開" style="flex-grow: 1; width: auto; padding: 6px;">
-                </div>
-            </div>
-            <div class="fb-setting-row">
-                <label class="fb-option-group">
-                    <input type="checkbox" id="keywordEnable" onchange="handleKeywordChange()"> 啟用通關密語
-                    <span class="tooltip" tabindex="0">?
-                        <span class="tooltip-text">若大量留言『完全相同』的字串，極易遭 FB 演算法判定為洗版而降流。建議在活動規則中引導粉絲留言『通關密語 + 個人心得/創意』，以保護粉專觸及率。</span>
-                    </span>
-                </label>
-                <input type="text" id="keywordInput" disabled placeholder="輸入指定字串，多組請用「逗號」隔開" style="flex-grow: 1; width: auto; padding: 6px;">
-            </div>
-            <div class="fb-setting-row">
-                <label class="fb-option-group">
-                    <input type="checkbox" id="tagEnable" onchange="handleTagChange()"> 啟用標記朋友
-                    <span class="tooltip" tabindex="0">?
-                        <span class="tooltip-text">若留言過度要求標記朋友易被 FB 系統判定為『互動誘餌』，可能導致貼文觸及率被大幅降低，請謹慎評估使用。勾選此項將同步啟用通關密語。</span>
-                    </span>
-                </label>
-                <span>至少標記 <input type="number" id="tagCountInput" value="1" min="1" disabled style="width: 60px; text-align: center; padding: 6px;"> 人</span>
-            </div>
+    <!-- 前置自動展開助手 (書籤列小工具) -->
+    <div class="fb-helper-panel">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <span style="font-weight: bold; color: #1877f2; font-size: 14px;">🚀 前置工具：自動點開全部留言</span>
+        <div style="display: flex; gap: 8px;">
+          <a class="fb-bookmarklet-btn" id="fb-bookmarklet-link" href='javascript:(function(){if(window.__fbExpanderTimer){clearInterval(window.__fbExpanderTimer);}window.__fbExpanderRunning=true;let count=0,bottomWait=0,lastArtCount=0,stopped=false;const oldBox=document.getElementById("fb-expand-box");if(oldBox)oldBox.remove();const box=document.createElement("div");box.id="fb-expand-box";box.style.cssText="position:fixed;top:20px;right:20px;z-index:9999999;background:#1877f2;color:#fff;padding:12px 20px;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.3);font-family:sans-serif;font-size:14px;font-weight:bold;cursor:pointer;user-select:none;line-height:1.4;";box.innerHTML="🚀 FB 留言展開中... (已點擊 0 次)<br><span style=\"font-size:12px;opacity:0.8;\">👉 點擊此處可強制停止</span>";document.body.appendChild(box);box.onclick=function(){stopped=true;box.style.background="#e41e3f";box.innerText="🛑 已手動停止！";setTimeout(()=>{box.remove();},1200);window.__fbExpanderRunning=false;clearInterval(window.__fbExpanderTimer);};function fireFullClick(el){["pointerdown","mousedown","pointerup","mouseup","click"].forEach(type=>{const evt=new MouseEvent(type,{bubbles:true,cancelable:true,view:window,buttons:1});el.dispatchEvent(evt);});if(typeof el.click==="function")el.click();}function getActiveRoot(){const dialogs=Array.from(document.querySelectorAll("[role=\x22dialog\x22], [aria-modal=\x22true\x22]")).filter(d=>{const r=d.getBoundingClientRect();return r.width>300&&r.height>300;});return dialogs.length>0?dialogs[dialogs.length-1]:document.body;}function getScrollContainer(root){const arts=root.querySelectorAll("[role=\x22article\x22]");if(arts.length>0){let p=arts[arts.length-1].parentElement;while(p&&p!==root&&p!==document.body){if(p.scrollHeight>p.clientHeight&&p.clientHeight>150){return p;}p=p.parentElement;}}if(root!==document.body&&root.scrollHeight>root.clientHeight){return root;}return null;}const reg=/(查看|檢視|載入|顯示|另外).*(則|条)?(回覆|留言)|查看更多|View.*(replies|comments)|(Previous|Load|More).*(replies|comments)|View more/i;window.__fbExpanderTimer=setInterval(()=>{if(stopped){clearInterval(window.__fbExpanderTimer);return;}const root=getActiveRoot();const arts=root.querySelectorAll("[role=\x22article\x22]");const curArtCount=arts.length;const now=Date.now();const buttons=Array.from(root.querySelectorAll("div[role=\x22button\x22], span[role=\x22button\x22]")).filter(btn=>{const r=btn.getBoundingClientRect();if(r.width===0||r.height===0)return false;const txt=btn.textContent.trim();if(!reg.test(txt))return false;if(txt.startsWith("回覆")||txt.includes("推薦")||txt.includes("分享")||txt.includes("貼文")||(txt.includes("隱藏")&&!/(查看|檢視|載入|顯示|view)/i.test(txt))||txt.includes("收回"))return false;if(btn.dataset.lastClickedText===txt&&(now-Number(btn.dataset.lastClickedTime||0))<2500){return false;}return true;});if(buttons.length>0){bottomWait=0;const target=buttons[0];const targetTxt=target.textContent.trim();target.dataset.lastClickedText=targetTxt;target.dataset.lastClickedTime=String(Date.now());try{target.scrollIntoView({behavior:"smooth",block:"center"});}catch(e){}fireFullClick(target);count++;box.innerHTML=`🚀 展開留言中... (已點擊 ${count} 次)<br><span style="font-size:12px;opacity:0.9;">💬 已載入 ${curArtCount} 則留言</span>`;}else{const scroller=getScrollContainer(root);let moved=false;if(scroller){const before=scroller.scrollTop;scroller.scrollTop+=400;scroller.dispatchEvent(new Event("scroll",{bubbles:true}));scroller.dispatchEvent(new WheelEvent("wheel",{deltaY:400,bubbles:true,cancelable:true}));moved=(scroller.scrollTop>before);}else if(root===document.body){const before=window.scrollY;window.scrollBy(0,400);moved=(window.scrollY>before);}if(moved||curArtCount!==lastArtCount){bottomWait=0;box.innerHTML=`⏩ 巡航搜尋中... (已點擊 ${count} 次)<br><span style="font-size:12px;opacity:0.9;">💬 已載入 ${curArtCount} 則留言</span>`;}else{bottomWait++;box.innerHTML=`⏳ 等待伺服器載入更多... (${bottomWait}/16)<br><span style="font-size:12px;opacity:0.9;">💬 目前共 ${curArtCount} 則留言</span>`;if(bottomWait>=16){clearInterval(window.__fbExpanderTimer);box.style.background="#42b72a";box.innerHTML=`✅ 全部展開完成！(共點擊 ${count} 次，共 ${curArtCount} 則)<br><span style="font-size:12px;">現在可以開始複製囉</span>`;setTimeout(()=>{box.remove();},4000);window.__fbExpanderRunning=false;}}}lastArtCount=curArtCount;},600);})();' title="拖曳至瀏覽器書籤列">📥 拖曳到書籤列</a>
+          <button type="button" onclick="copyBookmarkletCode()" style="background:#6c757d; color:white; font-size:12px; padding:6px 10px;">📋 複製代碼</button>
         </div>
+      </div>
+      <details style="margin-top: 8px;">
+        <summary style="font-size: 13px; color: #1877f2; cursor: pointer;">📖 查看書籤小工具使用說明</summary>
+        <div style="padding-top: 8px; border-top: 1px dashed #ced4da; margin-top: 6px;">
+          <div class="fb-guide-step"><b>步驟 1：</b> 按住上方藍色按鈕拖曳至瀏覽器書籤列（或點擊複製代碼手動新增書籤，代碼貼至書籤網址處）。</div>
+          <div class="fb-guide-step"><b>步驟 2：</b> 在 FB 貼文留言處切換顯示所有留言(若有的話)。然後點擊書籤，系統會自動滾動並點開所有回覆與樓中樓。</div>
+          <div class="fb-guide-step"><b>步驟 3：</b> 展開完畢後，在 FB 頁面反白全選留言按 Ctrl+C，回到此視窗貼上。</div>
+        </div>
+      </details>
     </div>
 
-    <div id="fb-statsPanel" class="fb-stats-panel">
-        <div style="display: flex; gap: 30px; font-weight: bold; font-size: 16px;">
-            <div>📌 掃描留言總數： <span id="statParsed" style="color: #2b542c;">0</span></div>
-            <div>✅ 資格合格人數： <span id="statOutput" style="color: #2b542c;">0</span></div>
-        </div>
-        
-        <details>
-          <summary>🔍 自動偵測作者</summary>
-          <div class="details-content" id="authorInfo">未偵測到</div>
-        </details>
-        
-        <details>
-          <summary>🗑️ 排除名單 (重複留言/手動排除)</summary>
-          <div class="details-content" id="statDuplicates">無</div>
-        </details>
+    <!-- 篩選條件設定卡片 (2x2 左右對稱) -->
+    <div class="fb-settings-panel">
+      <!-- 左上：樓中樓與作者開關 -->
+      <div class="fb-setting-col" style="gap: 15px;">
+        <label><input type="checkbox" id="includeRepliesCheck" checked> 納入樓中樓</label>
+        <label><input type="checkbox" id="excludeAuthorCheck" checked> 自動排除作者</label>
+      </div>
 
-        <details>
-          <summary>❌ 不符資格 (密語錯誤/標記不足)</summary>
-          <div class="details-content" id="statFail">無</div>
-        </details>
+      <!-- 右上：手動排除輸入 -->
+      <div class="fb-setting-col">
+        <span style="font-weight: bold; font-size: 13.5px; white-space: nowrap;">🚫 手動排除：</span>
+        <input type="text" id="manualExclusions" placeholder="人名，多筆用逗號隔開">
+      </div>
 
-        <details>
-          <summary>⚠️ 偵測同名不同人 (已自動標記 ID)</summary>
-          <div class="details-content" id="statSameName">無</div>
-        </details>
+      <!-- 左下：通關密語條件 -->
+      <div class="fb-setting-col">
+        <label><input type="checkbox" id="keywordEnable" onchange="handleKeywordChange()"> 通關密語：</label>
+        <input type="text" id="keywordInput" disabled placeholder="指定字串，多組請用逗號隔開">
+      </div>
+
+      <!-- 右下：標記朋友條件 -->
+      <div class="fb-setting-col" style="white-space: nowrap;">
+        <label><input type="checkbox" id="tagEnable" onchange="handleTagChange()"> 標記朋友：</label>
+        <span style="font-size: 13.5px;">至少 <input type="number" id="tagCountInput" value="1" min="1" disabled style="width: 45px; text-align: center; padding: 4px;"> 人</span>
+      </div>
     </div>
 
-    <div style="display:flex; flex-direction:column; gap:15px;">
-        <div style="width:100%;">
-            <h4 style="margin-top:0; margin-bottom:8px; color:#555;">1. 在下方貼上 FB 留言 (Ctrl+V)</h4>
-              <div id="fb-inputArea" contenteditable="true" 
-                 data-placeholder="💡 操作小撇步：&#10;1. 請開啟 FB 抽獎貼文『網頁版』&#10;2. 留言區點選『顯示所有留言』&#10;3. 用滑鼠由上往下『反白選取』所有留言內容&#10;4. 按下 Ctrl+C 複製，並在此處按下 Ctrl+V 貼上即可！"
-                 style="height:230px; border:2px dashed #aaa; padding:12px; overflow-y:auto; overflow-x:hidden; word-break:break-word; background:#fff; box-sizing:border-box; border-radius:6px;">
-              </div>
-        </div>
+    <!-- 上下結構：貼上區 -->
+    <div style="margin-bottom: 12px;">
+      <div style="font-weight: bold; margin-bottom: 6px; color: #555; font-size: 14px;">1. 貼上 FB 留言內容 (Ctrl+V)</div>
+      <div id="fb-inputArea" contenteditable="true" data-placeholder="請在 FB 網頁版反白複製留言區塊（包含樓中樓），在此處按下 Ctrl+V 貼上..."></div>
+    </div>
 
-        <div style="width:100%;">
-            <h4 style="margin-top:0; margin-bottom:8px; color:#555;">審核結果預覽</h4>
-            <textarea id="fb-outputArea" readonly 
-                      style="width:100%; height:180px; background:#f9f9f9; padding:12px; border:1px solid #ccc; box-sizing:border-box; border-radius:6px; resize: none;">
-            </textarea>
-        </div>
+    <!-- 功能操作按鈕列 -->
+    <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+      <button onclick="runFBExtraction()" style="background:#007bff; color:white; font-weight:bold; flex: 2; padding: 10px;">⚡ 1. 開始資料審核</button>
+      <button onclick="exportFBAuditLog()" id="btn-export-audit" style="background:#e67e22; color:white; font-weight:bold; flex: 1.5; padding: 10px;" class="hidden">📥 匯出審查紀錄 (.txt)</button>
+      <button onclick="importFBToList()" style="background:#28a745; color:white; font-weight:bold; flex: 2; padding: 10px;">✅ 2. 匯入合格名單至抽獎池</button>
+      <button onclick="clearFBInputs()" style="background:#6c757d; color:white; padding: 10px 15px;">🧹 清空</button>
+    </div>
+
+    <!-- 審核統計資訊列 -->
+    <div id="fb-statsBar" class="fb-stats-bar" style="display: none;">
+      <div>📌 總留言：<span id="statTotal" class="fb-stats-val">0</span></div>
+      <div>💬 主留言：<span id="statMainCount" class="fb-stats-val">0</span></div>
+      <div>↳ 樓中樓：<span id="statReplyCount" class="fb-stats-val">0</span></div>
+      <div>✅ 合格人數：<span id="statValid" class="fb-stats-val" style="color: #28a745;">0</span></div>
+      <div>❌ 排除：<span id="statFiltered" class="fb-stats-val" style="color: #dc3545;">0</span></div>
+    </div>
+
+    <!-- 上下結構：審核結果預覽與詳細明細 -->
+    <div>
+      <div style="font-weight: bold; margin-bottom: 6px; color: #555; font-size: 14px;">合格名單預覽 (將自動附帶 F- 前綴)</div>
+      <textarea id="fb-outputArea" readonly style="width: 100%; height: 130px; background: #fdfdfd; padding: 10px; border: 1px solid #ccc; box-sizing: border-box; border-radius: 6px; resize: vertical; font-family: monospace; font-size: 13px;"></textarea>
+      
+      <details class="fb-details-box" id="fb-fail-details-container" style="display: none;">
+        <summary style="color: #dc3545;">🗑️ 點此展開「排除與不符資格名細」</summary>
+        <div class="fb-details-content" id="statFailDetails" style="color: #d9534f;"></div>
+      </details>
     </div>
   </div>
 </div>
@@ -1306,23 +1351,42 @@
   }
 
   // -------------------------------------------------------------
-  // FB 萃取器 V2.0 核心邏輯 (TreeWalker + 條件審查)
+  // FB 萃取器 V3.3.2 核心邏輯 (DOM 巢狀解析 + 審查稽核匯出)
   // -------------------------------------------------------------
+  let fbAuditReportData = null; // 儲存稽核記錄供匯出文字檔使用
+
   function openFBModal() {
+    clearFBInputs();
+    document.getElementById('modal-fb-extract').classList.remove('hidden');
+  }
+
+  function clearFBInputs() {
     document.getElementById('fb-inputArea').innerHTML = '';
     document.getElementById('fb-outputArea').value = '';
-    document.getElementById('fb-statsPanel').style.display = 'none';
+    document.getElementById('fb-statsBar').style.display = 'none';
+    document.getElementById('btn-export-audit').classList.add('hidden');
+    document.getElementById('fb-fail-details-container').style.display = 'none';
+    document.getElementById('statFailDetails').innerHTML = '';
     extractedFBNames = [];
-    document.getElementById('modal-fb-extract').classList.remove('hidden');
+    fbAuditReportData = null;
+  }
+
+  function copyBookmarkletCode() {
+    const code = document.getElementById('fb-bookmarklet-link').getAttribute('href');
+    navigator.clipboard.writeText(code).then(() => {
+      alert("✅ 已複製書籤代碼！\n您可以在瀏覽器書籤列按右鍵「新增網頁/書籤」，網址處貼上即可。");
+    }).catch(() => {
+      alert("複製失敗，請手動拖曳按鈕至書籤列！");
+    });
   }
 
   function handleKeywordChange() {
     const isEnabled = document.getElementById('keywordEnable').checked;
     document.getElementById('keywordInput').disabled = !isEnabled;
     if (!isEnabled) {
-        document.getElementById('keywordInput').value = '';
-        document.getElementById('tagEnable').checked = false;
-        document.getElementById('tagCountInput').disabled = true;
+      document.getElementById('keywordInput').value = '';
+      document.getElementById('tagEnable').checked = false;
+      document.getElementById('tagCountInput').disabled = true;
     }
   }
 
@@ -1330,137 +1394,266 @@
     const isEnabled = document.getElementById('tagEnable').checked;
     document.getElementById('tagCountInput').disabled = !isEnabled;
     if (isEnabled) {
-        document.getElementById('keywordEnable').checked = true;
-        document.getElementById('keywordInput').disabled = false;
+      document.getElementById('keywordEnable').checked = true;
+      document.getElementById('keywordInput').disabled = false;
     }
   }
 
   function extractUserId(href) {
     if (!href) return "unknown";
     try {
-        let urlObj = href.startsWith('http') ? new URL(href) : new URL(href, 'https://www.facebook.com');
-        if (urlObj.pathname.includes('/profile.php')) return urlObj.searchParams.get('id') || "unknown";
-        if (urlObj.pathname.includes('/groups/') && urlObj.pathname.includes('/user/')) {
-            let segments = urlObj.pathname.split('/').filter(p => p !== "");
-            let userIdx = segments.indexOf('user');
-            if (userIdx !== -1 && segments.length > userIdx + 1) return segments[userIdx + 1];
-        }
-        let pathSegments = urlObj.pathname.split('/').filter(p => p !== "");
-        if (pathSegments.length > 0 && !pathSegments[0].includes("groups")) return pathSegments[0];
-        return "unknown";
+      let urlObj = href.startsWith('http') ? new URL(href) : new URL(href, 'https://www.facebook.com');
+      if (urlObj.pathname.includes('/profile.php')) return urlObj.searchParams.get('id') || "unknown";
+      if (urlObj.pathname.includes('/groups/') && urlObj.pathname.includes('/user/')) {
+        let segments = urlObj.pathname.split('/').filter(p => p !== "");
+        let userIdx = segments.indexOf('user');
+        if (userIdx !== -1 && segments.length > userIdx + 1) return segments[userIdx + 1];
+      }
+      let pathSegments = urlObj.pathname.split('/').filter(p => p !== "");
+      if (pathSegments.length > 0 && !pathSegments[0].includes("groups")) return pathSegments[0];
+      return "unknown";
     } catch (e) { return "unknown"; }
   }
 
   function runFBExtraction() {
-    const keywordActive = document.getElementById('keywordEnable').checked;
-    const kwInput = document.getElementById('keywordInput');
-    const tagActive = document.getElementById('tagEnable').checked;
-    const tagInput = document.getElementById('tagCountInput');
     const inputArea = document.getElementById('fb-inputArea');
-    
-    // 防呆驗證
-    if (keywordActive && kwInput.value.trim() === "") { alert("⚠️ 請輸入通關密語！"); kwInput.focus(); return; }
-    if (tagActive && (tagInput.value === "" || isNaN(parseFloat(tagInput.value)) || parseFloat(tagInput.value) < 1 || !Number.isInteger(parseFloat(tagInput.value)))) { 
-        alert("⚠️ 標記人數請輸入大於等於 1 的正整數！"); tagInput.focus(); return; 
+    const includeReplies = document.getElementById('includeRepliesCheck').checked;
+    const keywordActive = document.getElementById('keywordEnable').checked;
+    const kwInput = document.getElementById('keywordInput').value.trim();
+    const tagActive = document.getElementById('tagEnable').checked;
+    const minTags = parseInt(document.getElementById('tagCountInput').value) || 1;
+    const excludeAuthor = document.getElementById('excludeAuthorCheck').checked;
+    const manualExcludes = document.getElementById('manualExclusions').value.split(/[，,；;]+/).map(s => s.trim()).filter(Boolean);
+    const keywords = kwInput.split(/[，,；;]+/).map(k => k.replace(/\s+/g, '').toLowerCase()).filter(Boolean);
+
+    if (keywordActive && kwInput === "") { alert("⚠️ 請輸入通關密語！"); return; }
+
+    let articles = Array.from(inputArea.querySelectorAll('[role="article"]'));
+    if (articles.length === 0) {
+      articles = Array.from(inputArea.children).filter(el => el.querySelector('a[role="link"], a[href*="facebook.com"]'));
     }
 
-    const kwArray = kwInput.value.split(/[，,；;]+/).map(k => k.replace(/\s+/g, '').toLowerCase()).filter(k => k !== "");
-    const minTags = parseInt(tagInput.value);
-    const excludeAuthorActive = document.getElementById('excludeAuthorCheck').checked;
-    const manualList = document.getElementById('manualExclusions').value.split(/[，,；;]+/).map(n => n.trim()).filter(n => n !== "");
+    if (articles.length === 0) {
+      alert("⚠️ 未偵測到有效留言區塊，請確認是否有反白並貼上 FB 留言！");
+      return;
+    }
 
-    // 偵測作者
-    let detectedAuthors = new Set();
-    const textLines = inputArea.innerText.split('\n').map(l => l.trim());
-    textLines.forEach((line, i) => { if (line === "作者") { for (let j = i + 1; j < textLines.length; j++) if (textLines[j] !== "") { detectedAuthors.add(textLines[j]); break; } } });
+    let parsedList = [];
+    let mainCount = 0, replyCount = 0;
 
-    // 計算缩進
-    const links = Array.from(inputArea.querySelectorAll('a'));
-    let minLeftX = Infinity;
-    links.forEach(l => { let r = l.getBoundingClientRect(); if (r.width > 0 && r.left > 0 && r.left < minLeftX) minLeftX = r.left; });
-    const indentThreshold = minLeftX === Infinity ? 0 : minLeftX + 20;
+    articles.forEach((art, index) => {
+      const authorLink = art.querySelector('a[role="link"], a[href*="facebook.com"], a');
+      if (!authorLink) return;
 
-    let userMap = new Map(), totalParsed = 0;
-    let excludedLog = new Set(), disqualifiedLog = new Set(), sameNameLog = new Set();
-    const blacklist = ["讚", "回覆", "分享", "檢舉", "隱藏", "查看更多", "追蹤", "發送訊息", "頭號粉絲", "編輯記錄", "作者", "已編輯"];
+      const commenterName = authorLink.textContent.trim();
+      const commenterHref = authorLink.getAttribute('href') || "";
+      const commenterId = extractUserId(commenterHref);
 
-    let currentCase = null, isLookingForCommenter = true;
-    const walker = document.createTreeWalker(inputArea, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null, false);
-    let currentNode;
+      const parentArticle = art.parentElement ? art.parentElement.closest('[role="article"]') : null;
+      const isDomNested = !!parentArticle && inputArea.contains(parentArticle);
 
-    while (currentNode = walker.nextNode()) {
-        if (currentNode.nodeType === Node.ELEMENT_NODE && currentNode.tagName === "A") {
-            let text = currentNode.textContent.trim();
-            let rect = currentNode.getBoundingClientRect();
-            let href = currentNode.getAttribute('href') || "";
-            const isTime = /^\d+\s*(天|小時|分鐘|秒|週|年)(前)?$/.test(text) || text === "剛剛" || text === "昨天" || /^\d+月\d+日$/.test(text) || /^\d{4}年\d+月\d+日$/.test(text);
+      const ariaLabel = art.getAttribute('aria-label') || "";
+      const replyMatch = ariaLabel.match(/回覆\s*(.+?)\s*的留言/) || ariaLabel.match(/reply\s*(?:to|ing to)?\s*(.+)/i);
+      const isAriaReply = !!replyMatch || /回覆|reply/i.test(ariaLabel);
 
-            if (isTime || text === "回覆" || text === "讚") {
-                isLookingForCommenter = true;
-                if (currentCase) { finalizeCase(currentCase); currentCase = null; }
-                continue;
-            }
-            if (rect.width === 0) continue;
+      const isReply = isDomNested || isAriaReply;
+      let repliedTarget = replyMatch ? replyMatch[1].trim() : "";
 
-            if (isLookingForCommenter) {
-                if (rect.left <= indentThreshold && !blacklist.includes(text) && !text.startsWith("http") && isNaN(text)) {
-                    currentCase = { name: text, userId: extractUserId(href), content: "", tags: new Set(), isAuthor: excludeAuthorActive && detectedAuthors.has(text), isManual: manualList.includes(text) };
-                    isLookingForCommenter = false;
-                }
-            } else if (currentCase && text !== "" && !blacklist.includes(text)) {
-                const isHashtag = text.startsWith("#") || href.includes("/hashtag/");
-                const isPost = href.includes("/posts/") || href.includes("/share/");
-                const isExternal = href.includes("l.facebook.com") || (!href.includes("facebook.com") && href.startsWith("http"));
-                let targetId = extractUserId(href);
-                
-                if (!isHashtag && !isPost && !isExternal && targetId !== "unknown" && targetId !== currentCase.userId) {
-                    currentCase.tags.add(targetId);
-                }
-            }
-        } else if (currentNode.nodeType === Node.TEXT_NODE && currentCase && !isLookingForCommenter) {
-            if (currentNode.parentElement && !currentNode.parentElement.closest('a')) currentCase.content += currentNode.nodeValue;
+      if (isReply) replyCount++; else mainCount++;
+
+      const isAuthor = Array.from(art.querySelectorAll('span')).some(span => span.children.length === 0 && span.textContent.trim() === "作者");
+      const hasAuthorReaction = art.innerText.includes("來自作者");
+
+      const clone = art.cloneNode(true);
+      clone.querySelectorAll('img').forEach(img => {
+        const alt = img.getAttribute('alt');
+        if (alt) img.replaceWith(document.createTextNode(alt));
+      });
+
+      if (isReply && !repliedTarget) {
+        const links = clone.querySelectorAll('a');
+        if (links.length > 1) {
+          const candidate = links[1].textContent.trim();
+          if (clone.textContent.trim().includes(candidate)) repliedTarget = candidate;
         }
-    }
-    if (currentCase) finalizeCase(currentCase);
+      }
 
-    function finalizeCase(c) {
-        totalParsed++;
-        if (c.isAuthor || c.isManual) { excludedLog.add(c.name); return; }
-        if (keywordActive && kwArray.length > 0) {
-            const cleanContent = c.content.replace(/\s+/g, '').toLowerCase();
-            if (!kwArray.some(kw => cleanContent.includes(kw))) { disqualifiedLog.add(c.name + " (密語錯誤)"); return; }
+      let tags = new Set();
+      clone.querySelectorAll('a').forEach((a, aIdx) => {
+        if (aIdx === 0) return;
+        const text = a.textContent.trim();
+        if (isReply && repliedTarget && text === repliedTarget) return;
+
+        const href = a.getAttribute('href') || "";
+        const isHashtag = text.startsWith("#") || href.includes("/hashtag/");
+        const isPost = href.includes("/posts/") || href.includes("/share/");
+        const isExternal = href.includes("l.facebook.com") || (!href.includes("facebook.com") && href.startsWith("http"));
+        const targetId = extractUserId(href);
+
+        if (!isHashtag && !isPost && !isExternal && targetId !== "unknown" && targetId !== commenterId) {
+          tags.add(targetId);
         }
-        if (tagActive && c.tags.size < minTags) { disqualifiedLog.add(c.name + " (標記不足)"); return; }
+      });
 
-        if (userMap.has(c.name)) {
-            let ids = userMap.get(c.name);
-            if (ids.has(c.userId)) excludedLog.add(c.name);
-            else { ids.add(c.userId); sameNameLog.add(c.name); }
-        } else userMap.set(c.name, new Set([c.userId]));
-    }
+      const firstA = clone.querySelector('a');
+      if (firstA) firstA.remove();
+      clone.querySelectorAll('[role="button"], li, svg').forEach(el => el.remove());
+      
+      let contentText = clone.textContent.replace(/\s+/g, ' ').trim();
+      if (isReply && repliedTarget && contentText.startsWith(repliedTarget)) {
+        contentText = contentText.substring(repliedTarget.length).trim();
+      }
 
-    extractedFBNames = [];
-    userMap.forEach((ids, name) => {
-        if (ids.size === 1) extractedFBNames.push(name);
-        else ids.forEach(id => extractedFBNames.push(`${name} (@${id})`));
+      parsedList.push({
+        index: index + 1,
+        isReply: isReply,
+        name: commenterName,
+        userId: commenterId,
+        content: contentText,
+        tagsCount: tags.size,
+        isAuthor: isAuthor,
+        hasAuthorReaction: hasAuthorReaction,
+        isManual: manualExcludes.includes(commenterName)
+      });
     });
 
-    document.getElementById('fb-outputArea').value = extractedFBNames.join('\n');
-    document.getElementById('statParsed').innerText = totalParsed;
-    document.getElementById('statOutput').innerText = extractedFBNames.length;
-    document.getElementById('authorInfo').innerText = Array.from(detectedAuthors).join(', ') || "未偵測到";
-    document.getElementById('statDuplicates').innerText = Array.from(excludedLog).join(', ') || "無";
-    document.getElementById('statFail').innerText = Array.from(disqualifiedLog).join(', ') || "無";
-    document.getElementById('statSameName').innerText = Array.from(sameNameLog).join(', ') || "無";
-    document.getElementById('fb-statsPanel').style.display = 'block';
+    let userMap = new Map();
+    let qualifiedList = [];
+    let failLogs = [];
+    let auditList = [];
+
+    parsedList.forEach(item => {
+      let status = "合格";
+      let failReason = "";
+
+      if (!includeReplies && item.isReply) {
+        status = "略過 (樓中樓)";
+        failReason = "未包含樓中樓回覆";
+      } else if (excludeAuthor && item.isAuthor) {
+        status = "排除 (作者)";
+        failReason = "發文者身分 (作者本人)";
+      } else if (item.isManual) {
+        status = "排除 (手動)";
+        failReason = "名列手動排除名單";
+      } else if (keywordActive && keywords.length > 0) {
+        const cleanText = item.content.replace(/\s+/g, '').toLowerCase();
+        if (!keywords.some(k => cleanText.includes(k))) {
+          status = "不符 (密語錯誤)";
+          failReason = "未包含指定通關密語";
+        }
+      }
+
+      if (status === "合格" && tagActive && item.tagsCount < minTags) {
+        status = "不符 (標記不足)";
+        failReason = `標記人數不足 (有效標記: ${item.tagsCount}/${minTags})`;
+      }
+
+      if (status === "合格") {
+        if (userMap.has(item.name)) {
+          let ids = userMap.get(item.name);
+          if (ids.has(item.userId)) {
+            status = "排除 (重複)";
+            failReason = "同一用戶重複留言";
+          } else {
+            ids.add(item.userId);
+            qualifiedList.push({ name: item.name, id: item.userId, isSameName: true });
+          }
+        } else {
+          userMap.set(item.name, new Set([item.userId]));
+          qualifiedList.push({ name: item.name, id: item.userId, isSameName: false });
+        }
+      }
+
+      if (status !== "合格") {
+        failLogs.push(`[${item.name}${item.isReply ? ' (樓中樓)' : ''}]：${failReason} (內文: "${item.content.substring(0, 30)}")`);
+      }
+
+      auditList.push({
+        index: item.index,
+        type: item.isReply ? '樓中樓' : '主留言',
+        name: item.name,
+        userId: item.userId,
+        tags: item.tagsCount,
+        status: status,
+        content: item.content
+      });
+    });
+
+    extractedFBNames = qualifiedList.map(u => u.isSameName ? `${u.name} (@${u.id})` : u.name);
+
+    document.getElementById('statTotal').innerText = parsedList.length;
+    document.getElementById('statMainCount').innerText = mainCount;
+    document.getElementById('statReplyCount').innerText = replyCount;
+    document.getElementById('statValid').innerText = qualifiedList.length;
+    document.getElementById('statFiltered').innerText = parsedList.length - qualifiedList.length;
+    document.getElementById('fb-statsBar').style.display = 'flex';
+
+    document.getElementById('fb-outputArea').value = extractedFBNames.map((name, i) => `F-${String(i + 1).padStart(3, '0')} ${name}`).join('\n');
+
+    if (failLogs.length > 0) {
+      document.getElementById('statFailDetails').innerHTML = failLogs.join('<br>');
+      document.getElementById('fb-fail-details-container').style.display = 'block';
+    } else {
+      document.getElementById('fb-fail-details-container').style.display = 'none';
+    }
+
+    document.getElementById('btn-export-audit').classList.remove('hidden');
+
+    fbAuditReportData = {
+      timestamp: new Date().toLocaleString(),
+      total: parsedList.length,
+      main: mainCount,
+      reply: replyCount,
+      valid: qualifiedList.length,
+      filtered: parsedList.length - qualifiedList.length,
+      rules: {
+        includeReplies, excludeAuthor, manualExcludes, keywords, minTags: tagActive ? minTags : 0
+      },
+      qualifiedList: extractedFBNames,
+      failLogs,
+      auditList
+    };
+  }
+
+  function exportFBAuditLog() {
+    if (!fbAuditReportData) { alert("請先執行審核！"); return; }
+    const d = fbAuditReportData;
+    let txt = `==================================================\nFB 留言抽獎資格審查稽核日誌\n匯出時間：${d.timestamp}\n==================================================\n\n`;
+    txt += `【一、 審查規則與統計】\n`;
+    txt += `- 總掃描區塊：${d.total} 則 (主留言: ${d.main} / 樓中樓: ${d.reply})\n`;
+    txt += `- 納入樓中樓：${d.rules.includeReplies ? '是' : '否'} | 排除作者：${d.rules.excludeAuthor ? '是' : '否'}\n`;
+    if (d.rules.keywords.length > 0) txt += `- 通關密語：${d.rules.keywords.join(', ')}\n`;
+    if (d.rules.minTags > 0) txt += `- 標記好友門檻：至少 ${d.rules.minTags} 人\n`;
+    if (d.rules.manualExcludes.length > 0) txt += `- 手動排除名單：${d.rules.manualExcludes.join(', ')}\n`;
+    txt += `- 審核結果：合格 ${d.valid} 人 / 排除 ${d.filtered} 筆\n\n`;
+
+    txt += `【二、 合格名單 (共 ${d.valid} 人)】\n`;
+    txt += d.qualifiedList.map((name, i) => `F-${String(i + 1).padStart(3, '0')} ${name}`).join('\n') + `\n\n`;
+
+    txt += `【三、 排除與不符資格明細 (共 ${d.failLogs.length} 筆)】\n`;
+    txt += (d.failLogs.length > 0 ? d.failLogs.join('\n') : '無') + `\n\n`;
+
+    txt += `【四、 全留言逐筆審查詳細記錄】\n`;
+    d.auditList.forEach(item => {
+      txt += `[#${String(item.index).padStart(3, '0')}] ${item.type} | 留言者: ${item.name} | ID: ${item.userId} | 標記: ${item.tags} | 審查: ${item.status} | 內文: "${item.content}"\n`;
+    });
+
+    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `FB留言審查稽核日誌_${Date.now()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
   }
 
   function importFBToList() {
-    if(extractedFBNames.length === 0) { alert("⚠️ 名單為空！請先貼上留言並點擊「開始資料審核」。"); return; }
+    if (extractedFBNames.length === 0) { alert("⚠️ 名單為空！請先貼上留言並點擊「開始資料審核」。"); return; }
     let raw = document.getElementById("digitalListInput");
     let lines = raw.value.split('\n').filter(l => l.trim() !== "");
     let currentMaxF = getMaxSequence(lines, 'F-');
-    
+
     let newFBLines = extractedFBNames.map(name => {
       currentMaxF++;
       return `F-${String(currentMaxF).padStart(3, '0')} ${name}`;
@@ -1471,6 +1664,7 @@
     document.getElementById('modal-fb-extract').classList.add('hidden');
     updateLiveStats();
   }
+  //FB段結束
 
   let statsTimeout;
   function debouncedUpdateStats() { clearTimeout(statsTimeout); statsTimeout = setTimeout(updateLiveStats, 300); }

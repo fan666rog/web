@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FB 留言萃取演算法獨立測試工作站 V3.3.1</title>
+  <title>FB 留言萃取演算法獨立測試工作站 V3.3.2</title>
   <style>
     body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #1c1e21; margin: 0; padding: 20px; }
     .container { max-width: 1050px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -69,7 +69,7 @@
 <body>
 
 <div class="container">
-  <h1>📥 FB 留言抓取PC版測試工作站 V3.3.1</h1>
+  <h1>📥 FB 留言抓取PC版測試工作站 V3.3.2</h1>
 
   <!-- 前置自動展開工具區塊 -->
   <div class="helper-panel">
@@ -247,31 +247,56 @@
       const commenterHref = authorLink.getAttribute('href') || "";
       const commenterId = extractUserId(commenterHref);
 
+      // 1. 物理 DOM 祖先層級檢查（深層巢狀樓中樓必定被包裹在其他 article 內部）
+      const parentArticle = art.parentElement ? art.parentElement.closest('[role="article"]') : null;
+      const isDomNested = !!parentArticle && inputArea.contains(parentArticle);
+
+      // 2. 語意比對（放寬正規表達式，涵蓋多種語言與非標準標籤）
       const ariaLabel = art.getAttribute('aria-label') || "";
-      const replyMatch = ariaLabel.match(/^(.+?)回覆(.+?)的留言/);
-      const isReply = !!replyMatch;
-      const repliedTarget = isReply ? replyMatch[2].trim() : "";
+      const replyMatch = ariaLabel.match(/回覆\s*(.+?)\s*的留言/) || ariaLabel.match(/reply\s*(?:to|ing to)?\s*(.+)/i);
+      const isAriaReply = !!replyMatch || /回覆|reply/i.test(ariaLabel);
+
+      // 綜合判定是否為樓中樓
+      const isReply = isDomNested || isAriaReply;
+      let repliedTarget = replyMatch ? replyMatch[1].trim() : "";
 
       if (isReply) replyCount++; else mainCount++;
 
+      // 精準作者判定：嚴格檢查純文字等於「作者」的葉節點（徹底排除「來自作者」字串）
       const isAuthor = Array.from(art.querySelectorAll('span')).some(span => {
         return span.children.length === 0 && span.textContent.trim() === "作者";
       });
 
+      // 檢查是否獲得作者表情互動（愛心/讚/笑臉均包含「來自作者」字樣）
       const hasAuthorReaction = art.innerText.includes("來自作者");
 
+      // 建立乾淨節點副本
       const clone = art.cloneNode(true);
       
+      // Emoji 轉換
       clone.querySelectorAll('img').forEach(img => {
         const alt = img.getAttribute('alt');
         if (alt) img.replaceWith(document.createTextNode(alt));
       });
 
+      // 深層留言對象自動補捉：若無 aria-label 且為樓中樓，檢查開頭是否自帶被標記對象
+      if (isReply && !repliedTarget) {
+        const links = clone.querySelectorAll('a');
+        if (links.length > 1) {
+          const candidate = links[1].textContent.trim();
+          const rawBody = clone.textContent.trim();
+          if (rawBody.includes(candidate)) {
+            repliedTarget = candidate;
+          }
+        }
+      }
+
+      // 標記朋友計算（自動扣除自己與樓中樓預設標記對象）
       let tags = new Set();
       clone.querySelectorAll('a').forEach((a, aIdx) => {
-        if (aIdx === 0) return;
+        if (aIdx === 0) return; // 第 1 個連結為留言者本人
         const text = a.textContent.trim();
-        if (isReply && text === repliedTarget) return;
+        if (isReply && repliedTarget && text === repliedTarget) return;
 
         const href = a.getAttribute('href') || "";
         const isHashtag = text.startsWith("#") || href.includes("/hashtag/");
@@ -284,6 +309,7 @@
         }
       });
 
+      // 移除控制項與按鈕以抽取乾淨內文
       const firstA = clone.querySelector('a');
       if (firstA) firstA.remove();
       clone.querySelectorAll('[role="button"], li, svg').forEach(el => el.remove());
@@ -307,6 +333,7 @@
       });
     });
 
+    // 資格審核
     let userMap = new Map();
     let qualifiedList = [];
     let failLogs = [];
@@ -345,6 +372,7 @@
         failReason = `標記人數不足 (有效標記: ${item.tagsCount}/${minTags})`;
       }
 
+      // 重複留言判定
       if (status === "合格") {
         if (userMap.has(item.name)) {
           let ids = userMap.get(item.name);
@@ -382,6 +410,7 @@
         </tr>`;
     });
 
+    // 渲染統計與結果
     document.getElementById('statTotal').innerText = parsedList.length;
     document.getElementById('statMainCount').innerText = mainCount;
     document.getElementById('statReplyCount').innerText = replyCount;

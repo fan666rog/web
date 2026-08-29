@@ -1579,7 +1579,10 @@
       });
     });
 
-    extractedFBNames = qualifiedList.map(u => u.isSameName ? `${u.name} (@${u.id})` : u.name);
+    extractedFBNames = qualifiedList.map(u => {
+      const hasDuplicateName = userMap.get(u.name) && userMap.get(u.name).size > 1;
+      return hasDuplicateName ? `${u.name} (@${u.id})` : u.name;
+    });
 
     document.getElementById('statTotal').innerText = parsedList.length;
     document.getElementById('statMainCount').innerText = mainCount;

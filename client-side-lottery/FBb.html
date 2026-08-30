@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FB 留言萃取與按讚審核獨立工作站 V3.5.0</title>
+  <title>FB 留言萃取與按讚審核獨立工作站 V3.5.1</title>
   <style>
     body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #1c1e21; margin: 0; padding: 20px; }
     .container { max-width: 1050px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -12,7 +12,6 @@
     .panel { background: #f7f8fa; border: 1px solid #dddfe2; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
     .helper-panel { background: #eef5ff; border: 1.5px dashed #1877f2; border-radius: 8px; padding: 15px 18px; margin-bottom: 15px; }
     
-    /* 雙軌前置小工具卡片 */
     .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
     @media (max-width: 768px) { .tools-grid { grid-template-columns: 1fr; } }
     .tool-card { background: #fff; border: 1px solid #ccd0d5; border-radius: 8px; padding: 12px 15px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; }
@@ -52,7 +51,6 @@
     .btn-secondary { background: #e4e6eb; color: #050505; font-size: 13px; padding: 7px 12px; }
     .btn-secondary:hover { background: #d8dadf; }
 
-    /* 頁籤導覽樣式 */
     .tab-nav { display: flex; gap: 6px; margin-bottom: -2px; position: relative; z-index: 1; }
     .tab-btn {
       padding: 9px 18px;
@@ -136,9 +134,9 @@
 <body>
 
 <div class="container">
-  <h1>📥 FB 留言抓取與按讚審核工作站 V3.5.0</h1>
+  <h1>📥 FB 留言抓取與按讚審核工作站 V3.5.1</h1>
 
-  <!-- 前置自動展開工具區塊 (雙軌卡片) -->
+  <!-- 前置自動展開工具區塊 -->
   <div class="helper-panel">
     <div class="tools-grid">
       <!-- 工具 1：留言展開助手 -->
@@ -155,14 +153,14 @@
         </div>
       </div>
 
-      <!-- 工具 2：按讚抓取助手 -->
+      <!-- 工具 2：按讚抓取助手 (已修復引號問題) -->
       <div class="tool-card tool-card-green">
         <div>
           <div class="tool-title" style="color: #28a745;">👍 工具 2：FB 按讚名單抓取助手</div>
           <div style="font-size: 12.5px; color: #65676b; margin-top: 3px;">自動切換「全部」、滾動名單並一鍵複製</div>
         </div>
         <div class="tool-actions">
-          <a class="bookmarklet-btn btn-bm-green" id="bmReactionLink" href='javascript:(function(){try{if(window.__fbReactionTimer){clearInterval(window.__fbReactionTimer);}window.__fbReactionRunning=true;const oldBox=document.getElementById("fb-reaction-box");if(oldBox)oldBox.remove();const box=document.createElement("div");box.id="fb-reaction-box";box.style.cssText="position:fixed;top:20px;right:20px;z-index:9999999;background:#1877f2;color:#fff;padding:12px 20px;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.3);font-family:sans-serif;font-size:14px;font-weight:bold;cursor:pointer;user-select:none;line-height:1.4;transition:0.2s;";box.innerHTML="🔍 [1/3] 正在尋找按讚彈窗...";document.body.appendChild(box);let stopped=false;box.onclick=function(){stopped=true;box.style.background="#e41e3f";box.innerText="🛑 已手動停止！";setTimeout(()=>box.remove(),1200);clearInterval(window.__fbReactionTimer);};function getDialog(){const dialogs=Array.from(document.querySelectorAll(\x27[role=\x22dialog\x22], [aria-modal=\x22true\x22]\x27)).filter(d=>{const r=d.getBoundingClientRect();return r.width>250&&r.height>200;});return dialogs.length>0?dialogs[dialogs.length-1]:null;}const dialog=getDialog();if(!dialog){box.remove();alert("⚠️ 未偵測到按讚彈窗，請先在 FB 點開貼文按讚名單！");return;}box.innerHTML="🎯 [2/3] 切換至「全部」頁籤...";const tabs=Array.from(dialog.querySelectorAll(\x27[role=\x22tab\x22]\x27));if(tabs.length>0){const allTab=tabs.find(t=>/全部|all/i.test(t.textContent||\x27\x27)||/全部|all/i.test(t.getAttribute(\x27aria-label\x27)||\x27\x27))||tabs[0];if(allTab&&allTab.getAttribute(\x27aria-selected\x27)!==\x27true\x27){allTab.click();}}function findScroller(root){const links=root.querySelectorAll(\x27a[role=\x22link\x22], a[href*=\x22facebook.com\x22]\x27);if(links.length>0){let p=links[links.length-1].parentElement;while(p&&p!==root&&p!==document.body){if(p.scrollHeight>p.clientHeight&&p.clientHeight>80){return p;}p=p.parentElement;}}const divs=root.querySelectorAll(\x27div\x27);for(let d of divs){if(d.scrollHeight>d.clientHeight&&d.clientHeight>150){return d;}}return root;}let bottomWait=0,lastCount=0;setTimeout(()=>{window.__fbReactionTimer=setInterval(()=>{if(stopped){clearInterval(window.__fbReactionTimer);return;}const curDialog=getDialog();if(!curDialog){clearInterval(window.__fbReactionTimer);box.remove();return;}const users=curDialog.querySelectorAll(\x27a[role=\x22link\x22], a[href*=\x22facebook.com\x22]\x27);const curCount=users.length;const scroller=findScroller(curDialog);const before=scroller.scrollTop;scroller.scrollTop+=500;scroller.dispatchEvent(new Event("scroll",{bubbles:true}));const moved=(scroller.scrollTop>before);if(moved||curCount!==lastCount){bottomWait=0;box.innerHTML=`⏩ [3/3] 滾動載入中...<br><span style=\x27font-size:12px;opacity:0.9;\x27>👍 目前抓取: ${curCount} 人</span>`;}else{bottomWait++;box.innerHTML=`⏳ 等待名單載入... (${bottomWait}/10)<br><span style=\x27font-size:12px;opacity:0.9;\x27>👍 目前共 ${curCount} 人</span>`;if(bottomWait>=10){clearInterval(window.__fbReactionTimer);box.style.background="#28a745";box.style.boxShadow="0 4px 18px rgba(40,167,69,0.5)";box.innerHTML=`✅ 載入完成！(共 ${curCount} 人)<br><span style=\x27font-size:13px;text-decoration:underline;\x27>👉 點此「一鍵複製」全部名單</span>`;box.onclick=function(){try{const range=document.createRange();range.selectNodeContents(curDialog);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);document.execCommand(\x27copy\x27);sel.removeAllRanges();box.style.background="#1877f2";box.innerHTML=`🎉 已成功複製 ${curCount} 筆資料！<br><span style=\x27font-size:12px;\x27>請回工作站 Ctrl+V 貼上</span>`;setTimeout(()=>box.remove(),2500);}catch(e){alert("複製失敗，請手動全選彈窗反白複製！");}};}}lastCount=curCount;},350);},200);}catch(err){alert("❌ 腳本執行發生錯誤："+err.message);}})();' title="拖曳至瀏覽器書籤列">
+          <a class="bookmarklet-btn btn-bm-green" id="bmReactionLink" href='javascript:(function(){try{if(window.__fbReactionTimer){clearInterval(window.__fbReactionTimer);}window.__fbReactionRunning=true;const oldBox=document.getElementById("fb-reaction-box");if(oldBox)oldBox.remove();const box=document.createElement("div");box.id="fb-reaction-box";box.style.cssText="position:fixed;top:20px;right:20px;z-index:9999999;background:#1877f2;color:#fff;padding:12px 20px;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.3);font-family:sans-serif;font-size:14px;font-weight:bold;cursor:pointer;user-select:none;line-height:1.4;transition:0.2s;";box.innerHTML="🔍 [1/3] 正在尋找按讚彈窗...";document.body.appendChild(box);let stopped=false;box.onclick=function(){stopped=true;box.style.background="#e41e3f";box.innerText="🛑 已手動停止！";setTimeout(()=>box.remove(),1200);clearInterval(window.__fbReactionTimer);};function getDialog(){const dialogs=Array.from(document.querySelectorAll("[role=dialog], [aria-modal=true]")).filter(d=>{const r=d.getBoundingClientRect();return r.width>250&&r.height>200;});return dialogs.length>0?dialogs[dialogs.length-1]:null;}const dialog=getDialog();if(!dialog){box.remove();alert("⚠️ 未偵測到按讚彈窗，請先在 FB 點開貼文按讚名單！");return;}box.innerHTML="🎯 [2/3] 切換至「全部」頁籤...";const tabs=Array.from(dialog.querySelectorAll("[role=tab]"));if(tabs.length>0){const allTab=tabs.find(t=>/全部|all/i.test(t.textContent||"")||/全部|all/i.test(t.getAttribute("aria-label")||""))||tabs[0];if(allTab&&allTab.getAttribute("aria-selected")!=="true"){allTab.click();}}function findScroller(root){const links=root.querySelectorAll("a[role=link], a[href*=\x22facebook.com\x22]");if(links.length>0){let p=links[links.length-1].parentElement;while(p&&p!==root&&p!==document.body){if(p.scrollHeight>p.clientHeight&&p.clientHeight>80){return p;}p=p.parentElement;}}const divs=root.querySelectorAll("div");for(let d of divs){if(d.scrollHeight>d.clientHeight&&d.clientHeight>150){return d;}}return root;}let bottomWait=0,lastCount=0;setTimeout(()=>{window.__fbReactionTimer=setInterval(()=>{if(stopped){clearInterval(window.__fbReactionTimer);return;}const curDialog=getDialog();if(!curDialog){clearInterval(window.__fbReactionTimer);box.remove();return;}const users=curDialog.querySelectorAll("a[role=link], a[href*=\x22facebook.com\x22]");const curCount=users.length;const scroller=findScroller(curDialog);const before=scroller.scrollTop;scroller.scrollTop+=500;scroller.dispatchEvent(new Event("scroll",{bubbles:true}));const moved=(scroller.scrollTop>before);if(moved||curCount!==lastCount){bottomWait=0;box.innerHTML=`⏩ [3/3] 滾動載入中...<br><span style="font-size:12px;opacity:0.9;">👍 目前抓取: ${curCount} 人</span>`;}else{bottomWait++;box.innerHTML=`⏳ 等待名單載入... (${bottomWait}/10)<br><span style="font-size:12px;opacity:0.9;">👍 目前共 ${curCount} 人</span>`;if(bottomWait>=10){clearInterval(window.__fbReactionTimer);box.style.background="#28a745";box.style.boxShadow="0 4px 18px rgba(40,167,69,0.5)";box.innerHTML=`✅ 載入完成！(共 ${curCount} 人)<br><span style="font-size:13px;text-decoration:underline;">👉 點此「一鍵複製」全部名單</span>`;box.onclick=function(){try{const range=document.createRange();range.selectNodeContents(curDialog);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);document.execCommand("copy");sel.removeAllRanges();box.style.background="#1877f2";box.innerHTML=`🎉 已成功複製 ${curCount} 筆資料！<br><span style="font-size:12px;">請回工作站 Ctrl+V 貼上</span>`;setTimeout(()=>box.remove(),2500);}catch(e){alert("複製失敗，請手動全選彈窗反白複製！");}};}}lastCount=curCount;},350);},200);}catch(err){alert("❌ 腳本執行發生錯誤："+err.message);}})();' title="拖曳至瀏覽器書籤列">
             👍 拖曳我 (抓取按讚)
           </a>
           <button type="button" class="btn-secondary" onclick="copyBmCode('bmReactionLink')">📋 複製代碼</button>
@@ -237,13 +235,11 @@
 
   <!-- 結果與除錯檢視區 -->
   <div id="debugLogs" style="display: none; margin-top: 15px;">
-    <!-- 1. 合格名單 -->
     <details open>
       <summary>📋 最終合格名單預覽 (格式化輸出)</summary>
       <div class="details-body" id="outValidList" style="color: #2b542c; font-weight: bold;"></div>
     </details>
 
-    <!-- 2. 逐筆審查表格 -->
     <details open>
       <summary>🔍 逐筆詳細審查記錄 (留言除錯表格)</summary>
       <div class="details-body">
@@ -265,7 +261,6 @@
       </div>
     </details>
 
-    <!-- 3. 新增：按讚名單總覽面板 -->
     <details>
       <summary>👍 貼文按讚名單總覽 (<span id="reactionSectionCount">0</span> 人)</summary>
       <div class="details-body">
@@ -288,7 +283,6 @@
       </div>
     </details>
 
-    <!-- 4. 排除明細 -->
     <details>
       <summary>🗑️ 排除與不符資格明細</summary>
       <div class="details-body" id="outFailDetails" style="color: #d9534f;"></div>
@@ -380,7 +374,7 @@
   }
 
   function parseReactionsData(container) {
-    const links = Array.from(container.querySelectorAll('a[role="link"], a[href*="facebook.com"], a'));
+    const links = Array.from(container.querySelectorAll('a[role=link], a[href*="facebook.com"], a'));
     let reactorsById = new Map();
     let reactorsByName = new Map();
     let rawList = [];
@@ -423,7 +417,6 @@
       if (uId !== "unknown" && !reactorsById.has(uId)) reactorsById.set(uId, info);
       if (name && !reactorsByName.has(name)) reactorsByName.set(name, info);
       
-      // 去重加入清單
       if (!rawList.some(r => (r.uId !== "unknown" && r.uId === uId) || (r.uId === "unknown" && r.name === name))) {
         rawList.push(info);
       }
@@ -450,7 +443,7 @@
 
     let articles = Array.from(inputArea.querySelectorAll('[role="article"]'));
     if (articles.length === 0) {
-      articles = Array.from(inputArea.children).filter(el => el.querySelector('a[role="link"], a[href*="facebook.com"]'));
+      articles = Array.from(inputArea.children).filter(el => el.querySelector('a[role=link], a[href*="facebook.com"]'));
     }
 
     if (articles.length === 0) {
@@ -459,7 +452,6 @@
       return;
     }
 
-    // 解析按讚名單
     const { reactorsById, reactorsByName, rawList } = parseReactionsData(reactionArea);
     cachedReactionList = rawList;
     const totalReactors = rawList.length;
@@ -474,7 +466,6 @@
       }
     }
 
-    // 統計按讚表情分類
     let reactionStats = { '讚': 0, '大心': 0, '哈': 0, '哇': 0, '嗚': 0, '加油': 0, '怒': 0 };
     rawList.forEach(r => {
       if (reactionStats[r.reactionType] !== undefined) reactionStats[r.reactionType]++;
@@ -492,7 +483,6 @@
     `;
     document.getElementById('reactionSummaryPills').innerHTML = pillsHtml;
 
-    // 渲染按讚清單表格
     let reactionRowsHtml = "";
     rawList.forEach((r, idx) => {
       const isBad = excludeAngry && r.isAngry;
@@ -515,7 +505,7 @@
     let replyCount = 0;
 
     articles.forEach((art, index) => {
-      const authorLink = art.querySelector('a[role="link"], a[href*="facebook.com"], a');
+      const authorLink = art.querySelector('a[role=link], a[href*="facebook.com"], a');
       if (!authorLink) return;
 
       const commenterName = authorLink.textContent.trim();
@@ -603,7 +593,6 @@
       });
     });
 
-    // 資格審核
     let userMap = new Map();
     let qualifiedList = [];
     let failLogs = [];
@@ -703,7 +692,6 @@
         </tr>`;
     });
 
-    // 渲染統計
     document.getElementById('statTotal').innerText = parsedList.length;
     document.getElementById('statMainCount').innerText = mainCount;
     document.getElementById('statReplyCount').innerText = replyCount;

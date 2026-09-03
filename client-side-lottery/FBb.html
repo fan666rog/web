@@ -175,7 +175,7 @@
         </div>
         <div class="tool-actions">
           <a class="bookmarklet-btn btn-bm-blue" id="bmCommentLink" href='javascript:(function(){if(window.__fbExpanderTimer){clearInterval(window.__fbExpanderTimer);}window.__fbExpanderRunning=true;let count=0,bottomWait=0,lastArtCount=0,stopped=false;const oldBox=document.getElementById("fb-expand-box");if(oldBox)oldBox.remove();const box=document.createElement("div");box.id="fb-expand-box";box.style.cssText="position:fixed;top:20px;right:20px;z-index:9999999;background:#1877f2;color:#fff;padding:12px 20px;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.3);font-family:sans-serif;font-size:14px;font-weight:bold;cursor:pointer;user-select:none;line-height:1.4;";box.innerHTML="🚀 FB 留言展開中... (已點擊 0 次)<br><span style=\"font-size:12px;opacity:0.8;\">👉 點擊此處可強制停止</span>";document.body.appendChild(box);box.onclick=function(){stopped=true;box.style.background="#e41e3f";box.innerText="🛑 已手動停止！";setTimeout(()=>{box.remove();},1200);window.__fbExpanderRunning=false;clearInterval(window.__fbExpanderTimer);};function fireFullClick(el){["pointerdown","mousedown","pointerup","mouseup","click"].forEach(type=>{const evt=new MouseEvent(type,{bubbles:true,cancelable:true,view:window,buttons:1});el.dispatchEvent(evt);});if(typeof el.click==="function")el.click();}function getActiveRoot(){const dialogs=Array.from(document.querySelectorAll("[role=\x22dialog\x22], [aria-modal=\x22true\x22]")).filter(d=>{const r=d.getBoundingClientRect();return r.width>300&&r.height>300;});return dialogs.length>0?dialogs[dialogs.length-1]:document.body;}function getScrollContainer(root){const arts=root.querySelectorAll("[role=\x22article\x22]");if(arts.length>0){let p=arts[arts.length-1].parentElement;while(p&&p!==root&&p!==document.body){if(p.scrollHeight>p.clientHeight&&p.clientHeight>150){return p;}p=p.parentElement;}}if(root!==document.body&&root.scrollHeight>root.clientHeight){return root;}return null;}const reg=/(查看|檢視|載入|顯示|另外).*(則|条)?(回覆|留言)|查看更多|View.*(replies|comments)|(Previous|Load|More).*(replies|comments)|View more/i;window.__fbExpanderTimer=setInterval(()=>{if(stopped){clearInterval(window.__fbExpanderTimer);return;}const root=getActiveRoot();const arts=root.querySelectorAll("[role=\x22article\x22]");const curArtCount=arts.length;const now=Date.now();const buttons=Array.from(root.querySelectorAll("div[role=\x22button\x22], span[role=\x22button\x22]")).filter(btn=>{const r=btn.getBoundingClientRect();if(r.width===0||r.height===0)return false;const txt=btn.textContent.trim();if(!reg.test(txt))return false;if(txt.startsWith("回覆")||txt.includes("推薦")||txt.includes("分享")||txt.includes("貼文")||(txt.includes("隱藏")&&!/(查看|檢視|載入|顯示|view)/i.test(txt))||txt.includes("收回"))return false;if(btn.dataset.lastClickedText===txt&&(now-Number(btn.dataset.lastClickedTime||0))<2500){return false;}return true;});if(buttons.length>0){bottomWait=0;const target=buttons[0];const targetTxt=target.textContent.trim();target.dataset.lastClickedText=targetTxt;target.dataset.lastClickedTime=String(Date.now());try{target.scrollIntoView({behavior:"smooth",block:"center"});}catch(e){}fireFullClick(target);count++;box.innerHTML=`🚀 展開留言中... (已點擊 ${count} 次)<br><span style="font-size:12px;opacity:0.9;">💬 已載入 ${curArtCount} 則留言</span>`;}else{const scroller=getScrollContainer(root);let moved=false;if(scroller){const before=scroller.scrollTop;scroller.scrollTop+=400;scroller.dispatchEvent(new Event("scroll",{bubbles:true}));scroller.dispatchEvent(new WheelEvent("wheel",{deltaY:400,bubbles:true,cancelable:true}));moved=(scroller.scrollTop>before);}else if(root===document.body){const before=window.scrollY;window.scrollBy(0,400);moved=(window.scrollY>before);}if(moved||curArtCount!==lastArtCount){bottomWait=0;box.innerHTML=`⏩ 巡航搜尋中... (已點擊 ${count} 次)<br><span style="font-size:12px;opacity:0.9;">💬 已載入 ${curArtCount} 則留言</span>`;}else{bottomWait++;box.innerHTML=`⏳ 等待伺服器載入更多... (${bottomWait}/16)<br><span style="font-size:12px;opacity:0.9;">💬 目前共 ${curArtCount} 則留言</span>`;if(bottomWait>=16){clearInterval(window.__fbExpanderTimer);box.style.background="#42b72a";box.innerHTML=`✅ 全部展開完成！(共點擊 ${count} 次，共 ${curArtCount} 則)<br><span style="font-size:12px;">現在可以開始複製囉</span>`;setTimeout(()=>{box.remove();},4000);window.__fbExpanderRunning=false;}}}lastArtCount=curArtCount;},600);})();' title="拖曳至瀏覽器書籤列">
-            📥 拖曳我 (展開留言)
+            💬拖曳我 (展開留言)
           </a>
           <button type="button" class="btn-secondary" onclick="copyBmCode('bmCommentLink')">📋 複製代碼</button>
         </div>
@@ -184,12 +184,12 @@
       <!-- 工具 2：具名精準對應按讚助手 (V3.5.4 徹底修復同名同姓污染) -->
       <div class="tool-card tool-card-green">
         <div>
-          <div class="tool-title" style="color: #28a745;">👍 工具 2：FB 按讚精準抓取助手 (已修復同名漏洞)</div>
-          <div style="font-size: 12.5px; color: #65676b; margin-top: 3px;">嚴格 ID 隔離，100% 杜絕同名同姓帳號表情串味</div>
+          <div class="tool-title" style="color: #28a745;">👍 工具 2：FB 按讚精準抓取助手</div>
+          <div style="font-size: 12.5px; color: #65676b; margin-top: 3px;">按鈕精準對照。嚴格 ID 隔離，杜絕同名同姓帳號表情串味</div>
         </div>
         <div class="tool-actions">
           <a class="bookmarklet-btn btn-bm-green" id="bmReactionLink" href='javascript:void((function(){try{if(window.__fbReactionTimer){clearInterval(window.__fbReactionTimer);}window.__fbReactionRunning=true;const oldBox=document.getElementById("fb-reaction-box");if(oldBox)oldBox.remove();const box=document.createElement("div");box.id="fb-reaction-box";box.style.cssText="position:fixed;top:20px;right:20px;z-index:9999999;background:#1c1e21;color:#fff;padding:16px 18px;border-radius:10px;box-shadow:0 6px 25px rgba(0,0,0,0.6);font-family:sans-serif;font-size:13px;line-height:1.4;max-width:330px;border:2px solid #1877f2;user-select:none;";document.body.appendChild(box);let stopped=false;const minorityIdMap={};const minorityNameMap={};const capturedSummary={};function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}function getDialog(){const dialogs=Array.from(document.querySelectorAll("[role=\x22dialog\x22], [aria-modal=\x22true\x22]")).filter(function(d){const r=d.getBoundingClientRect();return r.width>250&&r.height>200;});return dialogs.length>0?dialogs[dialogs.length-1]:null;}const dialog=getDialog();if(!dialog){box.remove();alert("⚠️ 未偵測到按讚彈窗，請先在 FB 點開貼文按讚名單！");return;}function extractUserId(href){if(!href)return"unknown";try{let urlObj=href.startsWith("http")?new URL(href):new URL(href,"https://www.facebook.com");if(urlObj.pathname.includes("/profile.php"))return urlObj.searchParams.get("id")||"unknown";let segments=urlObj.pathname.split("/").filter(function(p){return p!=="";});let idx=segments.indexOf("user");if(idx!==-1&&segments.length>idx+1)return segments[idx+1];let pIdx=segments.indexOf("people");if(pIdx!==-1&&segments.length>pIdx+2)return segments[pIdx+2];const sys=["people","user","groups","pages","watch","events","messages","share","posts","photo"];if(segments.length>0&&!sys.includes(segments[0]))return segments[0];return"unknown";}catch(e){return"unknown";}}function findScroller(root){const links=root.querySelectorAll("a[role=\x22link\x22], a[href*=\x22facebook.com\x22]");if(links.length>0){let p=links[links.length-1].parentElement;while(p&&p!==root&&p!==document.body){if(p.scrollHeight>p.clientHeight&&p.clientHeight>80){return p;}p=p.parentElement;}}const divs=root.querySelectorAll("div");for(let d of divs){if(d.scrollHeight>d.clientHeight&&d.clientHeight>150){return d;}}return root;}function getUniqueUserCount(root){const links=root.querySelectorAll("a[role=\x22link\x22]:not([aria-label*=\x22大頭貼照\x22]), a[href*=\x22facebook.com\x22]:not([aria-label*=\x22大頭貼照\x22])");let set=new Set();links.forEach(function(a){const uId=extractUserId(a.getAttribute("href"));const name=a.textContent.trim();if(name&&name!=="加為朋友"&&name!=="追蹤"&&name!=="傳送訊息"){set.add(uId!=="unknown"?uId:name);}});return set.size;}async function scrollUntilDone(){let bottomWait=0,lastCount=0;while(!stopped){const curDialog=getDialog();if(!curDialog)break;const scroller=findScroller(curDialog);const curCount=getUniqueUserCount(curDialog);const before=scroller.scrollTop;scroller.scrollTop+=600;scroller.dispatchEvent(new Event("scroll",{bubbles:true}));const moved=(scroller.scrollTop>before);if(moved||curCount!==lastCount){bottomWait=0;}else{bottomWait++;if(bottomWait>=5){break;}}lastCount=curCount;await sleep(250);}}function recordCurrent(typeName){const curDialog=getDialog();if(!curDialog)return 0;let count=0;const userLinks=curDialog.querySelectorAll("a[role=\x22link\x22]:not([aria-label*=\x22大頭貼照\x22]), a[href*=\x22facebook.com\x22]:not([aria-label*=\x22大頭貼照\x22])");userLinks.forEach(function(a){const uId=extractUserId(a.getAttribute("href"));const name=a.textContent.trim();if(name&&name!=="加為朋友"&&name!=="追蹤"&&name!=="傳送訊息"){if(uId!=="unknown"){minorityIdMap[uId]=typeName;}else if(name){minorityNameMap[name]=typeName;}count++;}});capturedSummary[typeName]=count;return count;}const emotionConfig=[{type:"大心",icon:"❤️"},{type:"哈",icon:"😆"},{type:"怒",icon:"😡"},{type:"哇",icon:"😮"},{type:"嗚",icon:"😢"},{type:"加油",icon:"🥰"}];function renderUI(){let gridHtml="<div style=\x22display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;\x22>";emotionConfig.forEach(function(item){const count=capturedSummary[item.type];const isDone=count!==undefined;const btnStyle=isDone?"background:#242526;color:#28a745;border:1.5px solid #28a745;padding:7px 4px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12.5px;":"background:#3a3b3c;color:#fff;border:1px solid #4e4f50;padding:7px 4px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12.5px;";const label=isDone?"✅ "+item.icon+" "+item.type+" ("+count+"人)":item.icon+" 抓「"+item.type+"」";gridHtml+="<button class=\x22btn-react-snap\x22 data-type=\x22"+item.type+"\x22 style=\x22"+btnStyle+"\x22>"+label+"</button>";});gridHtml+="</div>";box.innerHTML="<div style=\x22font-size:14px;font-weight:bold;color:#1877f2;margin-bottom:6px;border-bottom:1px solid #3a3b3c;padding-bottom:5px;\x22>🎯 具名精準對應控制台</div><div style=\x22font-size:12px;color:#b0b3b8;margin-bottom:8px;line-height:1.35;\x22>1. 在 FB 點選表情 ➔ 點下方對應按鈕自動抓取<br>2. 點 FB「全部」 ➔ 點綠色按鈕結算複製</div>"+gridHtml+"<div style=\x22display:flex;flex-direction:column;gap:6px;\x22><button id=\x22btn-final-copy\x22 style=\x22background:#28a745;color:#fff;border:none;padding:9px 10px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:13px;\x22>🚀 我已切到「全部」，結算並複製！</button><button id=\x22btn-cancel\x22 style=\x22background:transparent;color:#888;border:none;padding:2px;cursor:pointer;font-size:11.5px;text-decoration:underline;\x22>關閉</button></div>";const snapBtns=box.querySelectorAll(".btn-react-snap");snapBtns.forEach(function(btn){btn.onclick=async function(){const targetType=this.getAttribute("data-type");this.disabled=true;this.innerText="⏳ 載入「"+targetType+"」...";await scrollUntilDone();recordCurrent(targetType);renderUI();};});document.getElementById("btn-final-copy").onclick=async function(){this.disabled=true;this.innerText="⏳ 正在自動滾動「全部」名單到底...";await scrollUntilDone();const curDialog=getDialog();if(!curDialog)return;const userRows=Array.from(curDialog.querySelectorAll("[data-visualcompletion=\x22ignore-dynamic\x22], [role=\x22listitem\x22]"));let totalUnique=getUniqueUserCount(curDialog);userRows.forEach(function(row){const nameLink=row.querySelector("a[role=\x22link\x22]:not([aria-label*=\x22大頭貼照\x22]), a:not([aria-label*=\x22大頭貼照\x22])");if(!nameLink||nameLink.dataset.fbReactionDone)return;const uId=extractUserId(nameLink.getAttribute("href"));const name=nameLink.textContent.trim();let type="讚";if(uId!=="unknown"){if(minorityIdMap[uId]){type=minorityIdMap[uId];}}else if(name&&minorityNameMap[name]){type=minorityNameMap[name];}const tag=document.createElement("span");tag.className="__fb_reaction_tag__";tag.style.cssText="color:#65676b;font-size:11px;margin-left:4px;font-weight:normal;";tag.textContent=" ["+type+"]";nameLink.appendChild(tag);nameLink.dataset.fbReactionDone="true";});box.style.background="#28a745";box.style.borderColor="#28a745";box.style.cursor="pointer";box.innerHTML="<div style=\x22font-size:14.5px;font-weight:bold;\x22>🎉 結算完成！(共 "+totalUnique+" 人)</div><div style=\x22font-size:12.5px;margin-top:6px;text-decoration:underline;\x22>👉 點此「一鍵複製」名單</div>";box.onclick=function(){try{const range=document.createRange();range.selectNodeContents(curDialog);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);document.execCommand("copy");sel.removeAllRanges();box.style.background="#1877f2";box.style.borderColor="#1877f2";box.innerHTML="🎉 已成功複製 "+totalUnique+" 位用戶！<br><span style=\x22font-size:12px;\x22>請回工作站 Ctrl+V 貼上即可</span>";setTimeout(function(){box.remove();},2800);}catch(e){alert("複製失敗，請手動全選彈窗反白複製！");}};};document.getElementById("btn-cancel").onclick=function(){box.remove();stopped=true;};}renderUI();}catch(err){alert("❌ 啟動失敗："+err.message);}})());' title="拖曳至瀏覽器書籤列">
-            👍 拖曳我 (更新版按讚助手)
+            👍拖曳我 (按讚助手)
           </a>
           <button type="button" class="btn-secondary" onclick="copyBmCode('bmReactionLink')">📋 複製代碼</button>
         </div>
@@ -201,8 +201,8 @@
         📖 點此查看【雙工具操作流程說明】
       </summary>
       <div style="padding-top: 10px; border-top: 1px solid #d0e1fd; margin-top: 8px;">
-        <div class="guide-step"><b>步驟 1 (安裝工具)：</b> 分別將上方的「💬 拖曳我 (展開留言)」與「👍 拖曳我 (抓取按讚)」拖曳至瀏覽器書籤列[cite: 1]。</div>
-        <div class="guide-step"><b>步驟 2 (抓取留言)：</b> 前往 FB 貼文將留言排序切換為「所有留言」，點擊留言書籤，展開完成後全選複製，貼在「<b>💬 1. FB 留言區塊</b>」[cite: 1]。</div>
+        <div class="guide-step"><b>步驟 1 (安裝工具)：</b> 分別將上方的「💬拖曳我 (展開留言)」與「👍拖曳我 (抓取按讚)」拖曳至瀏覽器書籤列。</div>
+        <div class="guide-step"><b>步驟 2 (抓取留言)：</b> 前往 FB 貼文將留言排序切換為「所有留言」(部分貼文無此排序功能)，點擊留言書籤，展開完成後全選複製，貼在「<b>💬 1. FB 留言區塊</b>」。</div>
         <div class="guide-step"><b>步驟 3 (精準抓取按讚)：</b> 點開 FB 貼文按讚彈窗並點擊按讚書籤：
           <br>① 在 FB 點選少數表情（如哈、大心、怒）➔ 點面板對應按鈕自動滾動記錄。
           <br>② 在 FB 切換回「全部」➔ 點綠色「結算並複製」按鈕。
@@ -218,7 +218,7 @@
       <label><input type="checkbox" id="includeRepliesCheck" checked> 納入「樓中樓回覆」參加抽獎</label>
       <label style="margin-left: 15px;"><input type="checkbox" id="excludeAuthorCheck" checked> 自動排除「發文者/作者本人」</label>
       <span style="font-weight:bold; margin-left: 10px;">🚫 手動排除：</span>
-      <input type="text" id="manualExclusions" placeholder="填寫人名，多筆用逗號隔開" style="flex-grow: 1;">
+      <input type="text" id="manualExclusions" placeholder="填寫人名或連結中ID，多筆用逗號隔開" style="flex-grow: 1;">
     </div>
     <div class="setting-row">
       <label><input type="checkbox" id="keywordEnable" onchange="toggleKeywordInput()"> 啟用通關密語</label>
@@ -656,8 +656,13 @@
       clone.querySelectorAll('[role="article"]').forEach(subArt => subArt.remove());
 
       const isAuthor = Array.from(clone.querySelectorAll('span')).some(span => {
-        return span.children.length === 0 && /(作者|發文者|Author|Admin)/i.test(span.textContent.trim());
-      });
+                     const text = span.textContent.trim();
+                     if (span.children.length === 0 && /^(作者|發文者|Author|Admin)$/i.test(text)) {
+                         const parentText = span.parentElement ? span.parentElement.textContent : "";
+                         return !/(來自|from)/i.test(parentText);
+                     }
+                     return false;
+                });
 
       const hasAuthorReaction = clone.innerText.includes("來自作者");
 
@@ -731,7 +736,7 @@
         tagsCount: tags.size,
         isAuthor: isAuthor,
         hasAuthorReaction: hasAuthorReaction,
-        isManual: manualExcludes.includes(commenterName),
+        isManual: manualExcludes.includes(commenterName) || (commenterId !== "unknown" && manualExcludes.includes(commenterId)),
         reactionMatch: reactionMatch
       });
     });
@@ -841,10 +846,16 @@
     document.getElementById('statFiltered').innerText = parsedList.length - qualifiedList.length;
     document.getElementById('statsBar').style.display = 'flex';
 
+    let qualifiedNameFreq = {};
+    qualifiedList.forEach(u => {
+                qualifiedNameFreq[u.name] = (qualifiedNameFreq[u.name] || 0) + 1;
+          });
+
     const finalFormatted = qualifiedList.map((u, i) => {
-      const serial = `F-${String(i + 1).padStart(3, '0')}`;
-      return u.isSameName ? `${serial} ${u.name} (@${u.id})` : `${serial} ${u.name}`;
-    });
+                const serial = `F-${String(i + 1).padStart(3, '0')}`;
+                const isMulti = qualifiedNameFreq[u.name] > 1;
+                return isMulti ? `${serial} ${u.name} (@${u.id})` : `${serial} ${u.name}`;
+          });
 
     document.getElementById('outValidList').innerHTML = finalFormatted.join('<br>') || '無合格名單';
     document.getElementById('outDebugTableBody').innerHTML = tableRowsHtml;

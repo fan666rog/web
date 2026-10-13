@@ -206,7 +206,7 @@
     <div id="gizmo-container"></div>
 
     <footer>
-        <p>&copy; <span id="copyright-year"></span> <a href="https://github.com/fan666rog/web" target="_blank">fan666rog</a> & Gemini. All Rights Reserved. V2.5</p>
+        <p>&copy; <span id="copyright-year"></span> <a href="https://github.com/fan666rog/web" target="_blank">fan666rog</a> & Gemini. All Rights Reserved. V3.0</p>
     </footer>
 
     <script type="importmap">
@@ -957,23 +957,48 @@ function generateScramble(length = 22) {
     return scramble;
 }
         
-        // 打亂魔方：限制只轉動外層（-1, 1），絕不轉動中層，保證狀態絕對合法
-        async function scrambleCube() {
-            dropdownMenu.classList.remove('show');
-            setControlsEnabled(false);
-            moveHistory = []; 
-            // 生成 22 步保證不抵銷的標準打亂序列
-            const scrambleMoves = generateScramble(22);
-            console.log('本次打亂公式：', scrambleMoves.join(' '));
+// 允許轉動中層的打亂邏輯
+async function scrambleCube() {
+    dropdownMenu.classList.remove('show');
+    setControlsEnabled(false);
+    moveHistory = []; 
 
-            // 每步 110ms（節奏俐落，約 2.5 秒打亂完畢，且每一步都是有效打亂）
-            for (const move of scrambleMoves) {
-                await executeMoveNotation(move, 110, false);
-            }
+    const axes = ['x', 'y', 'z'];
+    
+    // 總共打亂 25 步
+    for (let i = 0; i < 25; i++) {
+        const axis = axes[Math.floor(Math.random() * 3)];
+        const direction = Math.random() < 0.5 ? 1 : -1;
+        
+        // 30% 機率轉動中層 (0)，70% 機率轉動兩側外層 (-1 或 1)
+        const isMiddleLayer = Math.random() < 0.3;
 
-            moveHistory = [];
-            setControlsEnabled(true);
+        if (isMiddleLayer) {
+            // --- 轉動中間層 (切片層) ---
+            const pivotPoint = new THREE.Vector3(); // 座標為 0
+            
+            // 轉動中間層網格
+            await rotateLayer({ pivot: pivotPoint, axis: axis, direction: direction }, false, 100);
+
+            // 【關鍵校正】：中層轉動後，整顆方塊的參考系要反向轉動，以維持角塊與中心塊的奇偶校驗平衡
+            // 這樣視覺上看到中層轉了，但中心塊與角塊的群論相對關係依然 100% 合法！
+            const rotAxisVec = new THREE.Vector3(axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
+            rubiksCube.rotateOnWorldAxis(rotAxisVec, (-Math.PI / 2) * direction);
+            rubiksCube.updateMatrixWorld();
+            
+        } else {
+            // --- 轉動外層 ---
+            const layerCoord = Math.random() < 0.5 ? 1 : -1;
+            const pivotPoint = new THREE.Vector3();
+            pivotPoint[axis] = layerCoord * positionOffset;
+            
+            await rotateLayer({ pivot: pivotPoint, axis: axis, direction: direction }, false, 110);
         }
+    }
+
+    moveHistory = [];
+    setControlsEnabled(true);
+}
 
         async function undoMove() {
             if (moveHistory.length === 0 || isAnimating) return;

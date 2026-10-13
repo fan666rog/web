@@ -32,20 +32,20 @@
 
         .button-row {
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
 
         #controls-container button, #solver-container button {
             flex: 1;
             padding: 10px 5px;
-            font-size: 16px;
+            font-size: 15px;
             font-family: '微軟正黑體', sans-serif;
             background-color: rgba(30, 30, 30, 0.7);
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.5);
             border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.1s, border-color 0.3s;
+            transition: background-color 0.3s, transform 0.1s, border-color 0.3s, opacity 0.2s;
             white-space: nowrap; 
         }
         #controls-container button:hover, #solver-container button:hover {
@@ -57,13 +57,37 @@
         #controls-container button:disabled, #solver-container button:disabled {
             background-color: rgba(50, 50, 50, 0.5);
             color: #888;
+            opacity: 0.6;
             cursor: not-allowed;
+        }
+
+        /* 第二排純色吸附按鈕 */
+        .color-row {
+            display: flex;
+            gap: 8px;
+        }
+        .color-dot-btn {
+            height: 34px !important;
+            padding: 0 !important;
+            border-radius: 8px !important;
+            border: 2px solid rgba(255, 255, 255, 0.4) !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s !important;
+        }
+        .color-dot-btn:hover {
+            transform: translateY(-2px);
+            border-color: #ffffff !important;
+            box-shadow: 0 4px 10px rgba(255, 255, 255, 0.3);
+        }
+        .color-dot-btn:active {
+            transform: scale(0.92) !important;
         }
 
         /* 下拉選單樣式 */
         .dropdown-wrapper {
             position: relative;
-            flex: 2;
+            flex: 1.2;
             display: flex;
         }
         .dropdown-wrapper > button {
@@ -167,13 +191,13 @@
             text-decoration: underline;
         }
 
-        /* 3D ViewCube 導航方塊容器 */
+        /* 3D ViewCube 導航方塊容器（純淨極簡無文字） */
         #gizmo-container {
             position: absolute;
             bottom: 20px;
             left: 20px;
-            width: 120px;
-            height: 120px;
+            width: 110px;
+            height: 110px;
             z-index: 101;
             cursor: pointer;
             border-radius: 14px;
@@ -192,8 +216,10 @@
 <body>
     <!-- 正常模式介面 -->
     <div id="controls-container">
+        <!-- 第一排：上一步、視角回正、功能選單 -->
         <div class="button-row">
             <button id="undo-btn">上一步</button>
+            <button id="reset-view-btn">視角回正</button>
             <div class="dropdown-wrapper">
                 <button id="menu-toggle-btn">功能選單 ▾</button>
                 <div id="dropdown-menu" class="dropdown-content">
@@ -203,10 +229,14 @@
                 </div>
             </div>
         </div>
-        <div class="button-row">
-            <button id="reset-view-btn">視角回正</button>
-            <button id="invert-view-btn">上下顛倒</button>
-            <button id="rotate-view-btn">右側當底</button>
+        <!-- 第二排：六色吸附純色按鈕（白、黃、紅、橘、藍、綠） -->
+        <div class="color-row">
+            <button class="color-dot-btn" data-normal="0,1,0" style="background-color: #ffffff;" title="白面"></button>
+            <button class="color-dot-btn" data-normal="0,-1,0" style="background-color: #f1c40f;" title="黃面"></button>
+            <button class="color-dot-btn" data-normal="1,0,0" style="background-color: #e74c3c;" title="紅面"></button>
+            <button class="color-dot-btn" data-normal="-1,0,0" style="background-color: #e67e22;" title="橘面"></button>
+            <button class="color-dot-btn" data-normal="0,0,1" style="background-color: #2980b9;" title="藍面"></button>
+            <button class="color-dot-btn" data-normal="0,0,-1" style="background-color: #27ae60;" title="綠面"></button>
         </div>
     </div>
 
@@ -216,13 +246,11 @@
             <div id="solver-status">準備中...</div>
             <div id="solver-steps-indicator"></div>
         </div>
-        <!-- 播放控制排 -->
         <div class="button-row">
             <button id="solve-play-btn">▶ 播放</button>
             <button id="solve-step-btn">⏭ 單步</button>
             <button id="solve-exit-btn">✖ 退出</button>
         </div>
-        <!-- 速度切換排 -->
         <div class="button-row">
             <button class="speed-btn" data-speed="420">🐢 0.5x 慢速</button>
             <button class="speed-btn active-speed" data-speed="220">🚶 1.0x 正常</button>
@@ -277,35 +305,28 @@
             RIGHT: THREE.MOUSE.ROTATE
         };
 
-        // --- 方案 A：3D 迷你導航方塊（純中心色導航，移除空間方位代號） ---
+        // --- ViewCube 與中心剛體姿態同步 ---
         let gizmoRenderer, gizmoScene, gizmoCamera, gizmoGroup, viewCubeMesh, gizmoRaycaster;
-        const coreQuaternion = new THREE.Quaternion(); // 追蹤 6 個中心塊的剛體姿態
+        const coreQuaternion = new THREE.Quaternion(); // 追蹤中心塊剛體姿態
 
-        function createViewCubeFaceTexture(colorName, bgColor, textColor) {
+        // 純色塊質感貼圖（去除文字，保留高階內凹高光與陰影）
+        function createPureColorFaceTexture(bgColor) {
             const canvas = document.createElement('canvas');
             canvas.width = 128;
             canvas.height = 128;
             const ctx = canvas.getContext('2d');
 
-            // 底色
             ctx.fillStyle = bgColor;
             ctx.fillRect(0, 0, 128, 128);
 
-            // 立體內邊框
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)';
-            ctx.lineWidth = 10;
-            ctx.strokeRect(5, 5, 118, 118);
+            // 立體內陰影邊框
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.lineWidth = 12;
+            ctx.strokeRect(6, 6, 116, 116);
 
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-            ctx.lineWidth = 4;
-            ctx.strokeRect(10, 10, 108, 108);
-
-            // 純中心色標記（僅顯示單一文字，去除混淆的 U/D/F/B 代號）
-            ctx.fillStyle = textColor;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.font = 'bold 52px "微軟正黑體", sans-serif';
-            ctx.fillText(colorName, 64, 64);
+            ctx.lineWidth = 5;
+            ctx.strokeRect(12, 12, 104, 104);
 
             const texture = new THREE.CanvasTexture(canvas);
             texture.colorSpace = THREE.SRGBColorSpace;
@@ -334,14 +355,14 @@
             gizmoGroup = new THREE.Group();
             gizmoScene.add(gizmoGroup);
 
-            // 6 面材質順序對應局部軸：+X(紅), -X(橘), +Y(白), -Y(黃), +Z(藍), -Z(綠)
+            // 6 面純色材質：+X(紅), -X(橘), +Y(白), -Y(黃), +Z(藍), -Z(綠)
             const materialsList = [
-                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('紅', '#e74c3c', '#ffffff'), roughness: 0.3 }),
-                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('橘', '#e67e22', '#ffffff'), roughness: 0.3 }),
-                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('白', '#ffffff', '#222222'), roughness: 0.3 }),
-                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('黃', '#f1c40f', '#222222'), roughness: 0.3 }),
-                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('藍', '#2980b9', '#ffffff'), roughness: 0.3 }),
-                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('綠', '#27ae60', '#ffffff'), roughness: 0.3 })
+                new THREE.MeshStandardMaterial({ map: createPureColorFaceTexture('#e74c3c'), roughness: 0.3 }),
+                new THREE.MeshStandardMaterial({ map: createPureColorFaceTexture('#e67e22'), roughness: 0.3 }),
+                new THREE.MeshStandardMaterial({ map: createPureColorFaceTexture('#ffffff'), roughness: 0.3 }),
+                new THREE.MeshStandardMaterial({ map: createPureColorFaceTexture('#f1c40f'), roughness: 0.3 }),
+                new THREE.MeshStandardMaterial({ map: createPureColorFaceTexture('#2980b9'), roughness: 0.3 }),
+                new THREE.MeshStandardMaterial({ map: createPureColorFaceTexture('#27ae60'), roughness: 0.3 })
             ];
 
             viewCubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), materialsList);
@@ -355,7 +376,7 @@
             gizmoRenderer.domElement.addEventListener('pointerdown', onGizmoClick);
         }
 
-        // 精準法向量點擊判定：直接對齊被選中的顏色面
+        // 小魔方法向量點擊吸附
         function onGizmoClick(event) {
             if (isAnimating) return;
             event.stopPropagation();
@@ -372,25 +393,25 @@
             if (intersects.length > 0) {
                 const norm = intersects[0].face.normal;
                 const localNormal = new THREE.Vector3();
-                if (norm.x > 0.5) localNormal.set(1, 0, 0);       // 紅 (+X)
-                else if (norm.x < -0.5) localNormal.set(-1, 0, 0); // 橘 (-X)
-                else if (norm.y > 0.5) localNormal.set(0, 1, 0);   // 白 (+Y)
-                else if (norm.y < -0.5) localNormal.set(0, -1, 0); // 黃 (-Y)
-                else if (norm.z > 0.5) localNormal.set(0, 0, 1);   // 藍 (+Z)
-                else if (norm.z < -0.5) localNormal.set(0, 0, -1); // 綠 (-Z)
+                if (norm.x > 0.5) localNormal.set(1, 0, 0);       // 紅
+                else if (norm.x < -0.5) localNormal.set(-1, 0, 0); // 橘
+                else if (norm.y > 0.5) localNormal.set(0, 1, 0);   // 白
+                else if (norm.y < -0.5) localNormal.set(0, -1, 0); // 黃
+                else if (norm.z > 0.5) localNormal.set(0, 0, 1);   // 藍
+                else if (norm.z < -0.5) localNormal.set(0, 0, -1); // 綠
 
                 snapCameraToCoreFace(localNormal);
             }
         }
 
-        // 核心姿態吸附：自動旋轉視角正對選定顏色
+        // 核心姿態平滑吸附：正對目標顏色面
         function snapCameraToCoreFace(localNormal) {
             const distance = camera.position.length();
 
-            // 計算目標顏色面在世界座標系中的實際朝向
+            // 計算目標色塊世界空間朝向
             const targetWorldDir = localNormal.clone().applyQuaternion(coreQuaternion).normalize();
 
-            // 保持正視姿態的 Up 參考向量
+            // 基準垂直 Up 向量
             const coreWorldUp = new THREE.Vector3(0, 1, 0).applyQuaternion(coreQuaternion).normalize();
             const coreWorldFront = new THREE.Vector3(0, 0, 1).applyQuaternion(coreQuaternion).normalize();
 
@@ -409,6 +430,7 @@
             animateCamera(targetPosition, targetUp);
         }
 
+        // 餘弦平滑過場動畫（500ms）
         let cameraAnimationId = null;
         function animateCamera(targetPosition, targetUp) {
             if (cameraAnimationId) cancelAnimationFrame(cameraAnimationId);
@@ -475,8 +497,7 @@
         const undoBtn = document.getElementById('undo-btn');
         const solveBtn = document.getElementById('solve-btn');
         const resetViewBtn = document.getElementById('reset-view-btn');
-        const invertViewBtn = document.getElementById('invert-view-btn');
-        const rotateViewBtn = document.getElementById('rotate-view-btn');
+        const colorButtons = document.querySelectorAll('.color-dot-btn');
 
         const solverStatus = document.getElementById('solver-status');
         const solverStepsIndicator = document.getElementById('solver-steps-indicator');
@@ -566,8 +587,7 @@
                 solveBtn.disabled = !enabled;
                 undoBtn.disabled = !enabled || moveHistory.length === 0;
                 if(resetViewBtn) resetViewBtn.disabled = !enabled;
-                if(invertViewBtn) invertViewBtn.disabled = !enabled;
-                if(rotateViewBtn) rotateViewBtn.disabled = !enabled;
+                colorButtons.forEach(btn => btn.disabled = !enabled);
             }
         }
 
@@ -605,7 +625,7 @@
                             c.quaternion.copy(worldQuat);
                         });
 
-                        // 若轉動中層（座標為 0），更新中心姿態矩陣
+                        // 轉動中層更新姿態矩陣
                         if (Math.abs(pivotPoint[axis]) < 0.5) {
                             const stepQ = new THREE.Quaternion().setFromAxisAngle(rotationAxisVec, targetAngle);
                             coreQuaternion.premultiply(stepQ);
@@ -978,6 +998,16 @@
             });
         });
 
+        // --- 六色按鈕吸附點擊事件 ---
+        colorButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (isAnimating) return;
+                const [x, y, z] = btn.dataset.normal.split(',').map(Number);
+                snapCameraToCoreFace(new THREE.Vector3(x, y, z));
+            });
+        });
+
+        // --- 功能選單與按鈕邏輯 ---
         menuToggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             dropdownMenu.classList.toggle('show');
@@ -1051,13 +1081,8 @@
         solveStepBtn.addEventListener('click', handleSingleStep);
         solveExitBtn.addEventListener('click', exitSolverMode);
 
-        if(resetViewBtn) resetViewBtn.addEventListener('click', () => animateCamera(new THREE.Vector3(4, 4, 6), new THREE.Vector3(0, 1, 0)));
-        if(invertViewBtn) invertViewBtn.addEventListener('click', () => animateCamera(camera.position.clone(), camera.up.clone().negate()));
-        if(rotateViewBtn) {
-            rotateViewBtn.addEventListener('click', () => {
-                const lookDir = new THREE.Vector3(); camera.getWorldDirection(lookDir);
-                animateCamera(camera.position.clone(), camera.up.clone().applyQuaternion(new THREE.Quaternion().setFromAxisAngle(lookDir, -Math.PI / 2)));
-            });
+        if (resetViewBtn) {
+            resetViewBtn.addEventListener('click', () => animateCamera(new THREE.Vector3(4, 4, 6), new THREE.Vector3(0, 1, 0)));
         }
 
         // --- 事件綁定 ---

@@ -11,7 +11,7 @@
         body {
             margin: 0;
             overflow: hidden;
-            background: radial-gradient(circle at center, #181d26 0%, #0d1017 100%); /* 深藍灰柔和暗角漸層 */
+            background: radial-gradient(circle at center, #181d26 0%, #0d1017 100%);
         }
         canvas {
             display: block;
@@ -240,12 +240,12 @@
                 </div>
             </div>
         </div>
-        <!-- 第二排：六色抗混淆吸附按鈕（白、黃、紅、橘、藍、綠） -->
+        <!-- 第二排：六色抗混淆吸附按鈕（白、黃、深紅、鮮橙、藍、綠） -->
         <div class="color-row">
             <button class="color-dot-btn" data-normal="0,1,0" style="background-color: #f1f5f9;" title="白面"></button>
             <button class="color-dot-btn" data-normal="0,-1,0" style="background-color: #eab308;" title="黃面"></button>
-            <button class="color-dot-btn" data-normal="1,0,0" style="background-color: #e11d48;" title="紅面"></button>
-            <button class="color-dot-btn" data-normal="-1,0,0" style="background-color: #ea580c;" title="橘面"></button>
+            <button class="color-dot-btn" data-normal="1,0,0" style="background-color: #9f1239;" title="紅面"></button>
+            <button class="color-dot-btn" data-normal="-1,0,0" style="background-color: #f97316;" title="橘面"></button>
             <button class="color-dot-btn" data-normal="0,0,1" style="background-color: #2563eb;" title="藍面"></button>
             <button class="color-dot-btn" data-normal="0,0,-1" style="background-color: #16a34a;" title="綠面"></button>
         </div>
@@ -332,8 +332,8 @@
         warmBounceLight.position.set(0, -8, 4);
         scene.add(warmBounceLight);
 
-        // --- 海玻璃質感貼圖生成（抗護眼調校版） ---
-        function createFrostedGlassTexture(coreColor, edgeColor, highlightAlpha = 0.38) {
+        // --- 海玻璃質感貼圖生成（支援動態 HUD 標籤蓋章） ---
+        function createFrostedGlassTexture(coreColor, edgeColor, highlightAlpha = 0.38, label = '', textColor = '#ffffff') {
             const canvas = document.createElement('canvas');
             canvas.width = 256;
             canvas.height = 256;
@@ -356,7 +356,6 @@
             else ctx.rect(padX, padY, padW, padH);
             ctx.clip();
 
-            // 調整乳化半徑，讓色彩本色更純粹，避免被暖黃濾鏡稀釋
             const grad = ctx.createRadialGradient(128, 120, 30, 128, 128, 125);
             grad.addColorStop(0, coreColor);
             grad.addColorStop(0.7, edgeColor);
@@ -364,7 +363,6 @@
             ctx.fillStyle = grad;
             ctx.fillRect(padX, padY, padW, padH);
 
-            // 溫和不刺眼的磨砂倒角微反光
             const bevelGrad = ctx.createLinearGradient(padX, padY, padX, padY + padH);
             bevelGrad.addColorStop(0, `rgba(255, 255, 255, ${highlightAlpha})`);
             bevelGrad.addColorStop(0.18, 'rgba(255, 255, 255, 0.05)');
@@ -373,7 +371,25 @@
             ctx.fillStyle = bevelGrad;
             ctx.fillRect(padX, padY, padW, padH);
 
-            // 內框微光切線
+            // 4. 解題模式專屬：動態 HUD 標籤蓋章
+            if (label) {
+                // 科技感半透明圓形微光襯底
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.32)';
+                ctx.beginPath();
+                ctx.arc(128, 128, 54, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+
+                // 標籤字體
+                ctx.fillStyle = textColor;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = '900 68px "Segoe UI", Roboto, "微軟正黑體", sans-serif';
+                ctx.fillText(label, 128, 128);
+            }
+
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.38)';
             ctx.lineWidth = 3;
             ctx.stroke();
@@ -385,9 +401,90 @@
             return texture;
         }
 
-        // --- 方案 A：3D 迷你導航方塊（ViewCube）設定 ---
+        // --- 方塊本體與晶核材質 ---
+        const rubiksCube = new THREE.Group();
+        const CUBIE_SIZE = 1, CUBIE_GAP = 0.08, positionOffset = CUBIE_SIZE + CUBIE_GAP;
+
+        const insideMaterial = new THREE.ShaderMaterial({
+            side: THREE.DoubleSide,
+            uniforms: { u_time: { value: 0.0 } },
+            vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+            fragmentShader: `
+                uniform float u_time; varying vec2 vUv;
+                float random(vec2 st) { return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123); }
+                float noise(vec2 st) {
+                    vec2 i = floor(st), f = fract(st);
+                    float a = random(i), b = random(i + vec2(1.0, 0.0)), c = random(i + vec2(0.0, 1.0)), d = random(i + vec2(1.0, 1.0));
+                    vec2 u = f * f * (3.0 - 2.0 * f);
+                    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.y * u.x;
+                }
+                void main() {
+                    vec2 st = vUv * 3.5; st.x += u_time * 0.25;
+                    float n = noise(st * vec2(1.0, 2.0) + vec2(0.0, u_time * 0.5));
+                    float intensity = pow(n, 12.0);
+                    vec3 finalColor = mix(vec3(0.08, 0.12, 0.18), vec3(0.15, 0.5, 0.85), intensity);
+                    finalColor += vec3(0.25, 0.35, 0.75) * (sin(u_time * 2.0 + vUv.y * 5.0) * 0.5 + 0.5) * intensity;
+                    gl_FragColor = vec4(finalColor, 1.0);
+                }
+            `
+        });
+
+        // 大魔方六面海玻璃材質
+        const materials = {
+            right: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#be123c', '#881337', 0.4), roughness: 0.32, metalness: 0.05 }), // 深紅寶石
+            left: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#ffedd5', '#ea580c', 0.45), roughness: 0.32, metalness: 0.05 }),  // 鮮亮蜜柑橙
+            top: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#ffffff', '#e2e8f0', 0.45), roughness: 0.3, metalness: 0.05 }),   // 羊脂白
+            bottom: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fef08a', '#eab308', 0.45), roughness: 0.32, metalness: 0.05 }),// 金絲雀黃
+            front: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#60a5fa', '#2563eb', 0.45), roughness: 0.32, metalness: 0.05 }), // 寶石藍
+            back: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#86efac', '#16a34a', 0.45), roughness: 0.32, metalness: 0.05 }),  // 翠綠
+            inside: insideMaterial 
+        };
+
+        const cubies = [];
+        for (let x = -1; x <= 1; x++) {
+            for (let y = -1; y <= 1; y++) {
+                for (let z = -1; z <= 1; z++) {
+                    if (x === 0 && y === 0 && z === 0) continue;
+                    const cubie = new THREE.Mesh(new THREE.BoxGeometry(CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE), [
+                        x === 1 ? materials.right : materials.inside, x === -1 ? materials.left : materials.inside,
+                        y === 1 ? materials.top : materials.inside, y === -1 ? materials.bottom : materials.inside,
+                        z === 1 ? materials.front : materials.inside, z === -1 ? materials.back : materials.inside
+                    ]);
+                    cubie.position.set(x * positionOffset, y * positionOffset, z * positionOffset);
+                    rubiksCube.add(cubie);
+                    cubies.push(cubie);
+                }
+            }
+        }
+        scene.add(rubiksCube);
+
+        // --- 方案 A：3D 迷你導航方塊（ViewCube）設定與調色盤配置 ---
         let gizmoRenderer, gizmoScene, gizmoCamera, gizmoGroup, viewCubeMesh, gizmoRaycaster;
         const coreQuaternion = new THREE.Quaternion();
+
+        // 6 面色塊色彩、文字深淺設定與材質對照
+        const GIZMO_PALETTE = [
+            { core: '#be123c', edge: '#881337', alpha: 0.4, text: '#ffffff', mat: materials.right }, // 0: 紅 (+X)
+            { core: '#ffedd5', edge: '#ea580c', alpha: 0.45, text: '#0f172a', mat: materials.left },  // 1: 橘 (-X)
+            { core: '#ffffff', edge: '#e2e8f0', alpha: 0.45, text: '#0f172a', mat: materials.top },   // 2: 白 (+Y)
+            { core: '#fef08a', edge: '#eab308', alpha: 0.45, text: '#0f172a', mat: materials.bottom },// 3: 黃 (-Y)
+            { core: '#60a5fa', edge: '#2563eb', alpha: 0.45, text: '#ffffff', mat: materials.front }, // 4: 藍 (+Z)
+            { core: '#86efac', edge: '#16a34a', alpha: 0.45, text: '#ffffff', mat: materials.back }   // 5: 綠 (-Z)
+        ];
+
+        // 動態為小魔方蓋章或清除標籤
+        function updateGizmoLabels(dynamicMap = null) {
+            if (!viewCubeMesh) return;
+            GIZMO_PALETTE.forEach((item, index) => {
+                const label = dynamicMap ? (dynamicMap.get(item.mat) || '') : '';
+                const newTex = createFrostedGlassTexture(item.core, item.edge, item.alpha, label, item.text);
+                if (viewCubeMesh.material[index].map) {
+                    viewCubeMesh.material[index].map.dispose();
+                }
+                viewCubeMesh.material[index].map = newTex;
+                viewCubeMesh.material[index].needsUpdate = true;
+            });
+        }
 
         function initGizmo() {
             const container = document.getElementById('gizmo-container');
@@ -411,15 +508,14 @@
             gizmoGroup = new THREE.Group();
             gizmoScene.add(gizmoGroup);
 
-            // 6 面海玻璃材質（抗護眼調校色系）
-            const materialsList = [
-                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fb7185', '#e11d48', 0.45), roughness: 0.3, metalness: 0.05 }), // 紅寶石純紅 (+X)
-                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fdba74', '#ea580c', 0.45), roughness: 0.3, metalness: 0.05 }), // 血橙暖橘 (-X)
-                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#ffffff', '#e2e8f0', 0.45), roughness: 0.3, metalness: 0.05 }), // 羊脂月光白 (+Y，溫和不刺眼)
-                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fef08a', '#eab308', 0.45), roughness: 0.3, metalness: 0.05 }), // 金絲雀純黃 (-Y)
-                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#60a5fa', '#2563eb', 0.45), roughness: 0.3, metalness: 0.05 }), // 寶石鈷藍 (+Z，拔除青綠干擾)
-                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#86efac', '#16a34a', 0.45), roughness: 0.3, metalness: 0.05 })  // 青翠正綠 (-Z，拔除藍光依賴)
-            ];
+            // 初始化無字純色海玻璃
+            const materialsList = GIZMO_PALETTE.map(item =>
+                new THREE.MeshStandardMaterial({
+                    map: createFrostedGlassTexture(item.core, item.edge, item.alpha, '', item.text),
+                    roughness: 0.3,
+                    metalness: 0.05
+                })
+            );
 
             viewCubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), materialsList);
             const edges = new THREE.EdgesGeometry(viewCubeMesh.geometry);
@@ -555,64 +651,6 @@
         const solveStepBtn = document.getElementById('solve-step-btn');
         const solveExitBtn = document.getElementById('solve-exit-btn');
         const speedButtons = document.querySelectorAll('.speed-btn');
-
-        // --- 方塊本體與晶核材質 ---
-        const rubiksCube = new THREE.Group();
-        const CUBIE_SIZE = 1, CUBIE_GAP = 0.08, positionOffset = CUBIE_SIZE + CUBIE_GAP;
-
-        // 內部切面：幽藍晶體流光核心
-        const insideMaterial = new THREE.ShaderMaterial({
-            side: THREE.DoubleSide,
-            uniforms: { u_time: { value: 0.0 } },
-            vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-            fragmentShader: `
-                uniform float u_time; varying vec2 vUv;
-                float random(vec2 st) { return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123); }
-                float noise(vec2 st) {
-                    vec2 i = floor(st), f = fract(st);
-                    float a = random(i), b = random(i + vec2(1.0, 0.0)), c = random(i + vec2(0.0, 1.0)), d = random(i + vec2(1.0, 1.0));
-                    vec2 u = f * f * (3.0 - 2.0 * f);
-                    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.y * u.x;
-                }
-                void main() {
-                    vec2 st = vUv * 3.5; st.x += u_time * 0.25;
-                    float n = noise(st * vec2(1.0, 2.0) + vec2(0.0, u_time * 0.5));
-                    float intensity = pow(n, 12.0);
-                    vec3 finalColor = mix(vec3(0.08, 0.12, 0.18), vec3(0.15, 0.5, 0.85), intensity);
-                    finalColor += vec3(0.25, 0.35, 0.75) * (sin(u_time * 2.0 + vUv.y * 5.0) * 0.5 + 0.5) * intensity;
-                    gl_FragColor = vec4(finalColor, 1.0);
-                }
-            `
-        });
-
-        // 大魔方六面海玻璃材質（抗護眼調校版）
-        const materials = {
-            right: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fb7185', '#e11d48', 0.45), roughness: 0.32, metalness: 0.05 }), // 純紅
-            left: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fdba74', '#ea580c', 0.45), roughness: 0.32, metalness: 0.05 }),  // 血橙橘
-            top: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#ffffff', '#e2e8f0', 0.45), roughness: 0.3, metalness: 0.05 }),   // 羊脂白
-            bottom: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fef08a', '#eab308', 0.45), roughness: 0.32, metalness: 0.05 }),// 金絲雀黃
-            front: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#60a5fa', '#2563eb', 0.45), roughness: 0.32, metalness: 0.05 }), // 寶石藍
-            back: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#86efac', '#16a34a', 0.45), roughness: 0.32, metalness: 0.05 }),  // 翠綠
-            inside: insideMaterial 
-        };
-
-        const cubies = [];
-        for (let x = -1; x <= 1; x++) {
-            for (let y = -1; y <= 1; y++) {
-                for (let z = -1; z <= 1; z++) {
-                    if (x === 0 && y === 0 && z === 0) continue;
-                    const cubie = new THREE.Mesh(new THREE.BoxGeometry(CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE), [
-                        x === 1 ? materials.right : materials.inside, x === -1 ? materials.left : materials.inside,
-                        y === 1 ? materials.top : materials.inside, y === -1 ? materials.bottom : materials.inside,
-                        z === 1 ? materials.front : materials.inside, z === -1 ? materials.back : materials.inside
-                    ]);
-                    cubie.position.set(x * positionOffset, y * positionOffset, z * positionOffset);
-                    rubiksCube.add(cubie);
-                    cubies.push(cubie);
-                }
-            }
-        }
-        scene.add(rubiksCube);
 
         // --- 互動與動畫控制狀態 ---
         let moveHistory = [];
@@ -787,9 +825,8 @@
             return dynamicMap;
         }
 
-        function getCubeStateString() {
+        function getCubeStateString(dynamicMap) {
             let result = '';
-            const dynamicMap = buildDynamicFaceMap();
 
             const facesToScan = [
                 // U面 (+Y)
@@ -905,7 +942,13 @@
             solverStatus.textContent = '正在掃描方塊狀態...';
             solverStepsIndicator.textContent = '';
 
-            const faceletStr = getCubeStateString();
+            // 1. 動態計算當前空間中心塊方位
+            const dynamicMap = buildDynamicFaceMap();
+            
+            // 2. 【核心升級】：即時為小魔方蓋上本局公式對應的 U/D/F/B/L/R 標籤
+            updateGizmoLabels(dynamicMap);
+
+            const faceletStr = getCubeStateString(dynamicMap);
             console.log('54-Facelet 狀態：', faceletStr);
 
             if (!window.Cube) {
@@ -967,6 +1010,10 @@
             isSolvingMode = false;
             solverContainer.style.display = 'none';
             controlsContainer.style.display = 'flex';
+
+            // 【核心升級】：退出解題模式時，清除小魔方標籤，無縫還原為純色海玻璃
+            updateGizmoLabels(null);
+
             setControlsEnabled(true);
         }
 

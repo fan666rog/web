@@ -170,7 +170,7 @@
     </style>
 </head>
 <body>
-    <!-- 原始控制介面（正常模式） -->
+    <!-- 正常模式介面 -->
     <div id="controls-container">
         <div class="button-row">
             <button id="undo-btn">上一步</button>
@@ -190,10 +190,10 @@
         </div>
     </div>
 
-    <!-- 解題控制介面（解題模式，初始隱藏） -->
+    <!-- 解題模式介面（初始隱藏） -->
     <div id="solver-container" style="display: none;">
         <div id="solver-status-box">
-            <div id="solver-status">正在載入求解器...</div>
+            <div id="solver-status">準備中...</div>
             <div id="solver-steps-indicator"></div>
         </div>
         <div class="button-row">
@@ -522,7 +522,7 @@
         }
 
         // --- 旋轉單層動畫 ---
-        function rotateLayer(move, recordMove = false, duration = 250) {
+        function rotateLayer(move, recordMove = false, duration = 220) {
             return new Promise(resolve => {
                 if (recordMove) moveHistory.push(move);
                 setControlsEnabled(false);
@@ -618,16 +618,7 @@
             selectedCubie = null;
         }
 
-        // --- 3D 空間狀態掃描器與步驟翻譯器 ---
-        const materialToFace = new Map([
-            [materials.top, 'U'],
-            [materials.bottom, 'D'],
-            [materials.right, 'R'],
-            [materials.left, 'L'],
-            [materials.front, 'F'],
-            [materials.back, 'B']
-        ]);
-
+        // --- 空間顏色掃描與步驟翻譯（含動態中心塊映射） ---
         function getFaceMaterialInDirection(cubie, worldDirection) {
             const localNormals = [
                 new THREE.Vector3(1, 0, 0),  new THREE.Vector3(-1, 0, 0),
@@ -647,8 +638,36 @@
             return cubie.material[bestIndex];
         }
 
+        // 動態偵測 6 個中心塊的實際材質，確保顏色對應絕對精確
+        function buildDynamicFaceMap() {
+            const centers = [
+                { face: 'U', dir: new THREE.Vector3(0, 1, 0), coord: [0, 1, 0] },
+                { face: 'D', dir: new THREE.Vector3(0, -1, 0), coord: [0, -1, 0] },
+                { face: 'R', dir: new THREE.Vector3(1, 0, 0), coord: [1, 0, 0] },
+                { face: 'L', dir: new THREE.Vector3(-1, 0, 0), coord: [-1, 0, 0] },
+                { face: 'F', dir: new THREE.Vector3(0, 0, 1), coord: [0, 0, 1] },
+                { face: 'B', dir: new THREE.Vector3(0, 0, -1), coord: [0, 0, -1] }
+            ];
+
+            const dynamicMap = new Map();
+            centers.forEach(({ face, dir, coord }) => {
+                const cubie = cubies.find(c => 
+                    Math.round(c.position.x / positionOffset) === coord[0] &&
+                    Math.round(c.position.y / positionOffset) === coord[1] &&
+                    Math.round(c.position.z / positionOffset) === coord[2]
+                );
+                if (cubie) {
+                    const mat = getFaceMaterialInDirection(cubie, dir);
+                    dynamicMap.set(mat, face);
+                }
+            });
+            return dynamicMap;
+        }
+
         function getCubeStateString() {
             let result = '';
+            const dynamicMap = buildDynamicFaceMap();
+
             const facesToScan = [
                 // U面 (+Y): Z 從 -1 到 1, X 從 -1 到 1
                 { dir: new THREE.Vector3(0, 1, 0), coords: [
@@ -696,7 +715,7 @@
                         Math.round(c.position.z / positionOffset) === z
                     );
                     const mat = getFaceMaterialInDirection(cubie, face.dir);
-                    result += materialToFace.get(mat) || 'U';
+                    result += dynamicMap.get(mat) || 'U';
                 });
             });
 
@@ -744,6 +763,9 @@
             window.Cube.asyncInit('lib/worker.js', () => {
                 solverReady = true;
                 console.log('Cube Solver Worker 初始化就緒');
+                if (isSolvingMode && solverStatus.textContent.includes('查表')) {
+                    startSolving();
+                }
             });
         }
 
@@ -756,24 +778,7 @@
             solverStepsIndicator.textContent = upcoming ? `後續步驟：${upcoming}${currentSolveIndex + 8 < solveMoves.length ? ' ...' : ''}` : '已無後續步驟';
         }
 
-        async function enterSolverMode() {
-            dropdownMenu.classList.remove('show');
-            if (isAnimating) return;
-
-            // 切換介面
-            controlsContainer.style.display = 'none';
-            solverContainer.style.display = 'flex';
-            isSolvingMode = true;
-
-            // 重置狀態
-            solveMoves = [];
-            currentSolveIndex = 0;
-            isAutoPlaying = false;
-            shouldStopAutoPlay = false;
-            solvePlayBtn.disabled = true;
-            solveStepBtn.disabled = true;
-            solvePlayBtn.textContent = '▶ 播放';
-
+        function startSolving() {
             solverStatus.textContent = '正在掃描方塊狀態...';
             solverStepsIndicator.textContent = '';
 
@@ -806,6 +811,33 @@
                 solvePlayBtn.disabled = false;
                 solveStepBtn.disabled = false;
             });
+        }
+
+        async function enterSolverMode() {
+            dropdownMenu.classList.remove('show');
+            if (isAnimating) return;
+
+            // 切換介面
+            controlsContainer.style.display = 'none';
+            solverContainer.style.display = 'flex';
+            isSolvingMode = true;
+
+            // 重置狀態
+            solveMoves = [];
+            currentSolveIndex = 0;
+            isAutoPlaying = false;
+            shouldStopAutoPlay = false;
+            solvePlayBtn.disabled = true;
+            solveStepBtn.disabled = true;
+            solvePlayBtn.textContent = '▶ 播放';
+
+            if (!solverReady) {
+                solverStatus.textContent = '演算法查表中（初次約需 10 秒）...';
+                solverStepsIndicator.textContent = '請稍候，背景資料庫建表完成後會自動開始計算';
+                return;
+            }
+
+            startSolving();
         }
 
         function exitSolverMode() {
@@ -896,16 +928,17 @@
             }
         });
 
+        // 打亂魔方：限制只轉動外層（-1, 1），絕不轉動中層，保證狀態絕對合法
         async function scrambleCube() {
             dropdownMenu.classList.remove('show');
             setControlsEnabled(false);
             moveHistory = []; 
-            const axes = ['x', 'y', 'z'], layers = [-1, 0, 1];
-            for (let i = 0; i < 25; i++) {
+            const axes = ['x', 'y', 'z'], layers = [-1, 1];
+            for (let i = 0; i < 20; i++) {
                 const axis = axes[Math.floor(Math.random() * 3)];
                 const pivotPoint = new THREE.Vector3();
-                pivotPoint[axis] = layers[Math.floor(Math.random() * 3)] * positionOffset;
-                await rotateLayer({ pivot: pivotPoint, axis: axis, direction: Math.random() < 0.5 ? 1 : -1 }, false, 150);
+                pivotPoint[axis] = layers[Math.floor(Math.random() * 2)] * positionOffset;
+                await rotateLayer({ pivot: pivotPoint, axis: axis, direction: Math.random() < 0.5 ? 1 : -1 }, false, 120);
             }
             setControlsEnabled(true);
         }

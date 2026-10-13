@@ -760,6 +760,7 @@
 
         // 初始化背景 Worker
         if (window.Cube && window.Cube.asyncInit) {
+            window.Cube.prototype.asyncSolve = window.Cube.asyncSolve;
             window.Cube.asyncInit('lib/worker.js', () => {
                 solverReady = true;
                 console.log('Cube Solver Worker 初始化就緒');
@@ -798,7 +799,7 @@
             }
 
             solverStatus.textContent = '正在計算最少還原步驟...';
-            currentCube.asyncSolve((algorithm) => {
+            window.Cube._asyncSolve(currentCube, (algorithm) => {
                 if (!isSolvingMode) return;
                 if (!algorithm) {
                     solverStatus.textContent = '求解失敗或打亂狀態無效';

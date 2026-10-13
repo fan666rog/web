@@ -956,39 +956,60 @@ function generateScramble(length = 22) {
     }
     return scramble;
 }
-        
-// 打亂函式 模擬中層的打亂邏輯 穩定且包含「切片層視覺效果」的打亂函式
+
+// 具備「防回轉」、「中層切片效果」與「平穩轉速」的打亂函式
 async function scrambleCube() {
     dropdownMenu.classList.remove('show');
     setControlsEnabled(false);
     moveHistory = []; 
 
-    const axes = ['x', 'y', 'z'];
-    
-    // 總共打亂 22 步
-    for (let i = 0; i < 22; i++) {
-        const axis = axes[Math.floor(Math.random() * 3)];
-        const direction = Math.random() < 0.5 ? 1 : -1;
-        
-        // 25% 機率觸發「雙層反向旋轉」（視覺完全等同轉動中間層，且絕對合法不壞死）
-        const isSliceEffect = Math.random() < 0.25;
+    // === 轉速設定 ===
+    // 220ms: 沉穩清晰有機械感 (想更快可改 180ms，想更慢可改 260ms)
+    const SCRAMBLE_SPEED = 220; 
+    const TOTAL_STEPS = 20;
 
-        if (isSliceEffect) {
-            // 一側順時針，另一側逆時針（模擬中層錯位）
+    const axes = ['x', 'y', 'z'];
+    let lastAxis = null;
+    let lastLayer = null; // 1, -1, 或 'both' (雙層切片)
+
+    for (let i = 0; i < TOTAL_STEPS; i++) {
+        let axis, layer, isSlice;
+
+        // === 防回轉驗證迴圈：確保絕不產生任何原地抵銷 ===
+        while (true) {
+            axis = axes[Math.floor(Math.random() * 3)];
+            
+            // 20% 機率觸發雙層切片（視覺等於轉動中層）
+            isSlice = Math.random() < 0.2; 
+            layer = isSlice ? 'both' : (Math.random() < 0.5 ? 1 : -1);
+
+            // 規則 1：同一個軸向，絕不連續轉動同一層（防止 R 接 R' 抵銷倒帶）
+            if (axis === lastAxis && layer === lastLayer) continue;
+
+            // 規則 2：如果上一動是雙層切片，下一動強制換到不同軸向
+            if (lastLayer === 'both' && axis === lastAxis) continue;
+
+            break;
+        }
+
+        const direction = Math.random() < 0.5 ? 1 : -1;
+        lastAxis = axis;
+        lastLayer = layer;
+
+        if (isSlice) {
+            // --- 雙層反向旋轉（外觀等效切片中層，角稜平衡不壞死）---
             const pivot1 = new THREE.Vector3(); pivot1[axis] = 1 * positionOffset;
             const pivot2 = new THREE.Vector3(); pivot2[axis] = -1 * positionOffset;
 
-            // 同步轉動兩側
             await Promise.all([
-                rotateLayer({ pivot: pivot1, axis: axis, direction: direction }, false, 120),
-                rotateLayer({ pivot: pivot2, axis: axis, direction: -direction }, false, 120)
+                rotateLayer({ pivot: pivot1, axis: axis, direction: direction }, false, SCRAMBLE_SPEED),
+                rotateLayer({ pivot: pivot2, axis: axis, direction: -direction }, false, SCRAMBLE_SPEED)
             ]);
         } else {
-            // 一般單外層旋轉
-            const layerCoord = Math.random() < 0.5 ? 1 : -1;
+            // --- 一般單外層旋轉 ---
             const pivot = new THREE.Vector3();
-            pivot[axis] = layerCoord * positionOffset;
-            await rotateLayer({ pivot: pivot, axis: axis, direction: direction }, false, 120);
+            pivot[axis] = layer * positionOffset;
+            await rotateLayer({ pivot: pivot, axis: axis, direction: direction }, false, SCRAMBLE_SPEED);
         }
     }
 

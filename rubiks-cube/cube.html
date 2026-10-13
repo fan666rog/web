@@ -957,7 +957,7 @@ function generateScramble(length = 22) {
     return scramble;
 }
         
-// 允許轉動中層的打亂邏輯
+// 打亂函式 模擬中層的打亂邏輯 穩定且包含「切片層視覺效果」的打亂函式
 async function scrambleCube() {
     dropdownMenu.classList.remove('show');
     setControlsEnabled(false);
@@ -965,34 +965,30 @@ async function scrambleCube() {
 
     const axes = ['x', 'y', 'z'];
     
-    // 總共打亂 25 步
-    for (let i = 0; i < 25; i++) {
+    // 總共打亂 22 步
+    for (let i = 0; i < 22; i++) {
         const axis = axes[Math.floor(Math.random() * 3)];
         const direction = Math.random() < 0.5 ? 1 : -1;
         
-        // 30% 機率轉動中層 (0)，70% 機率轉動兩側外層 (-1 或 1)
-        const isMiddleLayer = Math.random() < 0.3;
+        // 25% 機率觸發「雙層反向旋轉」（視覺完全等同轉動中間層，且絕對合法不壞死）
+        const isSliceEffect = Math.random() < 0.25;
 
-        if (isMiddleLayer) {
-            // --- 轉動中間層 (切片層) ---
-            const pivotPoint = new THREE.Vector3(); // 座標為 0
-            
-            // 轉動中間層網格
-            await rotateLayer({ pivot: pivotPoint, axis: axis, direction: direction }, false, 100);
+        if (isSliceEffect) {
+            // 一側順時針，另一側逆時針（模擬中層錯位）
+            const pivot1 = new THREE.Vector3(); pivot1[axis] = 1 * positionOffset;
+            const pivot2 = new THREE.Vector3(); pivot2[axis] = -1 * positionOffset;
 
-            // 【關鍵校正】：中層轉動後，整顆方塊的參考系要反向轉動，以維持角塊與中心塊的奇偶校驗平衡
-            // 這樣視覺上看到中層轉了，但中心塊與角塊的群論相對關係依然 100% 合法！
-            const rotAxisVec = new THREE.Vector3(axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
-            rubiksCube.rotateOnWorldAxis(rotAxisVec, (-Math.PI / 2) * direction);
-            rubiksCube.updateMatrixWorld();
-            
+            // 同步轉動兩側
+            await Promise.all([
+                rotateLayer({ pivot: pivot1, axis: axis, direction: direction }, false, 120),
+                rotateLayer({ pivot: pivot2, axis: axis, direction: -direction }, false, 120)
+            ]);
         } else {
-            // --- 轉動外層 ---
+            // 一般單外層旋轉
             const layerCoord = Math.random() < 0.5 ? 1 : -1;
-            const pivotPoint = new THREE.Vector3();
-            pivotPoint[axis] = layerCoord * positionOffset;
-            
-            await rotateLayer({ pivot: pivotPoint, axis: axis, direction: direction }, false, 110);
+            const pivot = new THREE.Vector3();
+            pivot[axis] = layerCoord * positionOffset;
+            await rotateLayer({ pivot: pivot, axis: axis, direction: direction }, false, 120);
         }
     }
 

@@ -175,7 +175,7 @@
             width: 130px;
             height: 130px;
             z-index: 101;
-            cursor: grab;
+            cursor: pointer;
             border-radius: 12px;
             background: rgba(30, 30, 30, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.15);
@@ -277,21 +277,20 @@
             RIGHT: THREE.MOUSE.ROTATE
         };
 
-        // --- 方案一：3D 迷你導航方塊（ViewCube）設定 ---
+        // --- 方案 A：3D 迷你導航方塊（ViewCube）與中心剛體姿態 ---
         let gizmoRenderer, gizmoScene, gizmoCamera, gizmoGroup, viewCubeMesh, gizmoRaycaster;
+        // 核心姿態：記錄 6 個中心塊剛體在世界空間中的旋轉矩陣
+        const coreQuaternion = new THREE.Quaternion();
 
-        // 生成高質感的導航面材質（色彩 + 邊框 + 中英文中心色標註）
         function createViewCubeFaceTexture(title, sub, bgColor, textColor) {
             const canvas = document.createElement('canvas');
             canvas.width = 128;
             canvas.height = 128;
             const ctx = canvas.getContext('2d');
 
-            // 背景色
             ctx.fillStyle = bgColor;
             ctx.fillRect(0, 0, 128, 128);
 
-            // 內縮雙層陰影邊框（立體感）
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)';
             ctx.lineWidth = 10;
             ctx.strokeRect(5, 5, 118, 118);
@@ -300,7 +299,6 @@
             ctx.lineWidth = 4;
             ctx.strokeRect(10, 10, 108, 108);
 
-            // 文字
             ctx.fillStyle = textColor;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -337,7 +335,7 @@
             gizmoGroup = new THREE.Group();
             gizmoScene.add(gizmoGroup);
 
-            // 6 個面材質順序：+X(右/紅), -X(左/橘), +Y(頂/白), -Y(底/黃), +Z(前/藍), -Z(後/綠)
+            // 6 面材質對應小魔方局部座標：+X(右), -X(左), +Y(頂), -Y(底), +Z(前), -Z(後)
             const materialsList = [
                 new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('右', '紅 / R', '#e74c3c', '#ffffff'), roughness: 0.3 }),
                 new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('左', '橘 / L', '#e67e22', '#ffffff'), roughness: 0.3 }),
@@ -347,10 +345,10 @@
                 new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('後', '綠 / B', '#27ae60', '#ffffff'), roughness: 0.3 })
             ];
 
-            // 建立迷你立方體與邊緣線
             viewCubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), materialsList);
             const edges = new THREE.EdgesGeometry(viewCubeMesh.geometry);
             const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x111111, linewidth: 2 }));
+            line.raycast = () => {}; // 禁用線條射線偵測，避免攔截點擊
             viewCubeMesh.add(line);
             gizmoGroup.add(viewCubeMesh);
 
@@ -358,9 +356,11 @@
             gizmoRenderer.domElement.addEventListener('pointerdown', onGizmoClick);
         }
 
-        // 點擊迷你方塊的某個面，相機平滑飛向該面
+        // 精準點擊小魔方面向：直接依據點擊法向量 + 核心姿態對齊
         function onGizmoClick(event) {
             if (isAnimating) return;
+            event.stopPropagation();
+
             const rect = gizmoRenderer.domElement.getBoundingClientRect();
             const mouse = new THREE.Vector2(
                 ((event.clientX - rect.left) / rect.width) * 2 - 1,
@@ -368,16 +368,47 @@
             );
 
             gizmoRaycaster.setFromCamera(mouse, gizmoCamera);
-            const intersects = gizmoRaycaster.intersectObject(viewCubeMesh);
+            // 關鍵修正：recursive 設為 false，只檢測立方體面
+            const intersects = gizmoRaycaster.intersectObject(viewCubeMesh, false);
 
             if (intersects.length > 0) {
-                // BoxGeometry 每個面由 2 個三角形組成
-                const faceIdx = Math.floor(intersects[0].faceIndex / 2);
-                const faceDirections = ['X', '-X', 'Y', '-Y', 'Z', '-Z'];
-                if (faceDirections[faceIdx]) {
-                    snapCameraToView(faceDirections[faceIdx]);
-                }
+                const norm = intersects[0].face.normal;
+                const localNormal = new THREE.Vector3();
+                if (norm.x > 0.5) localNormal.set(1, 0, 0);       // 右 / 紅 (+X)
+                else if (norm.x < -0.5) localNormal.set(-1, 0, 0); // 左 / 橘 (-X)
+                else if (norm.y > 0.5) localNormal.set(0, 1, 0);   // 頂 / 白 (+Y)
+                else if (norm.y < -0.5) localNormal.set(0, -1, 0); // 底 / 黃 (-Y)
+                else if (norm.z > 0.5) localNormal.set(0, 0, 1);   // 前 / 藍 (+Z)
+                else if (norm.z < -0.5) localNormal.set(0, 0, -1); // 後 / 綠 (-Z)
+
+                snapCameraToCoreFace(localNormal);
             }
+        }
+
+        // 方案 A 專屬吸附：根據中心塊姿態，自動飛向目標面並保持正視姿態
+        function snapCameraToCoreFace(localNormal) {
+            const distance = camera.position.length();
+
+            // 1. 計算該面在當前世界座標中的實際朝向
+            const targetWorldDir = localNormal.clone().applyQuaternion(coreQuaternion).normalize();
+
+            // 2. 計算當前核心的頂部與正面朝向向量
+            const coreWorldUp = new THREE.Vector3(0, 1, 0).applyQuaternion(coreQuaternion).normalize();
+            const coreWorldFront = new THREE.Vector3(0, 0, 1).applyQuaternion(coreQuaternion).normalize();
+
+            const targetPosition = targetWorldDir.clone().multiplyScalar(distance);
+            let targetUp;
+
+            const dotUp = targetWorldDir.dot(coreWorldUp);
+            if (dotUp > 0.9) {
+                targetUp = coreWorldFront.clone().negate();
+            } else if (dotUp < -0.9) {
+                targetUp = coreWorldFront.clone();
+            } else {
+                targetUp = coreWorldUp.clone();
+            }
+
+            animateCamera(targetPosition, targetUp);
         }
 
         let cameraAnimationId = null;
@@ -434,20 +465,6 @@
                 }
             }
             animate();
-        }
-
-        function snapCameraToView(axis) {
-            const distance = camera.position.length();
-            let position, up;
-            switch (axis) {
-                case 'X': position = new THREE.Vector3(distance, 0, 0); up = new THREE.Vector3(0, 1, 0); break;     // 右/紅
-                case '-X': position = new THREE.Vector3(-distance, 0, 0); up = new THREE.Vector3(0, 1, 0); break;   // 左/橘
-                case 'Y': position = new THREE.Vector3(0, distance, 0); up = new THREE.Vector3(0, 0, -1); break;    // 頂/白
-                case '-Y': position = new THREE.Vector3(0, -distance, 0); up = new THREE.Vector3(0, 0, 1); break;   // 底/黃
-                case 'Z': position = new THREE.Vector3(0, 0, distance); up = new THREE.Vector3(0, 1, 0); break;     // 前/藍
-                case '-Z': position = new THREE.Vector3(0, 0, -distance); up = new THREE.Vector3(0, 1, 0); break;   // 後/綠
-            }
-            if (position) animateCamera(position, up);
         }
 
         // --- UI 元件參照 ---
@@ -539,7 +556,7 @@
         let selectedCubie = null, selectedFaceNormal = null, isDragging = false, dragStartPoint = new THREE.Vector2();
         let isAnimating = false;
         let isSolvingMode = false;
-        let solveSpeedDuration = 220; // 預設 1.0x 速度為 220ms
+        let solveSpeedDuration = 220;
 
         function setControlsEnabled(enabled) {
             isAnimating = !enabled;
@@ -557,7 +574,7 @@
             }
         }
 
-        // --- 旋轉單層動畫 ---
+        // --- 旋轉單層動畫（含中間層姿態同步） ---
         function rotateLayer(move, recordMove = false, duration = 220) {
             return new Promise(resolve => {
                 if (recordMove) moveHistory.push(move);
@@ -590,6 +607,13 @@
                             c.position.copy(worldPos).divideScalar(positionOffset).round().multiplyScalar(positionOffset);
                             c.quaternion.copy(worldQuat);
                         });
+
+                        // 【方案 A 核心更新】：如果是中間層（軸心座標為 0），更新中心姿態
+                        if (Math.abs(pivotPoint[axis]) < 0.5) {
+                            const stepQ = new THREE.Quaternion().setFromAxisAngle(rotationAxisVec, targetAngle);
+                            coreQuaternion.premultiply(stepQ);
+                        }
+
                         setControlsEnabled(true);
                         resolve();
                     }
@@ -598,7 +622,7 @@
             });
         }
 
-        // --- 手勢與滑鼠拖曳：區分「點方塊轉單層」與「點空白轉視角」 ---
+        // --- 手勢與滑鼠拖曳 ---
         function onPointerDown(event) {
             if (isAnimating || isSolvingMode) return;
             if (event.pointerType === 'mouse' && event.button !== 0) return;
@@ -618,7 +642,7 @@
                 selectedFaceNormal = intersects[0].face.normal.clone();
                 isDragging = true;
                 dragStartPoint.set(mouse.x, mouse.y);
-                if (controls) controls.noRotate = true; // 抓到方塊，鎖定視角，進入轉層模式
+                if (controls) controls.noRotate = true; 
             }
         }
 
@@ -793,7 +817,6 @@
         let isAutoPlaying = false;
         let shouldStopAutoPlay = false;
 
-        // 初始化背景 Worker 與原型鏈補齊
         if (window.Cube && window.Cube.asyncInit) {
             window.Cube.prototype.asyncSolve = window.Cube.asyncSolve;
             window.Cube.asyncInit('lib/worker.js', () => {
@@ -950,7 +973,6 @@
             }
         }
 
-        // --- 速度控制按鈕事件 ---
         speedButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 speedButtons.forEach(b => b.classList.remove('active-speed'));
@@ -959,7 +981,6 @@
             });
         });
 
-        // --- 功能選單與按鈕邏輯 ---
         menuToggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             dropdownMenu.classList.toggle('show');
@@ -971,14 +992,14 @@
             }
         });
 
-        // 優化打亂：防回轉記憶 + 中層切片效果 + 舒適速度（220ms）
+        // 打亂魔方
         async function scrambleCube() {
             dropdownMenu.classList.remove('show');
             setControlsEnabled(false);
             moveHistory = []; 
 
             const SCRAMBLE_SPEED = 220; 
-            const TOTAL_STEPS = 25; // 充分打亂步數
+            const TOTAL_STEPS = 25;
             const axes = ['x', 'y', 'z'];
             let lastAxis = null;
             let lastLayer = null;
@@ -1050,16 +1071,16 @@
         renderer.domElement.addEventListener('pointerleave', resetPointerState);
         renderer.domElement.addEventListener('pointercancel', resetPointerState);
 
-        // --- 渲染迴圈：ViewCube 與主鏡頭同步 ---
+        // --- 渲染迴圈：方案 A 姿態同步 ---
         const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);
             insideMaterial.uniforms.u_time.value = clock.getElapsedTime();
             if (controls) controls.update(); 
             
-            // 迷你方塊姿態同步
+            // 方案 A 關鍵公式：ViewCube 姿態 = (鏡頭姿態)⁻¹ × (中心核心姿態)
             if (gizmoRenderer && gizmoGroup) {
-                gizmoGroup.quaternion.copy(camera.quaternion).invert();
+                gizmoGroup.quaternion.copy(camera.quaternion).invert().multiply(coreQuaternion);
                 gizmoRenderer.render(gizmoScene, gizmoCamera);
             }
             renderer.render(scene, camera);

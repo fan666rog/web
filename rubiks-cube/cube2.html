@@ -67,7 +67,7 @@
             border-color: rgba(255, 255, 255, 0.08);
         }
 
-        /* 第二排海玻璃純色吸附按鈕 */
+        /* 第二排抗護眼干擾的海玻璃純色吸附按鈕 */
         .color-row {
             display: flex;
             gap: 8px;
@@ -76,15 +76,15 @@
             height: 36px !important;
             padding: 0 !important;
             border-radius: 9px !important;
-            border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
-            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.6), 0 3px 8px rgba(0, 0, 0, 0.4);
+            border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4);
             cursor: pointer;
             transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s !important;
         }
         .color-dot-btn:hover {
             transform: translateY(-2px);
             border-color: #ffffff !important;
-            box-shadow: inset 0 1px 4px rgba(255, 255, 255, 0.9), 0 6px 14px rgba(255, 255, 255, 0.25);
+            box-shadow: inset 0 1px 4px rgba(255, 255, 255, 0.8), 0 6px 14px rgba(255, 255, 255, 0.25);
         }
         .color-dot-btn:active {
             transform: scale(0.92) !important;
@@ -240,14 +240,14 @@
                 </div>
             </div>
         </div>
-        <!-- 第二排：六色海玻璃吸附按鈕（白、黃、紅、橘、藍、綠） -->
+        <!-- 第二排：六色抗混淆吸附按鈕（白、黃、紅、橘、藍、綠） -->
         <div class="color-row">
-            <button class="color-dot-btn" data-normal="0,1,0" style="background-color: #f8fafc;" title="白面"></button>
-            <button class="color-dot-btn" data-normal="0,-1,0" style="background-color: #facc15;" title="黃面"></button>
-            <button class="color-dot-btn" data-normal="1,0,0" style="background-color: #f43f5e;" title="紅面"></button>
-            <button class="color-dot-btn" data-normal="-1,0,0" style="background-color: #fb923c;" title="橘面"></button>
-            <button class="color-dot-btn" data-normal="0,0,1" style="background-color: #38bdf8;" title="藍面"></button>
-            <button class="color-dot-btn" data-normal="0,0,-1" style="background-color: #34d399;" title="綠面"></button>
+            <button class="color-dot-btn" data-normal="0,1,0" style="background-color: #f1f5f9;" title="白面"></button>
+            <button class="color-dot-btn" data-normal="0,-1,0" style="background-color: #eab308;" title="黃面"></button>
+            <button class="color-dot-btn" data-normal="1,0,0" style="background-color: #e11d48;" title="紅面"></button>
+            <button class="color-dot-btn" data-normal="-1,0,0" style="background-color: #ea580c;" title="橘面"></button>
+            <button class="color-dot-btn" data-normal="0,0,1" style="background-color: #2563eb;" title="藍面"></button>
+            <button class="color-dot-btn" data-normal="0,0,-1" style="background-color: #16a34a;" title="綠面"></button>
         </div>
     </div>
 
@@ -297,7 +297,7 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.1;
+        renderer.toneMappingExposure = 1.08;
         document.body.appendChild(renderer.domElement);
 
         // --- 控制項（手勢自由旋轉背景） ---
@@ -317,42 +317,38 @@
             RIGHT: THREE.MOUSE.ROTATE
         };
 
-        // --- 攝影棚柔和漫反射光照（消除硬核眩光與刺眼光點） ---
-        scene.add(new THREE.AmbientLight(0xffffff, 0.95)); // 充足均勻環境光
+        // --- 柔和漫射光照 ---
+        scene.add(new THREE.AmbientLight(0xffffff, 0.95)); 
 
-        // 主柔光
         const softKeyLight = new THREE.DirectionalLight(0xffffff, 0.9);
         softKeyLight.position.set(6, 10, 8);
         scene.add(softKeyLight);
 
-        // 天青側補光（襯托壓克力通透度）
         const coolFillLight = new THREE.DirectionalLight(0x93c5fd, 0.55);
         coolFillLight.position.set(-8, 3, -6);
         scene.add(coolFillLight);
 
-        // 微暖底反光（增加立體層次感）
         const warmBounceLight = new THREE.DirectionalLight(0xfde68a, 0.35);
         warmBounceLight.position.set(0, -8, 4);
         scene.add(warmBounceLight);
 
-        // --- 核心技術：海玻璃／磨砂壓克力質感貼圖生成 ---
-        // 利用次表面散射模擬（透光乳化中心 + 磨砂微倒角 + 邊緣透亮高光）
-        function createFrostedGlassTexture(coreColor, edgeColor, highlightAlpha = 0.4) {
+        // --- 海玻璃質感貼圖生成（抗護眼調校版） ---
+        function createFrostedGlassTexture(coreColor, edgeColor, highlightAlpha = 0.38) {
             const canvas = document.createElement('canvas');
             canvas.width = 256;
             canvas.height = 256;
             const ctx = canvas.getContext('2d');
 
-            // 1. 深色消光樹脂基底（Dark Matte Resin）
-            ctx.fillStyle = '#1a1d24';
+            // 1. 深色消光樹脂基底
+            ctx.fillStyle = '#181b22';
             ctx.fillRect(0, 0, 256, 256);
 
             // 2. 邊緣外框倒角陰影
-            ctx.strokeStyle = '#272c37';
+            ctx.strokeStyle = '#242934';
             ctx.lineWidth = 8;
             ctx.strokeRect(10, 10, 236, 236);
 
-            // 3. 內嵌磨砂海玻璃面板
+            // 3. 磨砂海玻璃面板
             const padX = 22, padY = 22, padW = 212, padH = 212, r = 24;
             ctx.save();
             ctx.beginPath();
@@ -360,25 +356,25 @@
             else ctx.rect(padX, padY, padW, padH);
             ctx.clip();
 
-            // 乳光次表面散射擴散漸層（中心微透亮、向外漸進為飽滿磨砂色）
-            const grad = ctx.createRadialGradient(128, 120, 20, 128, 128, 130);
+            // 調整乳化半徑，讓色彩本色更純粹，避免被暖黃濾鏡稀釋
+            const grad = ctx.createRadialGradient(128, 120, 30, 128, 128, 125);
             grad.addColorStop(0, coreColor);
-            grad.addColorStop(0.75, edgeColor);
+            grad.addColorStop(0.7, edgeColor);
             grad.addColorStop(1, edgeColor);
             ctx.fillStyle = grad;
             ctx.fillRect(padX, padY, padW, padH);
 
-            // 模擬磨砂玻璃上緣的高光微倒角（Frosted Bevel Reflection）
+            // 溫和不刺眼的磨砂倒角微反光
             const bevelGrad = ctx.createLinearGradient(padX, padY, padX, padY + padH);
             bevelGrad.addColorStop(0, `rgba(255, 255, 255, ${highlightAlpha})`);
-            bevelGrad.addColorStop(0.15, 'rgba(255, 255, 255, 0.08)');
+            bevelGrad.addColorStop(0.18, 'rgba(255, 255, 255, 0.05)');
             bevelGrad.addColorStop(0.85, 'rgba(0, 0, 0, 0.05)');
             bevelGrad.addColorStop(1, 'rgba(0, 0, 0, 0.25)');
             ctx.fillStyle = bevelGrad;
             ctx.fillRect(padX, padY, padW, padH);
 
-            // 晶瑩內微光輪廓線
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+            // 內框微光切線
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.38)';
             ctx.lineWidth = 3;
             ctx.stroke();
 
@@ -415,19 +411,19 @@
             gizmoGroup = new THREE.Group();
             gizmoScene.add(gizmoGroup);
 
-            // 6 面海玻璃材質：+X(紅), -X(橘), +Y(白), -Y(黃), +Z(藍), -Z(綠)
+            // 6 面海玻璃材質（抗護眼調校色系）
             const materialsList = [
-                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fda4af', '#f43f5e', 0.5), roughness: 0.28, metalness: 0.05 }), // 紅寶石珊瑚
-                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fed7aa', '#fb923c', 0.5), roughness: 0.28, metalness: 0.05 }), // 蜜柑橙晶
-                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#ffffff', '#f1f5f9', 0.6), roughness: 0.25, metalness: 0.05 }), // 蛋白月光石
-                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fef08a', '#facc15', 0.5), roughness: 0.28, metalness: 0.05 }), // 琥珀蜜蠟
-                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#bae6fd', '#38bdf8', 0.5), roughness: 0.28, metalness: 0.05 }), // 天青海藍
-                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#a7f3d0', '#34d399', 0.5), roughness: 0.28, metalness: 0.05 })  // 薄荷翡翠
+                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fb7185', '#e11d48', 0.45), roughness: 0.3, metalness: 0.05 }), // 紅寶石純紅 (+X)
+                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fdba74', '#ea580c', 0.45), roughness: 0.3, metalness: 0.05 }), // 血橙暖橘 (-X)
+                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#ffffff', '#e2e8f0', 0.45), roughness: 0.3, metalness: 0.05 }), // 羊脂月光白 (+Y，溫和不刺眼)
+                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fef08a', '#eab308', 0.45), roughness: 0.3, metalness: 0.05 }), // 金絲雀純黃 (-Y)
+                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#60a5fa', '#2563eb', 0.45), roughness: 0.3, metalness: 0.05 }), // 寶石鈷藍 (+Z，拔除青綠干擾)
+                new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#86efac', '#16a34a', 0.45), roughness: 0.3, metalness: 0.05 })  // 青翠正綠 (-Z，拔除藍光依賴)
             ];
 
             viewCubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), materialsList);
             const edges = new THREE.EdgesGeometry(viewCubeMesh.geometry);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25 }));
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22 }));
             line.raycast = () => {};
             viewCubeMesh.add(line);
             gizmoGroup.add(viewCubeMesh);
@@ -582,21 +578,21 @@
                     vec2 st = vUv * 3.5; st.x += u_time * 0.25;
                     float n = noise(st * vec2(1.0, 2.0) + vec2(0.0, u_time * 0.5));
                     float intensity = pow(n, 12.0);
-                    vec3 finalColor = mix(vec3(0.08, 0.12, 0.18), vec3(0.2, 0.6, 0.9), intensity);
-                    finalColor += vec3(0.3, 0.4, 0.8) * (sin(u_time * 2.0 + vUv.y * 5.0) * 0.5 + 0.5) * intensity;
+                    vec3 finalColor = mix(vec3(0.08, 0.12, 0.18), vec3(0.15, 0.5, 0.85), intensity);
+                    finalColor += vec3(0.25, 0.35, 0.75) * (sin(u_time * 2.0 + vUv.y * 5.0) * 0.5 + 0.5) * intensity;
                     gl_FragColor = vec4(finalColor, 1.0);
                 }
             `
         });
 
-        // 大魔方六面海玻璃材質（溫潤微透、防眩光、色差純淨）
+        // 大魔方六面海玻璃材質（抗護眼調校版）
         const materials = {
-            right: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fda4af', '#f43f5e', 0.5), roughness: 0.32, metalness: 0.05 }), // 紅
-            left: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fed7aa', '#fb923c', 0.5), roughness: 0.32, metalness: 0.05 }),  // 橘
-            top: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#ffffff', '#f1f5f9', 0.6), roughness: 0.3, metalness: 0.05 }),   // 白
-            bottom: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fef08a', '#facc15', 0.5), roughness: 0.32, metalness: 0.05 }),// 黃
-            front: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#bae6fd', '#38bdf8', 0.5), roughness: 0.32, metalness: 0.05 }), // 藍
-            back: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#a7f3d0', '#34d399', 0.5), roughness: 0.32, metalness: 0.05 }),  // 綠
+            right: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fb7185', '#e11d48', 0.45), roughness: 0.32, metalness: 0.05 }), // 純紅
+            left: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fdba74', '#ea580c', 0.45), roughness: 0.32, metalness: 0.05 }),  // 血橙橘
+            top: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#ffffff', '#e2e8f0', 0.45), roughness: 0.3, metalness: 0.05 }),   // 羊脂白
+            bottom: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fef08a', '#eab308', 0.45), roughness: 0.32, metalness: 0.05 }),// 金絲雀黃
+            front: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#60a5fa', '#2563eb', 0.45), roughness: 0.32, metalness: 0.05 }), // 寶石藍
+            back: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#86efac', '#16a34a', 0.45), roughness: 0.32, metalness: 0.05 }),  // 翠綠
             inside: insideMaterial 
         };
 

@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Rubik's Cube</title>
+    <!-- 引入 cube.js 核心與非同步 Worker 擴充 -->
+    <script src="lib/cube.js"></script>
+    <script src="lib/async.js"></script>
     <style>
         body {
             margin: 0;
@@ -12,9 +15,9 @@
         }
         canvas {
             display: block;
-            touch-action: none; /* 關鍵修正：防止手機瀏覽器觸控時觸發上下捲動或重新整理 */
+            touch-action: none;
         }
-        #controls-container {
+        #controls-container, #solver-container {
             position: absolute;
             top: 20px;
             left: 50%;
@@ -32,7 +35,7 @@
             gap: 10px;
         }
 
-        #controls-container button {
+        #controls-container button, #solver-container button {
             flex: 1;
             padding: 10px 5px;
             font-size: 16px;
@@ -42,19 +45,102 @@
             border: 1px solid rgba(255, 255, 255, 0.5);
             border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.1s;
+            transition: background-color 0.3s, transform 0.1s, border-color 0.3s;
             white-space: nowrap; 
         }
-        #controls-container button:hover {
+        #controls-container button:hover, #solver-container button:hover {
             background-color: rgba(0, 0, 0, 0.7);
         }
-        #controls-container button:active {
+        #controls-container button:active, #solver-container button:active {
             transform: scale(0.95);
         }
-        #controls-container button:disabled {
+        #controls-container button:disabled, #solver-container button:disabled {
             background-color: rgba(50, 50, 50, 0.5);
             color: #888;
             cursor: not-allowed;
+        }
+
+        /* 下拉選單樣式 */
+        .dropdown-wrapper {
+            position: relative;
+            flex: 2;
+            display: flex;
+        }
+        .dropdown-wrapper > button {
+            width: 100%;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            width: 100%;
+            background-color: rgba(25, 25, 25, 0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            z-index: 102;
+            flex-direction: column;
+        }
+        .dropdown-content.show {
+            display: flex;
+        }
+        .dropdown-item {
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+            padding: 12px 10px !important;
+            text-align: center;
+            font-size: 15px !important;
+            cursor: pointer;
+        }
+        .dropdown-item:last-child {
+            border-bottom: none !important;
+        }
+        .dropdown-item:hover {
+            background-color: rgba(255, 255, 255, 0.15) !important;
+        }
+
+        /* 解題控制台專屬樣式 */
+        #solver-status-box {
+            background: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #fff;
+            text-align: center;
+            font-family: '微軟正黑體', sans-serif;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        #solver-status {
+            font-size: 16px;
+            font-weight: bold;
+            color: #4da6ff;
+        }
+        #solver-steps-indicator {
+            font-size: 13px;
+            color: #ccc;
+            margin-top: 5px;
+            min-height: 18px;
+            word-break: break-all;
+        }
+
+        /* 速度按鈕專屬樣式 */
+        .speed-btn {
+            font-size: 14px !important;
+            padding: 8px 5px !important;
+            color: #aaa !important;
+        }
+        .speed-btn.active-speed {
+            background-color: rgba(77, 166, 255, 0.35) !important;
+            border-color: #4da6ff !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+            box-shadow: 0 0 8px rgba(77, 166, 255, 0.5);
         }
 
         /* 頁尾樣式 */
@@ -98,11 +184,18 @@
     </style>
 </head>
 <body>
+    <!-- 正常模式介面 -->
     <div id="controls-container">
         <div class="button-row">
-            <button id="scramble-btn">打亂</button>
-            <button id="reset-btn">重置</button>
             <button id="undo-btn">上一步</button>
+            <div class="dropdown-wrapper">
+                <button id="menu-toggle-btn">功能選單 ▾</button>
+                <div id="dropdown-menu" class="dropdown-content">
+                    <button id="scramble-btn" class="dropdown-item">🎲 打亂魔方</button>
+                    <button id="reset-btn" class="dropdown-item">🔄 重置魔方</button>
+                    <button id="solve-btn" class="dropdown-item">🧩 自動解題</button>
+                </div>
+            </div>
         </div>
         <div class="button-row">
             <button id="reset-view-btn">視角回正</button>
@@ -111,10 +204,30 @@
         </div>
     </div>
 
+    <!-- 解題模式介面（初始隱藏） -->
+    <div id="solver-container" style="display: none;">
+        <div id="solver-status-box">
+            <div id="solver-status">準備中...</div>
+            <div id="solver-steps-indicator"></div>
+        </div>
+        <!-- 播放控制排 -->
+        <div class="button-row">
+            <button id="solve-play-btn">▶ 播放</button>
+            <button id="solve-step-btn">⏭ 單步</button>
+            <button id="solve-exit-btn">✖ 退出</button>
+        </div>
+        <!-- 速度切換排 -->
+        <div class="button-row">
+            <button class="speed-btn" data-speed="420">🐢 0.5x 慢速</button>
+            <button class="speed-btn active-speed" data-speed="220">🚶 1.0x 正常</button>
+            <button class="speed-btn" data-speed="90">⚡ 2.0x 快速</button>
+        </div>
+    </div>
+
     <div id="gizmo-container"></div>
 
     <footer>
-        <p>&copy; <span id="copyright-year"></span> <a href="https://github.com/fan666rog/web" target="_blank">fan666rog</a> & Gemini. All Rights Reserved. V2.5</p>
+        <p>&copy; <span id="copyright-year"></span> <a href="https://github.com/fan666rog/web" target="_blank">fan666rog</a> & Gemini. All Rights Reserved. V3.0</p>
     </footer>
 
     <script type="importmap">
@@ -150,8 +263,6 @@
         controls.staticMoving = true;
         controls.dynamicDampingFactor = 0.2;
         controls.rotateSpeed = 3.0;
-        
-        // 永遠保持開啟，避免 Three.js 內部遺失 pointerup 事件產生幽靈指標
         controls.enabled = true; 
 
         controls.mouseButtons = {
@@ -326,14 +437,28 @@
             if (position) animateCamera(position, up);
         }
 
-        // --- UI & 光源 & 方塊初始化 ---
+        // --- UI 元件參照 ---
+        const controlsContainer = document.getElementById('controls-container');
+        const solverContainer = document.getElementById('solver-container');
+        const menuToggleBtn = document.getElementById('menu-toggle-btn');
+        const dropdownMenu = document.getElementById('dropdown-menu');
         const scrambleBtn = document.getElementById('scramble-btn');
         const resetBtn = document.getElementById('reset-btn');
         const undoBtn = document.getElementById('undo-btn');
+        const solveBtn = document.getElementById('solve-btn');
         const resetViewBtn = document.getElementById('reset-view-btn');
         const invertViewBtn = document.getElementById('invert-view-btn');
         const rotateViewBtn = document.getElementById('rotate-view-btn');
 
+        // 解題介面元件
+        const solverStatus = document.getElementById('solver-status');
+        const solverStepsIndicator = document.getElementById('solver-steps-indicator');
+        const solvePlayBtn = document.getElementById('solve-play-btn');
+        const solveStepBtn = document.getElementById('solve-step-btn');
+        const solveExitBtn = document.getElementById('solve-exit-btn');
+        const speedButtons = document.querySelectorAll('.speed-btn');
+
+        // --- 光源 & 材質 & 方塊初始化 ---
         scene.add(new THREE.AmbientLight(0xffffff, 0.8));
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
         directionalLight.position.set(5, 10, 7.5);
@@ -367,9 +492,13 @@
         });
 
         const materials = {
-            right: new THREE.MeshStandardMaterial({ color: 0xff0000 }), left: new THREE.MeshStandardMaterial({ color: 0xffa500 }), 
-            top: new THREE.MeshStandardMaterial({ color: 0xffffff }), bottom: new THREE.MeshStandardMaterial({ color: 0xffff00 }), 
-            front: new THREE.MeshStandardMaterial({ color: 0x0000ff }), back: new THREE.MeshStandardMaterial({ color: 0x008000 }), inside: insideMaterial 
+            right: new THREE.MeshStandardMaterial({ color: 0xff0000 }), // R: 紅 (+X)
+            left: new THREE.MeshStandardMaterial({ color: 0xffa500 }),  // L: 橘 (-X)
+            top: new THREE.MeshStandardMaterial({ color: 0xffffff }),   // U: 白 (+Y)
+            bottom: new THREE.MeshStandardMaterial({ color: 0xffff00 }),// D: 黃 (-Y)
+            front: new THREE.MeshStandardMaterial({ color: 0x0000ff }), // F: 藍 (+Z)
+            back: new THREE.MeshStandardMaterial({ color: 0x008000 }),  // B: 綠 (-Z)
+            inside: insideMaterial 
         };
 
         const cubies = [];
@@ -390,38 +519,81 @@
         }
         scene.add(rubiksCube);
 
-        // --- 核心互動修正區 ---
+        // --- 互動與動畫控制狀態 ---
         let moveHistory = [];
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         let selectedCubie = null, selectedFaceNormal = null, isDragging = false, dragStartPoint = new THREE.Vector2();
         let isAnimating = false;
+        let isSolvingMode = false;
+        let solveSpeedDuration = 220; // 預設 1.0x 速度為 220ms
 
         function setControlsEnabled(enabled) {
             isAnimating = !enabled;
-            // 關鍵修正：不再開關 enabled，而是透過 noRotate 阻止鏡頭轉動，維持事件傾聽不斷線
             if (controls) controls.noRotate = !enabled; 
-            scrambleBtn.disabled = !enabled;
-            resetBtn.disabled = !enabled;
-            undoBtn.disabled = !enabled || moveHistory.length === 0;
-            if(resetViewBtn) resetViewBtn.disabled = !enabled;
-            if(invertViewBtn) invertViewBtn.disabled = !enabled;
-            if(rotateViewBtn) rotateViewBtn.disabled = !enabled;
+
+            if (!isSolvingMode) {
+                menuToggleBtn.disabled = !enabled;
+                scrambleBtn.disabled = !enabled;
+                resetBtn.disabled = !enabled;
+                solveBtn.disabled = !enabled;
+                undoBtn.disabled = !enabled || moveHistory.length === 0;
+                if(resetViewBtn) resetViewBtn.disabled = !enabled;
+                if(invertViewBtn) invertViewBtn.disabled = !enabled;
+                if(rotateViewBtn) rotateViewBtn.disabled = !enabled;
+            }
         }
 
+        // --- 旋轉單層動畫 ---
+        function rotateLayer(move, recordMove = false, duration = 220) {
+            return new Promise(resolve => {
+                if (recordMove) moveHistory.push(move);
+                setControlsEnabled(false);
+                
+                const { pivot: pivotPoint, axis, direction } = move;
+                const layer = cubies.filter(c => Math.abs(c.position[axis] - pivotPoint[axis]) < 0.5);
+                const pivot = new THREE.Object3D();
+                scene.add(pivot);
+                layer.forEach(c => pivot.attach(c));
+                
+                const targetAngle = (Math.PI / 2) * direction;
+                const rotationAxisVec = new THREE.Vector3(axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
+                const animationDuration = duration, startTime = performance.now();
+                
+                const animateRotation = (time) => {
+                    const t = Math.min(1, (time - startTime) / animationDuration);
+                    const easedT = 1 - Math.pow(1 - t, 3);
+                    pivot.setRotationFromAxisAngle(rotationAxisVec, targetAngle * easedT);
+                    if (t < 1) {
+                        requestAnimationFrame(animateRotation);
+                    } else {
+                        pivot.setRotationFromAxisAngle(rotationAxisVec, targetAngle);
+                        scene.remove(pivot);
+                        layer.forEach(c => {
+                            const worldPos = new THREE.Vector3(), worldQuat = new THREE.Quaternion();
+                            c.getWorldPosition(worldPos);
+                            c.getWorldQuaternion(worldQuat);
+                            rubiksCube.attach(c);
+                            c.position.copy(worldPos).divideScalar(positionOffset).round().multiplyScalar(positionOffset);
+                            c.quaternion.copy(worldQuat);
+                        });
+                        setControlsEnabled(true);
+                        resolve();
+                    }
+                };
+                requestAnimationFrame(animateRotation);
+            });
+        }
+
+        // --- 手勢與滑鼠拖曳 ---
         function onPointerDown(event) {
-            if (isAnimating) return;
-            
-            // PC: 嚴格限制只有左鍵能選取方塊
+            if (isAnimating || isSolvingMode) return;
             if (event.pointerType === 'mouse' && event.button !== 0) return;
-            
-            // 手機: 確保只有第一根手指能轉方塊，多指手勢交給 Trackball 處理
             if (event.pointerType === 'touch' && !event.isPrimary) return;
 
             const gizmoContainer = document.getElementById('gizmo-container');
             if (gizmoContainer && gizmoContainer.contains(event.target)) return;
 
-            // 修正：統一透過 event 讀取座標，不再誤用 touches 陣列
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
             
@@ -433,14 +605,12 @@
                 selectedFaceNormal = intersects[0].face.normal.clone();
                 isDragging = true;
                 dragStartPoint.set(mouse.x, mouse.y);
-                
-                // 抓到方塊的瞬間，動態鎖定相機旋轉，這樣滑鼠/手指滑動時就不會拉扯到整顆魔方
                 if (controls) controls.noRotate = true; 
             }
         }
 
         function onPointerMove(event) {
-            if (!isDragging || isAnimating) return;
+            if (!isDragging || isAnimating || isSolvingMode) return;
             
             const currentPoint = new THREE.Vector2((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
             const dragVector = currentPoint.clone().sub(dragStartPoint);
@@ -466,73 +636,399 @@
         }
 
         function resetPointerState() {
-            // 只要手放開/滑出，且不是在動畫中，就立刻解鎖相機旋轉
-            if (controls && !isAnimating) {
-                controls.noRotate = false;
-            }
+            if (controls && !isAnimating) controls.noRotate = false;
             isDragging = false;
             selectedCubie = null;
         }
 
-        // --- 旋轉動畫 ---
-        function rotateLayer(move, recordMove = false) {
-            return new Promise(resolve => {
-                if (recordMove) moveHistory.push(move);
-                setControlsEnabled(false); // 這邊會設定 isAnimating = true, noRotate = true
-                
-                const { pivot: pivotPoint, axis, direction } = move;
-                const layer = cubies.filter(c => Math.abs(c.position[axis] - pivotPoint[axis]) < 0.5);
-                const pivot = new THREE.Object3D();
-                scene.add(pivot);
-                layer.forEach(c => pivot.attach(c));
-                
-                const targetAngle = (Math.PI / 2) * direction;
-                const rotationAxisVec = new THREE.Vector3(axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
-                const animationDuration = 300, startTime = performance.now();
-                
-                const animateRotation = (time) => {
-                    const t = Math.min(1, (time - startTime) / animationDuration);
-                    const easedT = 1 - Math.pow(1 - t, 3);
-                    pivot.setRotationFromAxisAngle(rotationAxisVec, targetAngle * easedT);
-                    if (t < 1) {
-                        requestAnimationFrame(animateRotation);
-                    } else {
-                        pivot.setRotationFromAxisAngle(rotationAxisVec, targetAngle);
-                        scene.remove(pivot);
-                        layer.forEach(c => {
-                            const worldPos = new THREE.Vector3(), worldQuat = new THREE.Quaternion();
-                            c.getWorldPosition(worldPos);
-                            c.getWorldQuaternion(worldQuat);
-                            rubiksCube.attach(c);
-                            c.position.copy(worldPos).divideScalar(positionOffset).round().multiplyScalar(positionOffset);
-                            c.quaternion.copy(worldQuat);
-                        });
-                        setControlsEnabled(true); // 動畫結束，解除鎖定
-                        resolve();
-                    }
-                };
-                requestAnimationFrame(animateRotation);
+        // --- 空間顏色掃描與步驟翻譯（動態中心塊映射） ---
+        function getFaceMaterialInDirection(cubie, worldDirection) {
+            const localNormals = [
+                new THREE.Vector3(1, 0, 0),  new THREE.Vector3(-1, 0, 0),
+                new THREE.Vector3(0, 1, 0),  new THREE.Vector3(0, -1, 0),
+                new THREE.Vector3(0, 0, 1),  new THREE.Vector3(0, 0, -1)
+            ];
+
+            let bestDot = -Infinity, bestIndex = 0;
+            localNormals.forEach((localNorm, index) => {
+                const currentWorldNorm = localNorm.clone().applyQuaternion(cubie.quaternion).normalize();
+                const dot = currentWorldNorm.dot(worldDirection);
+                if (dot > bestDot) {
+                    bestDot = dot;
+                    bestIndex = index;
+                }
+            });
+            return cubie.material[bestIndex];
+        }
+
+        function buildDynamicFaceMap() {
+            const centers = [
+                { face: 'U', dir: new THREE.Vector3(0, 1, 0), coord: [0, 1, 0] },
+                { face: 'D', dir: new THREE.Vector3(0, -1, 0), coord: [0, -1, 0] },
+                { face: 'R', dir: new THREE.Vector3(1, 0, 0), coord: [1, 0, 0] },
+                { face: 'L', dir: new THREE.Vector3(-1, 0, 0), coord: [-1, 0, 0] },
+                { face: 'F', dir: new THREE.Vector3(0, 0, 1), coord: [0, 0, 1] },
+                { face: 'B', dir: new THREE.Vector3(0, 0, -1), coord: [0, 0, -1] }
+            ];
+
+            const dynamicMap = new Map();
+            centers.forEach(({ face, dir, coord }) => {
+                const cubie = cubies.find(c => 
+                    Math.round(c.position.x / positionOffset) === coord[0] &&
+                    Math.round(c.position.y / positionOffset) === coord[1] &&
+                    Math.round(c.position.z / positionOffset) === coord[2]
+                );
+                if (cubie) {
+                    const mat = getFaceMaterialInDirection(cubie, dir);
+                    dynamicMap.set(mat, face);
+                }
+            });
+            return dynamicMap;
+        }
+
+        function getCubeStateString() {
+            let result = '';
+            const dynamicMap = buildDynamicFaceMap();
+
+            const facesToScan = [
+                // U面 (+Y): Z 從 -1 到 1, X 從 -1 到 1
+                { dir: new THREE.Vector3(0, 1, 0), coords: [
+                    [-1, 1, -1], [0, 1, -1], [1, 1, -1],
+                    [-1, 1,  0], [0, 1,  0], [1, 1,  0],
+                    [-1, 1,  1], [0, 1,  1], [1, 1,  1]
+                ]},
+                // R面 (+X): Y 從 1 到 -1, Z 從 1 到 -1
+                { dir: new THREE.Vector3(1, 0, 0), coords: [
+                    [1,  1,  1], [1,  1,  0], [1,  1, -1],
+                    [1,  0,  1], [1,  0,  0], [1,  0, -1],
+                    [1, -1,  1], [1, -1,  0], [1, -1, -1]
+                ]},
+                // F面 (+Z): Y 從 1 到 -1, X 從 -1 到 1
+                { dir: new THREE.Vector3(0, 0, 1), coords: [
+                    [-1,  1, 1], [0,  1, 1], [1,  1, 1],
+                    [-1,  0, 1], [0,  0, 1], [1,  0, 1],
+                    [-1, -1, 1], [0, -1, 1], [1, -1, 1]
+                ]},
+                // D面 (-Y): Z 從 1 到 -1, X 從 -1 到 1
+                { dir: new THREE.Vector3(0, -1, 0), coords: [
+                    [-1, -1,  1], [0, -1,  1], [1, -1,  1],
+                    [-1, -1,  0], [0, -1,  0], [1, -1,  0],
+                    [-1, -1, -1], [0, -1, -1], [1, -1, -1]
+                ]},
+                // L面 (-X): Y 從 1 到 -1, Z 從 -1 到 1
+                { dir: new THREE.Vector3(-1, 0, 0), coords: [
+                    [-1,  1, -1], [-1,  1,  0], [-1,  1,  1],
+                    [-1,  0, -1], [-1,  0,  0], [-1,  0,  1],
+                    [-1, -1, -1], [-1, -1,  0], [-1, -1,  1]
+                ]},
+                // B面 (-Z): Y 從 1 到 -1, X 從 1 到 -1
+                { dir: new THREE.Vector3(0, 0, -1), coords: [
+                    [ 1,  1, -1], [ 0,  1, -1], [-1,  1, -1],
+                    [ 1,  0, -1], [ 0,  0, -1], [-1,  0, -1],
+                    [ 1, -1, -1], [ 0, -1, -1], [-1, -1, -1]
+                ]}
+            ];
+
+            facesToScan.forEach(face => {
+                face.coords.forEach(([x, y, z]) => {
+                    const cubie = cubies.find(c => 
+                        Math.round(c.position.x / positionOffset) === x &&
+                        Math.round(c.position.y / positionOffset) === y &&
+                        Math.round(c.position.z / positionOffset) === z
+                    );
+                    const mat = getFaceMaterialInDirection(cubie, face.dir);
+                    result += dynamicMap.get(mat) || 'U';
+                });
+            });
+
+            return result;
+        }
+
+        async function executeMoveNotation(moveNotation, duration = 220, recordMove = true) {
+            const face = moveNotation[0];
+            const modifier = moveNotation.length > 1 ? moveNotation[1] : '';
+
+            let axis = 'y', layerCoord = 1, baseDir = -1;
+            switch (face) {
+                case 'U': axis = 'y'; layerCoord =  1; baseDir = -1; break;
+                case 'D': axis = 'y'; layerCoord = -1; baseDir =  1; break;
+                case 'R': axis = 'x'; layerCoord =  1; baseDir = -1; break;
+                case 'L': axis = 'x'; layerCoord = -1; baseDir =  1; break;
+                case 'F': axis = 'z'; layerCoord =  1; baseDir = -1; break;
+                case 'B': axis = 'z'; layerCoord = -1; baseDir =  1; break;
+            }
+
+            const pivot = new THREE.Vector3();
+            pivot[axis] = layerCoord * positionOffset;
+
+            let turns = 1, dir = baseDir;
+            if (modifier === "'") {
+                dir = -baseDir;
+            } else if (modifier === '2') {
+                turns = 2;
+            }
+
+            for (let i = 0; i < turns; i++) {
+                await rotateLayer({ pivot, axis, direction: dir }, recordMove, duration);
+            }
+        }
+
+        // --- 解題模式控制器 ---
+        let solverReady = false;
+        let solveMoves = [];
+        let currentSolveIndex = 0;
+        let isAutoPlaying = false;
+        let shouldStopAutoPlay = false;
+
+        // 初始化背景 Worker 與原型鏈補齊
+        if (window.Cube && window.Cube.asyncInit) {
+            window.Cube.prototype.asyncSolve = window.Cube.asyncSolve;
+            window.Cube.asyncInit('lib/worker.js', () => {
+                solverReady = true;
+                console.log('Cube Solver Worker 初始化就緒');
+                if (isSolvingMode && solverStatus.textContent.includes('查表')) {
+                    startSolving();
+                }
             });
         }
 
-        // --- 其餘按鈕邏輯 ---
+        function updateStepsIndicator() {
+            if (solveMoves.length === 0) {
+                solverStepsIndicator.textContent = '';
+                return;
+            }
+            const upcoming = solveMoves.slice(currentSolveIndex, currentSolveIndex + 8).join(' ');
+            solverStepsIndicator.textContent = upcoming ? `後續步驟：${upcoming}${currentSolveIndex + 8 < solveMoves.length ? ' ...' : ''}` : '已無後續步驟';
+        }
+
+        function startSolving() {
+            solverStatus.textContent = '正在掃描方塊狀態...';
+            solverStepsIndicator.textContent = '';
+
+            const faceletStr = getCubeStateString();
+            console.log('54-Facelet 狀態：', faceletStr);
+
+            if (!window.Cube) {
+                solverStatus.textContent = '錯誤：未載入 Cube 解題庫';
+                return;
+            }
+
+            const currentCube = window.Cube.fromString(faceletStr);
+            if (currentCube.isSolved()) {
+                solverStatus.textContent = '🎉 方塊已處於還原狀態！';
+                solverStepsIndicator.textContent = '六面已完成，無需轉動';
+                return;
+            }
+
+            solverStatus.textContent = '正在計算最少還原步驟...';
+            window.Cube._asyncSolve(currentCube, (algorithm) => {
+                if (!isSolvingMode) return;
+                if (!algorithm) {
+                    solverStatus.textContent = '求解失敗或打亂狀態無效';
+                    return;
+                }
+                solveMoves = algorithm.trim().split(/\s+/);
+                currentSolveIndex = 0;
+                solverStatus.textContent = `計算完成！共 ${solveMoves.length} 步`;
+                updateStepsIndicator();
+                solvePlayBtn.disabled = false;
+                solveStepBtn.disabled = false;
+            });
+        }
+
+        async function enterSolverMode() {
+            dropdownMenu.classList.remove('show');
+            if (isAnimating) return;
+
+            controlsContainer.style.display = 'none';
+            solverContainer.style.display = 'flex';
+            isSolvingMode = true;
+
+            solveMoves = [];
+            currentSolveIndex = 0;
+            isAutoPlaying = false;
+            shouldStopAutoPlay = false;
+            solvePlayBtn.disabled = true;
+            solveStepBtn.disabled = true;
+            solvePlayBtn.textContent = '▶ 播放';
+
+            if (!solverReady) {
+                solverStatus.textContent = '演算法查表中（初次約需 10 秒）...';
+                solverStepsIndicator.textContent = '請稍候，背景資料庫建表完成後會自動開始計算';
+                return;
+            }
+
+            startSolving();
+        }
+
+        function exitSolverMode() {
+            isAutoPlaying = false;
+            shouldStopAutoPlay = true;
+            isSolvingMode = false;
+            solverContainer.style.display = 'none';
+            controlsContainer.style.display = 'flex';
+            setControlsEnabled(true);
+        }
+
+        async function handlePlayPause() {
+            if (isAutoPlaying) {
+                shouldStopAutoPlay = true;
+                isAutoPlaying = false;
+                solvePlayBtn.textContent = '▶ 播放';
+                solveStepBtn.disabled = (currentSolveIndex >= solveMoves.length);
+                return;
+            }
+
+            if (currentSolveIndex >= solveMoves.length) return;
+
+            isAutoPlaying = true;
+            shouldStopAutoPlay = false;
+            solvePlayBtn.textContent = '⏸ 暫停';
+            solveStepBtn.disabled = true;
+
+            while (isAutoPlaying && currentSolveIndex < solveMoves.length && !shouldStopAutoPlay && isSolvingMode) {
+                const move = solveMoves[currentSolveIndex];
+                solverStatus.textContent = `還原中：第 ${currentSolveIndex + 1} / ${solveMoves.length} 步 (${move})`;
+                updateStepsIndicator();
+                
+                // 動態使用當前選中的速度
+                await executeMoveNotation(move, solveSpeedDuration, true);
+                currentSolveIndex++;
+
+                if (currentSolveIndex >= solveMoves.length) {
+                    solverStatus.textContent = '🎉 六面已成功還原！';
+                    solverStepsIndicator.textContent = '所有步驟執行完畢';
+                    isAutoPlaying = false;
+                    solvePlayBtn.textContent = '✔ 完成';
+                    solvePlayBtn.disabled = true;
+                    solveStepBtn.disabled = true;
+                    break;
+                }
+            }
+
+            if (shouldStopAutoPlay || !isAutoPlaying) {
+                isAutoPlaying = false;
+                solvePlayBtn.textContent = '▶ 播放';
+                solveStepBtn.disabled = (currentSolveIndex >= solveMoves.length);
+            }
+        }
+
+        async function handleSingleStep() {
+            if (isAnimating || currentSolveIndex >= solveMoves.length) return;
+
+            solveStepBtn.disabled = true;
+            solvePlayBtn.disabled = true;
+
+            const move = solveMoves[currentSolveIndex];
+            solverStatus.textContent = `單步：第 ${currentSolveIndex + 1} / ${solveMoves.length} 步 (${move})`;
+            
+            // 單步同樣套用當前設定速度
+            await executeMoveNotation(move, solveSpeedDuration, true);
+            currentSolveIndex++;
+            updateStepsIndicator();
+
+            if (currentSolveIndex >= solveMoves.length) {
+                solverStatus.textContent = '🎉 六面已成功還原！';
+                solverStepsIndicator.textContent = '所有步驟執行完畢';
+                solvePlayBtn.textContent = '✔ 完成';
+                solvePlayBtn.disabled = true;
+                solveStepBtn.disabled = true;
+            } else {
+                solveStepBtn.disabled = false;
+                solvePlayBtn.disabled = false;
+            }
+        }
+
+        // --- 速度控制按鈕事件 ---
+        speedButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                speedButtons.forEach(b => b.classList.remove('active-speed'));
+                btn.classList.add('active-speed');
+                solveSpeedDuration = parseInt(btn.dataset.speed, 10);
+            });
+        });
+
+        // --- 功能選單與按鈕邏輯 ---
+        menuToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('show');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!dropdownMenu.contains(e.target) && e.target !== menuToggleBtn) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
+
+        // 優化打亂：防回轉記憶 + 中層切片效果 + 舒適速度（220ms）
         async function scrambleCube() {
+            dropdownMenu.classList.remove('show');
             setControlsEnabled(false);
             moveHistory = []; 
-            const axes = ['x', 'y', 'z'], layers = [-1, 0, 1];
-            for (let i = 0; i < 25; i++) {
-                const axis = axes[Math.floor(Math.random() * 3)];
-                const pivotPoint = new THREE.Vector3();
-                pivotPoint[axis] = layers[Math.floor(Math.random() * 3)] * positionOffset;
-                await rotateLayer({ pivot: pivotPoint, axis: axis, direction: Math.random() < 0.5 ? 1 : -1 }, false);
+
+            const SCRAMBLE_SPEED = 220; 
+            const TOTAL_STEPS = 20;
+            const axes = ['x', 'y', 'z'];
+            let lastAxis = null;
+            let lastLayer = null;
+
+            for (let i = 0; i < TOTAL_STEPS; i++) {
+                let axis, layer, isSlice;
+
+                while (true) {
+                    axis = axes[Math.floor(Math.random() * 3)];
+                    isSlice = Math.random() < 0.2; 
+                    layer = isSlice ? 'both' : (Math.random() < 0.5 ? 1 : -1);
+
+                    if (axis === lastAxis && layer === lastLayer) continue;
+                    if (lastLayer === 'both' && axis === lastAxis) continue;
+                    break;
+                }
+
+                const direction = Math.random() < 0.5 ? 1 : -1;
+                lastAxis = axis;
+                lastLayer = layer;
+
+                if (isSlice) {
+                    const pivot1 = new THREE.Vector3(); pivot1[axis] = 1 * positionOffset;
+                    const pivot2 = new THREE.Vector3(); pivot2[axis] = -1 * positionOffset;
+                    await Promise.all([
+                        rotateLayer({ pivot: pivot1, axis: axis, direction: direction }, false, SCRAMBLE_SPEED),
+                        rotateLayer({ pivot: pivot2, axis: axis, direction: -direction }, false, SCRAMBLE_SPEED)
+                    ]);
+                } else {
+                    const pivot = new THREE.Vector3();
+                    pivot[axis] = layer * positionOffset;
+                    await rotateLayer({ pivot: pivot, axis: axis, direction: direction }, false, SCRAMBLE_SPEED);
+                }
             }
+
+            moveHistory = [];
             setControlsEnabled(true);
         }
 
         async function undoMove() {
-            if (moveHistory.length === 0) return;
+            if (moveHistory.length === 0 || isAnimating) return;
             const lastMove = moveHistory.pop();
             await rotateLayer({ pivot: lastMove.pivot, axis: lastMove.axis, direction: -lastMove.direction }, false);
+        }
+
+        scrambleBtn.addEventListener('click', scrambleCube);
+        resetBtn.addEventListener('click', () => { window.location.reload(); });
+        undoBtn.addEventListener('click', undoMove);
+        solveBtn.addEventListener('click', enterSolverMode);
+
+        solvePlayBtn.addEventListener('click', handlePlayPause);
+        solveStepBtn.addEventListener('click', handleSingleStep);
+        solveExitBtn.addEventListener('click', exitSolverMode);
+
+        if(resetViewBtn) resetViewBtn.addEventListener('click', () => animateCamera(new THREE.Vector3(4, 4, 6), new THREE.Vector3(0, 1, 0)));
+        if(invertViewBtn) invertViewBtn.addEventListener('click', () => animateCamera(camera.position.clone(), camera.up.clone().negate()));
+        if(rotateViewBtn) {
+            rotateViewBtn.addEventListener('click', () => {
+                const lookDir = new THREE.Vector3(); camera.getWorldDirection(lookDir);
+                animateCamera(camera.position.clone(), camera.up.clone().applyQuaternion(new THREE.Quaternion().setFromAxisAngle(lookDir, -Math.PI / 2)));
+            });
         }
 
         // --- 事件綁定 ---
@@ -542,18 +1038,6 @@
         renderer.domElement.addEventListener('pointerup', resetPointerState);
         renderer.domElement.addEventListener('pointerleave', resetPointerState);
         renderer.domElement.addEventListener('pointercancel', resetPointerState);
-
-        scrambleBtn.addEventListener('click', scrambleCube);
-        resetBtn.addEventListener('click', () => { window.location.reload(); });
-        undoBtn.addEventListener('click', undoMove);
-        if(resetViewBtn) resetViewBtn.addEventListener('click', () => animateCamera(new THREE.Vector3(4, 4, 6), new THREE.Vector3(0, 1, 0)));
-        if(invertViewBtn) invertViewBtn.addEventListener('click', () => animateCamera(camera.position.clone(), camera.up.clone().negate()));
-        if(rotateViewBtn) {
-            rotateViewBtn.addEventListener('click', () => {
-                const lookDir = new THREE.Vector3(); camera.getWorldDirection(lookDir);
-                animateCamera(camera.position.clone(), camera.up.clone().applyQuaternion(new THREE.Quaternion().setFromAxisAngle(lookDir, -Math.PI / 2)));
-            });
-        }
 
         // --- 渲染迴圈 ---
         const clock = new THREE.Clock();

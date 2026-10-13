@@ -722,7 +722,7 @@
             return result;
         }
 
-        async function executeMoveNotation(moveNotation, duration = 200) {
+        async function executeMoveNotation(moveNotation, duration = 200, recordMove = true) {
             const face = moveNotation[0];
             const modifier = moveNotation.length > 1 ? moveNotation[1] : '';
 
@@ -747,7 +747,7 @@
             }
 
             for (let i = 0; i < turns; i++) {
-                await rotateLayer({ pivot, axis, direction: dir }, true, duration);
+                await rotateLayer({ pivot, axis, direction: dir }, recordMove, duration);
             }
         }
 
@@ -929,18 +929,49 @@
             }
         });
 
+        // WCA 官方防抵銷打亂公式生成器（預設 22 步）
+function generateScramble(length = 22) {
+    const faces = ['U', 'D', 'R', 'L', 'F', 'B'];
+    const modifiers = ['', "'", '2'];
+    const opposites = { 'U': 'D', 'D': 'U', 'R': 'L', 'L': 'R', 'F': 'B', 'B': 'F' };
+
+    const scramble = [];
+    let lastFace = '';
+    let secondLastFace = '';
+
+    while (scramble.length < length) {
+        const face = faces[Math.floor(Math.random() * faces.length)];
+        
+        // 規則 1：絕不連續轉動同一個面（避免 R 接 R' 或 R 接 R2）
+        if (face === lastFace) continue;
+        
+        // 規則 2：絕不出現對立面夾擊（避免 R L R' 這種無效對消）
+        if (face === secondLastFace && opposites[face] === lastFace) continue;
+
+        const modifier = modifiers[Math.floor(Math.random() * modifiers.length)];
+        scramble.push(face + modifier);
+
+        secondLastFace = lastFace;
+        lastFace = face;
+    }
+    return scramble;
+}
+        
         // 打亂魔方：限制只轉動外層（-1, 1），絕不轉動中層，保證狀態絕對合法
         async function scrambleCube() {
             dropdownMenu.classList.remove('show');
             setControlsEnabled(false);
             moveHistory = []; 
-            const axes = ['x', 'y', 'z'], layers = [-1, 1];
-            for (let i = 0; i < 20; i++) {
-                const axis = axes[Math.floor(Math.random() * 3)];
-                const pivotPoint = new THREE.Vector3();
-                pivotPoint[axis] = layers[Math.floor(Math.random() * 2)] * positionOffset;
-                await rotateLayer({ pivot: pivotPoint, axis: axis, direction: Math.random() < 0.5 ? 1 : -1 }, false, 120);
+            // 生成 22 步保證不抵銷的標準打亂序列
+            const scrambleMoves = generateScramble(22);
+            console.log('本次打亂公式：', scrambleMoves.join(' '));
+
+            // 每步 110ms（節奏俐落，約 2.5 秒打亂完畢，且每一步都是有效打亂）
+            for (const move of scrambleMoves) {
+                await executeMoveNotation(move, 110, false);
             }
+
+            moveHistory = [];
             setControlsEnabled(true);
         }
 

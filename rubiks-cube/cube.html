@@ -172,20 +172,20 @@
             position: absolute;
             bottom: 20px;
             left: 20px;
-            width: 130px;
-            height: 130px;
+            width: 120px;
+            height: 120px;
             z-index: 101;
             cursor: pointer;
-            border-radius: 12px;
-            background: rgba(30, 30, 30, 0.4);
+            border-radius: 14px;
+            background: rgba(30, 30, 30, 0.45);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(6px);
             touch-action: none;
         }
 
         #gizmo-container canvas {
             display: block;
-            border-radius: 12px;
+            border-radius: 14px;
         }
     </style>
 </head>
@@ -277,36 +277,35 @@
             RIGHT: THREE.MOUSE.ROTATE
         };
 
-        // --- 方案 A：3D 迷你導航方塊（ViewCube）與中心剛體姿態 ---
+        // --- 方案 A：3D 迷你導航方塊（純中心色導航，移除空間方位代號） ---
         let gizmoRenderer, gizmoScene, gizmoCamera, gizmoGroup, viewCubeMesh, gizmoRaycaster;
-        // 核心姿態：記錄 6 個中心塊剛體在世界空間中的旋轉矩陣
-        const coreQuaternion = new THREE.Quaternion();
+        const coreQuaternion = new THREE.Quaternion(); // 追蹤 6 個中心塊的剛體姿態
 
-        function createViewCubeFaceTexture(title, sub, bgColor, textColor) {
+        function createViewCubeFaceTexture(colorName, bgColor, textColor) {
             const canvas = document.createElement('canvas');
             canvas.width = 128;
             canvas.height = 128;
             const ctx = canvas.getContext('2d');
 
+            // 底色
             ctx.fillStyle = bgColor;
             ctx.fillRect(0, 0, 128, 128);
 
+            // 立體內邊框
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)';
             ctx.lineWidth = 10;
             ctx.strokeRect(5, 5, 118, 118);
 
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
             ctx.lineWidth = 4;
             ctx.strokeRect(10, 10, 108, 108);
 
+            // 純中心色標記（僅顯示單一文字，去除混淆的 U/D/F/B 代號）
             ctx.fillStyle = textColor;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.font = 'bold 38px "微軟正黑體", sans-serif';
-            ctx.fillText(title, 64, 48);
-
-            ctx.font = 'bold 22px "微軟正黑體", sans-serif';
-            ctx.fillText(sub, 64, 88);
+            ctx.font = 'bold 52px "微軟正黑體", sans-serif';
+            ctx.fillText(colorName, 64, 64);
 
             const texture = new THREE.CanvasTexture(canvas);
             texture.colorSpace = THREE.SRGBColorSpace;
@@ -335,14 +334,14 @@
             gizmoGroup = new THREE.Group();
             gizmoScene.add(gizmoGroup);
 
-            // 6 面材質對應小魔方局部座標：+X(右), -X(左), +Y(頂), -Y(底), +Z(前), -Z(後)
+            // 6 面材質順序對應局部軸：+X(紅), -X(橘), +Y(白), -Y(黃), +Z(藍), -Z(綠)
             const materialsList = [
-                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('右', '紅 / R', '#e74c3c', '#ffffff'), roughness: 0.3 }),
-                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('左', '橘 / L', '#e67e22', '#ffffff'), roughness: 0.3 }),
-                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('頂', '白 / U', '#ffffff', '#222222'), roughness: 0.3 }),
-                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('底', '黃 / D', '#f1c40f', '#222222'), roughness: 0.3 }),
-                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('前', '藍 / F', '#2980b9', '#ffffff'), roughness: 0.3 }),
-                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('後', '綠 / B', '#27ae60', '#ffffff'), roughness: 0.3 })
+                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('紅', '#e74c3c', '#ffffff'), roughness: 0.3 }),
+                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('橘', '#e67e22', '#ffffff'), roughness: 0.3 }),
+                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('白', '#ffffff', '#222222'), roughness: 0.3 }),
+                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('黃', '#f1c40f', '#222222'), roughness: 0.3 }),
+                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('藍', '#2980b9', '#ffffff'), roughness: 0.3 }),
+                new THREE.MeshStandardMaterial({ map: createViewCubeFaceTexture('綠', '#27ae60', '#ffffff'), roughness: 0.3 })
             ];
 
             viewCubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), materialsList);
@@ -356,7 +355,7 @@
             gizmoRenderer.domElement.addEventListener('pointerdown', onGizmoClick);
         }
 
-        // 精準點擊小魔方面向：直接依據點擊法向量 + 核心姿態對齊
+        // 精準法向量點擊判定：直接對齊被選中的顏色面
         function onGizmoClick(event) {
             if (isAnimating) return;
             event.stopPropagation();
@@ -368,31 +367,30 @@
             );
 
             gizmoRaycaster.setFromCamera(mouse, gizmoCamera);
-            // 關鍵修正：recursive 設為 false，只檢測立方體面
             const intersects = gizmoRaycaster.intersectObject(viewCubeMesh, false);
 
             if (intersects.length > 0) {
                 const norm = intersects[0].face.normal;
                 const localNormal = new THREE.Vector3();
-                if (norm.x > 0.5) localNormal.set(1, 0, 0);       // 右 / 紅 (+X)
-                else if (norm.x < -0.5) localNormal.set(-1, 0, 0); // 左 / 橘 (-X)
-                else if (norm.y > 0.5) localNormal.set(0, 1, 0);   // 頂 / 白 (+Y)
-                else if (norm.y < -0.5) localNormal.set(0, -1, 0); // 底 / 黃 (-Y)
-                else if (norm.z > 0.5) localNormal.set(0, 0, 1);   // 前 / 藍 (+Z)
-                else if (norm.z < -0.5) localNormal.set(0, 0, -1); // 後 / 綠 (-Z)
+                if (norm.x > 0.5) localNormal.set(1, 0, 0);       // 紅 (+X)
+                else if (norm.x < -0.5) localNormal.set(-1, 0, 0); // 橘 (-X)
+                else if (norm.y > 0.5) localNormal.set(0, 1, 0);   // 白 (+Y)
+                else if (norm.y < -0.5) localNormal.set(0, -1, 0); // 黃 (-Y)
+                else if (norm.z > 0.5) localNormal.set(0, 0, 1);   // 藍 (+Z)
+                else if (norm.z < -0.5) localNormal.set(0, 0, -1); // 綠 (-Z)
 
                 snapCameraToCoreFace(localNormal);
             }
         }
 
-        // 方案 A 專屬吸附：根據中心塊姿態，自動飛向目標面並保持正視姿態
+        // 核心姿態吸附：自動旋轉視角正對選定顏色
         function snapCameraToCoreFace(localNormal) {
             const distance = camera.position.length();
 
-            // 1. 計算該面在當前世界座標中的實際朝向
+            // 計算目標顏色面在世界座標系中的實際朝向
             const targetWorldDir = localNormal.clone().applyQuaternion(coreQuaternion).normalize();
 
-            // 2. 計算當前核心的頂部與正面朝向向量
+            // 保持正視姿態的 Up 參考向量
             const coreWorldUp = new THREE.Vector3(0, 1, 0).applyQuaternion(coreQuaternion).normalize();
             const coreWorldFront = new THREE.Vector3(0, 0, 1).applyQuaternion(coreQuaternion).normalize();
 
@@ -480,7 +478,6 @@
         const invertViewBtn = document.getElementById('invert-view-btn');
         const rotateViewBtn = document.getElementById('rotate-view-btn');
 
-        // 解題介面元件
         const solverStatus = document.getElementById('solver-status');
         const solverStepsIndicator = document.getElementById('solver-steps-indicator');
         const solvePlayBtn = document.getElementById('solve-play-btn');
@@ -608,7 +605,7 @@
                             c.quaternion.copy(worldQuat);
                         });
 
-                        // 【方案 A 核心更新】：如果是中間層（軸心座標為 0），更新中心姿態
+                        // 若轉動中層（座標為 0），更新中心姿態矩陣
                         if (Math.abs(pivotPoint[axis]) < 0.5) {
                             const stepQ = new THREE.Quaternion().setFromAxisAngle(rotationAxisVec, targetAngle);
                             coreQuaternion.premultiply(stepQ);
@@ -728,37 +725,37 @@
             const dynamicMap = buildDynamicFaceMap();
 
             const facesToScan = [
-                // U面 (+Y): Z 從 -1 到 1, X 從 -1 到 1
+                // U面 (+Y)
                 { dir: new THREE.Vector3(0, 1, 0), coords: [
                     [-1, 1, -1], [0, 1, -1], [1, 1, -1],
                     [-1, 1,  0], [0, 1,  0], [1, 1,  0],
                     [-1, 1,  1], [0, 1,  1], [1, 1,  1]
                 ]},
-                // R面 (+X): Y 從 1 到 -1, Z 從 1 到 -1
+                // R面 (+X)
                 { dir: new THREE.Vector3(1, 0, 0), coords: [
                     [1,  1,  1], [1,  1,  0], [1,  1, -1],
                     [1,  0,  1], [1,  0,  0], [1,  0, -1],
                     [1, -1,  1], [1, -1,  0], [1, -1, -1]
                 ]},
-                // F面 (+Z): Y 從 1 到 -1, X 從 -1 到 1
+                // F面 (+Z)
                 { dir: new THREE.Vector3(0, 0, 1), coords: [
                     [-1,  1, 1], [0,  1, 1], [1,  1, 1],
                     [-1,  0, 1], [0,  0, 1], [1,  0, 1],
                     [-1, -1, 1], [0, -1, 1], [1, -1, 1]
                 ]},
-                // D面 (-Y): Z 從 1 到 -1, X 從 -1 到 1
+                // D面 (-Y)
                 { dir: new THREE.Vector3(0, -1, 0), coords: [
                     [-1, -1,  1], [0, -1,  1], [1, -1,  1],
                     [-1, -1,  0], [0, -1,  0], [1, -1,  0],
                     [-1, -1, -1], [0, -1, -1], [1, -1, -1]
                 ]},
-                // L面 (-X): Y 從 1 到 -1, Z 從 -1 到 1
+                // L面 (-X)
                 { dir: new THREE.Vector3(-1, 0, 0), coords: [
                     [-1,  1, -1], [-1,  1,  0], [-1,  1,  1],
                     [-1,  0, -1], [-1,  0,  0], [-1,  0,  1],
                     [-1, -1, -1], [-1, -1,  0], [-1, -1,  1]
                 ]},
-                // B面 (-Z): Y 從 1 到 -1, X 從 1 到 -1
+                // B面 (-Z)
                 { dir: new THREE.Vector3(0, 0, -1), coords: [
                     [ 1,  1, -1], [ 0,  1, -1], [-1,  1, -1],
                     [ 1,  0, -1], [ 0,  0, -1], [-1,  0, -1],
@@ -1071,14 +1068,13 @@
         renderer.domElement.addEventListener('pointerleave', resetPointerState);
         renderer.domElement.addEventListener('pointercancel', resetPointerState);
 
-        // --- 渲染迴圈：方案 A 姿態同步 ---
+        // --- 渲染迴圈：ViewCube 與相機姿態同步 ---
         const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);
             insideMaterial.uniforms.u_time.value = clock.getElapsedTime();
             if (controls) controls.update(); 
             
-            // 方案 A 關鍵公式：ViewCube 姿態 = (鏡頭姿態)⁻¹ × (中心核心姿態)
             if (gizmoRenderer && gizmoGroup) {
                 gizmoGroup.quaternion.copy(camera.quaternion).invert().multiply(coreQuaternion);
                 gizmoRenderer.render(gizmoScene, gizmoCamera);

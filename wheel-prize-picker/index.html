@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>幸運輪盤抽獎 V3.1 Single-File Edition</title>
+    <title>幸運輪盤抽獎 V3.2</title>
     <style>
         :root {
             --primary: #4f46e5;
@@ -33,6 +33,7 @@
             background: var(--bg-gradient);
             color: var(--text-main);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
@@ -183,7 +184,6 @@
             justify-content: center;
         }
 
-        /* 2K 螢幕自動放大至最高 720px，同時受 66vh 保護不超出螢幕高度 */
         #wheel-main-container {
             width: min(88vw, 66vh, 720px);
             position: relative;
@@ -482,6 +482,7 @@
             width: 100%;
             max-width: 640px;
             height: 100vh;
+            height: 100dvh;
             background: var(--card-bg);
             z-index: 50;
             box-shadow: -10px 0 35px rgba(15, 23, 42, 0.2);
@@ -496,6 +497,7 @@
         }
 
         .drawer-header {
+            flex-shrink: 0;
             padding: 18px 24px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
@@ -539,22 +541,27 @@
         .drawer-body {
             flex: 1;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             padding: 18px 24px;
             display: flex;
             flex-direction: column;
             gap: 16px;
         }
 
-        /* 整合在設定抽屜內的摺疊使用說明（做法 B） */
+        /* 關鍵修正：強制抽屜內所有直接子區塊不允許被 Flexbox 壓縮，確保展開說明時自然往下推 */
+        .drawer-body > * {
+            flex-shrink: 0;
+        }
+
+        /* 整合在設定抽屜內的摺疊使用說明（移除 overflow:hidden 防止手機版文字被裁切） */
         details.help-accordion {
             background: #f8fafc;
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            overflow: hidden;
         }
 
         details.help-accordion summary {
-            padding: 11px 16px;
+            padding: 12px 16px;
             font-size: 0.92rem;
             font-weight: 700;
             color: var(--primary);
@@ -565,6 +572,12 @@
             align-items: center;
             user-select: none;
             background: #eef2ff;
+            border-radius: 11px;
+            transition: border-radius 0.15s ease;
+        }
+
+        details.help-accordion[open] summary {
+            border-radius: 11px 11px 0 0;
         }
 
         details.help-accordion summary::-webkit-details-marker {
@@ -584,14 +597,19 @@
 
         .help-accordion-content {
             padding: 14px 18px 14px 32px;
-            font-size: 0.86rem;
+            font-size: 0.88rem;
             line-height: 1.7;
             color: #334155;
             border-top: 1px solid var(--border-color);
+            background: #f8fafc;
+            border-radius: 0 0 11px 11px;
         }
 
         .help-accordion-content li {
-            margin-bottom: 6px;
+            margin-bottom: 8px;
+        }
+        .help-accordion-content li:last-child {
+            margin-bottom: 0;
         }
 
         /* 機率智慧輔助工具列 */
@@ -753,7 +771,8 @@
         }
 
         .drawer-footer {
-            padding: 16px 24px;
+            flex-shrink: 0;
+            padding: 14px 24px;
             border-top: 1px solid var(--border-color);
             background: #f8fafc;
             display: flex;
@@ -802,7 +821,6 @@
             header.top-bar {
                 padding: 8px 14px;
             }
-            /* 手機版右上角設定鈕隱藏文字，只留精緻圖示，省下大量頂部空間 */
             #open-settings-btn .btn-text {
                 display: none;
             }
@@ -814,6 +832,15 @@
             #wheel-main-container,
             #result-banner {
                 width: min(92vw, 400px);
+            }
+            .drawer-header {
+                padding: 14px 16px;
+            }
+            .drawer-body {
+                padding: 14px 16px;
+            }
+            .drawer-footer {
+                padding: 12px 16px;
             }
             .prize-list-header {
                 display: none;
@@ -907,7 +934,7 @@
         </div>
 
         <div class="drawer-body">
-            <!-- 做法 B：整合進設定抽屜內的摺疊使用說明 -->
+            <!-- 摺疊使用說明（已修復手機版展開壓縮問題） -->
             <details class="help-accordion">
                 <summary>📖 查看使用說明與操作技巧</summary>
                 <ul class="help-accordion-content">
@@ -960,13 +987,13 @@
 
     <!-- 頁尾版權 -->
     <footer class="app-footer">
-        <a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer">fan666rog</a> &amp; Gemini 編寫 V3.1 Single-File Edition
+        <a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer">fan666rog</a> &amp; Gemini 編寫 V3.2
     </footer>
 
     <script>
-        // fan666rog & Gemini 編寫 (V3.1 Single-File Edition)
-        const STORAGE_KEY_DATA = 'wheelPrizeHistoryV3.1';
-        const STORAGE_KEY_TITLE = 'wheelMainTitleV3.1';
+        // fan666rog & Gemini 編寫 (V3.2 Single-File Edition)
+        const STORAGE_KEY_DATA = 'wheelPrizeHistoryV3.2';
+        const STORAGE_KEY_TITLE = 'wheelMainTitleV3.2';
 
         const wheelCanvas = document.getElementById('wheel');
         const ctx = wheelCanvas.getContext('2d');
@@ -1621,6 +1648,7 @@
         // --- 本地儲存 (相容舊版資料無縫讀取) ---
         function loadState() {
             const savedData = localStorage.getItem(STORAGE_KEY_DATA)
+                || localStorage.getItem('wheelPrizeHistoryV3.1')
                 || localStorage.getItem('wheelPrizeHistoryV3.0')
                 || localStorage.getItem('wheelPrizeHistoryV2.6');
 
@@ -1677,6 +1705,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const mainTitle = document.getElementById('main-title');
             const savedTitle = localStorage.getItem(STORAGE_KEY_TITLE)
+                || localStorage.getItem('wheelMainTitleV3.1')
                 || localStorage.getItem('wheelMainTitleV3.0')
                 || localStorage.getItem('wheelMainTitleV2.6');
             if (savedTitle) {

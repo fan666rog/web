@@ -12,6 +12,8 @@
             margin: 0;
             overflow: hidden;
             background: radial-gradient(circle at center, #181d26 0%, #0d1017 100%);
+            user-select: none;
+            -webkit-user-select: none;
         }
         canvas {
             display: block;
@@ -242,12 +244,12 @@
         </div>
         <!-- 第二排：六色抗混淆吸附按鈕（白、黃、深紅、鮮橙、藍、綠） -->
         <div class="color-row">
-            <button class="color-dot-btn" data-normal="0,1,0" style="background-color: #f1f5f9;" title="白面"></button>
-            <button class="color-dot-btn" data-normal="0,-1,0" style="background-color: #eab308;" title="黃面"></button>
-            <button class="color-dot-btn" data-normal="1,0,0" style="background-color: #9f1239;" title="紅面"></button>
-            <button class="color-dot-btn" data-normal="-1,0,0" style="background-color: #f97316;" title="橘面"></button>
-            <button class="color-dot-btn" data-normal="0,0,1" style="background-color: #2563eb;" title="藍面"></button>
-            <button class="color-dot-btn" data-normal="0,0,-1" style="background-color: #16a34a;" title="綠面"></button>
+            <button class="color-dot-btn" data-normal="0,1,0" style="background-color: #f1f5f9;" title="白面 (U)"></button>
+            <button class="color-dot-btn" data-normal="0,-1,0" style="background-color: #eab308;" title="黃面 (D)"></button>
+            <button class="color-dot-btn" data-normal="1,0,0" style="background-color: #9f1239;" title="紅面 (R)"></button>
+            <button class="color-dot-btn" data-normal="-1,0,0" style="background-color: #f97316;" title="橘面 (L)"></button>
+            <button class="color-dot-btn" data-normal="0,0,1" style="background-color: #2563eb;" title="藍面 (F)"></button>
+            <button class="color-dot-btn" data-normal="0,0,-1" style="background-color: #16a34a;" title="綠面 (B)"></button>
         </div>
     </div>
 
@@ -273,7 +275,7 @@
     <div id="gizmo-container"></div>
 
     <footer>
-        <p>&copy; <span id="copyright-year"></span> <a href="https://github.com/fan666rog/web" target="_blank">fan666rog</a> & Gemini. All Rights Reserved. V3.5</p>
+        <p>&copy; <span id="copyright-year"></span> <a href="https://github.com/fan666rog/web" target="_blank">fan666rog</a> & Gemini. All Rights Reserved. V3.6</p>
     </footer>
 
     <script type="importmap">
@@ -296,6 +298,7 @@
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.08;
         document.body.appendChild(renderer.domElement);
@@ -373,7 +376,6 @@
 
             // 4. 解題模式專屬：動態 HUD 標籤蓋章
             if (label) {
-                // 科技感半透明圓形微光襯底
                 ctx.fillStyle = 'rgba(15, 23, 42, 0.32)';
                 ctx.beginPath();
                 ctx.arc(128, 128, 54, 0, Math.PI * 2);
@@ -382,7 +384,6 @@
                 ctx.lineWidth = 2.5;
                 ctx.stroke();
 
-                // 標籤字體
                 ctx.fillStyle = textColor;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
@@ -431,25 +432,43 @@
 
         // 大魔方六面海玻璃材質
         const materials = {
-            right: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#be123c', '#881337', 0.4), roughness: 0.32, metalness: 0.05 }), // 深紅寶石
-            left: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#ffedd5', '#ea580c', 0.45), roughness: 0.32, metalness: 0.05 }),  // 鮮亮蜜柑橙
-            top: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#ffffff', '#e2e8f0', 0.45), roughness: 0.3, metalness: 0.05 }),   // 羊脂白
-            bottom: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fef08a', '#eab308', 0.45), roughness: 0.32, metalness: 0.05 }),// 金絲雀黃
-            front: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#60a5fa', '#2563eb', 0.45), roughness: 0.32, metalness: 0.05 }), // 寶石藍
-            back: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#86efac', '#16a34a', 0.45), roughness: 0.32, metalness: 0.05 }),  // 翠綠
+            right: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#be123c', '#881337', 0.4), roughness: 0.32, metalness: 0.05 }), // 深紅寶石 (R)
+            left: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#ffedd5', '#ea580c', 0.45), roughness: 0.32, metalness: 0.05 }),  // 鮮亮蜜柑橙 (L)
+            top: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#ffffff', '#e2e8f0', 0.45), roughness: 0.3, metalness: 0.05 }),   // 羊脂白 (U)
+            bottom: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#fef08a', '#eab308', 0.45), roughness: 0.32, metalness: 0.05 }),// 金絲雀黃 (D)
+            front: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#60a5fa', '#2563eb', 0.45), roughness: 0.32, metalness: 0.05 }), // 寶石藍 (F)
+            back: new THREE.MeshStandardMaterial({ map: createFrostedGlassTexture('#86efac', '#16a34a', 0.45), roughness: 0.32, metalness: 0.05 }),  // 翠綠 (B)
             inside: insideMaterial 
         };
 
+        // 【方案 A 標準映射】：將顏色材質直接綁定為國際標準 WCA 解題面代號
+        const STANDARD_FACE_MAP = new Map([
+            [materials.top, 'U'],
+            [materials.bottom, 'D'],
+            [materials.right, 'R'],
+            [materials.left, 'L'],
+            [materials.front, 'F'],
+            [materials.back, 'B']
+        ]);
+
+        // 共用單一 BoxGeometry 提升記憶體與渲染效能
+        const sharedCubieGeometry = new THREE.BoxGeometry(CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE);
         const cubies = [];
+
         for (let x = -1; x <= 1; x++) {
             for (let y = -1; y <= 1; y++) {
                 for (let z = -1; z <= 1; z++) {
                     if (x === 0 && y === 0 && z === 0) continue;
-                    const cubie = new THREE.Mesh(new THREE.BoxGeometry(CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE), [
-                        x === 1 ? materials.right : materials.inside, x === -1 ? materials.left : materials.inside,
-                        y === 1 ? materials.top : materials.inside, y === -1 ? materials.bottom : materials.inside,
-                        z === 1 ? materials.front : materials.inside, z === -1 ? materials.back : materials.inside
+                    const cubie = new THREE.Mesh(sharedCubieGeometry, [
+                        x === 1 ? materials.right : materials.inside,
+                        x === -1 ? materials.left : materials.inside,
+                        y === 1 ? materials.top : materials.inside,
+                        y === -1 ? materials.bottom : materials.inside,
+                        z === 1 ? materials.front : materials.inside,
+                        z === -1 ? materials.back : materials.inside
                     ]);
+                    // 儲存初始網格座標以便免重整快速重置
+                    cubie.userData.initCoord = new THREE.Vector3(x, y, z);
                     cubie.position.set(x * positionOffset, y * positionOffset, z * positionOffset);
                     rubiksCube.add(cubie);
                     cubies.push(cubie);
@@ -458,30 +477,28 @@
         }
         scene.add(rubiksCube);
 
-        // --- 方案 A：3D 迷你導航方塊（ViewCube）設定與調色盤配置 ---
+        // --- 3D 迷你導航方塊（ViewCube）與預先快取貼圖 ---
         let gizmoRenderer, gizmoScene, gizmoCamera, gizmoGroup, viewCubeMesh, gizmoRaycaster;
         const coreQuaternion = new THREE.Quaternion();
 
-        // 6 面色塊色彩、文字深淺設定與材質對照
+        // 6 面色塊色彩、文字深淺與固定標準方位標籤 (R, L, U, D, F, B)
         const GIZMO_PALETTE = [
-            { core: '#be123c', edge: '#881337', alpha: 0.4, text: '#ffffff', mat: materials.right }, // 0: 紅 (+X)
-            { core: '#ffedd5', edge: '#ea580c', alpha: 0.45, text: '#0f172a', mat: materials.left },  // 1: 橘 (-X)
-            { core: '#ffffff', edge: '#e2e8f0', alpha: 0.45, text: '#0f172a', mat: materials.top },   // 2: 白 (+Y)
-            { core: '#fef08a', edge: '#eab308', alpha: 0.45, text: '#0f172a', mat: materials.bottom },// 3: 黃 (-Y)
-            { core: '#60a5fa', edge: '#2563eb', alpha: 0.45, text: '#ffffff', mat: materials.front }, // 4: 藍 (+Z)
-            { core: '#86efac', edge: '#16a34a', alpha: 0.45, text: '#ffffff', mat: materials.back }   // 5: 綠 (-Z)
+            { core: '#be123c', edge: '#881337', alpha: 0.4,  text: '#ffffff', label: 'R' }, // 0: 紅 (+X)
+            { core: '#ffedd5', edge: '#ea580c', alpha: 0.45, text: '#0f172a', label: 'L' }, // 1: 橘 (-X)
+            { core: '#ffffff', edge: '#e2e8f0', alpha: 0.45, text: '#0f172a', label: 'U' }, // 2: 白 (+Y)
+            { core: '#fef08a', edge: '#eab308', alpha: 0.45, text: '#0f172a', label: 'D' }, // 3: 黃 (-Y)
+            { core: '#60a5fa', edge: '#2563eb', alpha: 0.45, text: '#ffffff', label: 'F' }, // 4: 藍 (+Z)
+            { core: '#86efac', edge: '#16a34a', alpha: 0.45, text: '#ffffff', label: 'B' }  // 5: 綠 (-Z)
         ];
 
-        // 動態為小魔方蓋章或清除標籤
-        function updateGizmoLabels(dynamicMap = null) {
+        // 預先建立「純色」與「HUD 標籤」兩組貼圖快取，切換解題模式時零延遲且不產生垃圾記憶體
+        const gizmoTexturesPlain = [];
+        const gizmoTexturesLabeled = [];
+
+        function setGizmoLabelMode(showLabels = false) {
             if (!viewCubeMesh) return;
-            GIZMO_PALETTE.forEach((item, index) => {
-                const label = dynamicMap ? (dynamicMap.get(item.mat) || '') : '';
-                const newTex = createFrostedGlassTexture(item.core, item.edge, item.alpha, label, item.text);
-                if (viewCubeMesh.material[index].map) {
-                    viewCubeMesh.material[index].map.dispose();
-                }
-                viewCubeMesh.material[index].map = newTex;
+            GIZMO_PALETTE.forEach((_, index) => {
+                viewCubeMesh.material[index].map = showLabels ? gizmoTexturesLabeled[index] : gizmoTexturesPlain[index];
                 viewCubeMesh.material[index].needsUpdate = true;
             });
         }
@@ -492,6 +509,7 @@
 
             gizmoRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
             gizmoRenderer.setSize(container.clientWidth, container.clientHeight);
+            gizmoRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             gizmoRenderer.setClearAlpha(0);
             container.appendChild(gizmoRenderer.domElement);
 
@@ -508,14 +526,15 @@
             gizmoGroup = new THREE.Group();
             gizmoScene.add(gizmoGroup);
 
-            // 初始化無字純色海玻璃
-            const materialsList = GIZMO_PALETTE.map(item =>
-                new THREE.MeshStandardMaterial({
-                    map: createFrostedGlassTexture(item.core, item.edge, item.alpha, '', item.text),
+            const materialsList = GIZMO_PALETTE.map((item, idx) => {
+                gizmoTexturesPlain[idx] = createFrostedGlassTexture(item.core, item.edge, item.alpha, '', item.text);
+                gizmoTexturesLabeled[idx] = createFrostedGlassTexture(item.core, item.edge, item.alpha, item.label, item.text);
+                return new THREE.MeshStandardMaterial({
+                    map: gizmoTexturesPlain[idx],
                     roughness: 0.3,
                     metalness: 0.05
-                })
-            );
+                });
+            });
 
             viewCubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), materialsList);
             const edges = new THREE.EdgesGeometry(viewCubeMesh.geometry);
@@ -544,33 +563,69 @@
             if (intersects.length > 0) {
                 const norm = intersects[0].face.normal;
                 const localNormal = new THREE.Vector3();
-                if (norm.x > 0.5) localNormal.set(1, 0, 0);       // 紅
-                else if (norm.x < -0.5) localNormal.set(-1, 0, 0); // 橘
-                else if (norm.y > 0.5) localNormal.set(0, 1, 0);   // 白
-                else if (norm.y < -0.5) localNormal.set(0, -1, 0); // 黃
-                else if (norm.z > 0.5) localNormal.set(0, 0, 1);   // 藍
-                else if (norm.z < -0.5) localNormal.set(0, 0, -1); // 綠
+                if (norm.x > 0.5) localNormal.set(1, 0, 0);       // 紅 (R)
+                else if (norm.x < -0.5) localNormal.set(-1, 0, 0); // 橘 (L)
+                else if (norm.y > 0.5) localNormal.set(0, 1, 0);   // 白 (U)
+                else if (norm.y < -0.5) localNormal.set(0, -1, 0); // 黃 (D)
+                else if (norm.z > 0.5) localNormal.set(0, 0, 1);   // 藍 (F)
+                else if (norm.z < -0.5) localNormal.set(0, 0, -1); // 綠 (B)
 
                 snapCameraToCoreFace(localNormal);
             }
         }
 
+        // --- 【升級重點】：智慧俯仰與四元數 Slerp 平滑視角切換 ---
         function snapCameraToCoreFace(localNormal) {
             const distance = camera.position.length();
             const targetWorldDir = localNormal.clone().applyQuaternion(coreQuaternion).normalize();
+            const targetPosition = targetWorldDir.clone().multiplyScalar(distance);
 
             const coreWorldUp = new THREE.Vector3(0, 1, 0).applyQuaternion(coreQuaternion).normalize();
-            const coreWorldFront = new THREE.Vector3(0, 0, 1).applyQuaternion(coreQuaternion).normalize();
+            const coreAxes = [
+                new THREE.Vector3(1, 0, 0).applyQuaternion(coreQuaternion).normalize(),
+                new THREE.Vector3(-1, 0, 0).applyQuaternion(coreQuaternion).normalize(),
+                new THREE.Vector3(0, 0, 1).applyQuaternion(coreQuaternion).normalize(),
+                new THREE.Vector3(0, 0, -1).applyQuaternion(coreQuaternion).normalize()
+            ];
 
-            const targetPosition = targetWorldDir.clone().multiplyScalar(distance);
             let targetUp;
-
             const dotUp = targetWorldDir.dot(coreWorldUp);
-            if (dotUp > 0.9) {
-                targetUp = coreWorldFront.clone().negate();
-            } else if (dotUp < -0.9) {
-                targetUp = coreWorldFront.clone();
+
+            if (Math.abs(dotUp) > 0.9) {
+                // 點擊白面 (U) 或黃面 (D)：
+                // 計算相機直接「往上仰 / 往下俯」過去時，自然留在畫面頭頂的方向，避免多餘的水平自轉扭頭
+                const currentPosDir = camera.position.clone().normalize();
+                const currentUp = camera.up.clone().normalize();
+                let naturalUp;
+
+                const alignDot = currentPosDir.dot(targetWorldDir);
+                if (alignDot > 0.98) {
+                    // 已經正對著白面或黃面：維持當前頭頂方向並對齊最近的魔方正交軸
+                    naturalUp = currentUp.clone();
+                } else if (alignDot < -0.98) {
+                    // 從正對面 (180度，如白面直接切黃面) 垂直翻轉過去
+                    naturalUp = currentUp.clone().negate();
+                } else {
+                    // 從側面 (紅/橘/藍/綠) 順著當前方向直接俯仰過去：
+                    // 若往頂面(白)看，原本視線的反方向會自然變成畫面頭頂；若往底面(黃)看，原本視線方向會變成畫面頭頂
+                    naturalUp = (dotUp > 0) ? currentPosDir.clone().negate() : currentPosDir.clone();
+                }
+
+                naturalUp.projectOnPlane(targetWorldDir).normalize();
+
+                // 吸附至最接近的魔方側面正交軸，確保方塊在畫面中橫平豎直
+                let bestAxis = coreAxes[0];
+                let maxDot = -Infinity;
+                for (const axis of coreAxes) {
+                    const d = naturalUp.dot(axis);
+                    if (d > maxDot) {
+                        maxDot = d;
+                        bestAxis = axis;
+                    }
+                }
+                targetUp = bestAxis.clone();
             } else {
+                // 點擊側面 (紅/橘/藍/綠)：固定以白面 (U) 為正上方
                 targetUp = coreWorldUp.clone();
             }
 
@@ -582,55 +637,67 @@
             if (cameraAnimationId) cancelAnimationFrame(cameraAnimationId);
             setControlsEnabled(false);
 
-            const startPosition = camera.position.clone();
-            const startUp = camera.up.clone();
-            const duration = 500, startTime = performance.now();
+            const distance = targetPosition.length();
+            const startQuat = camera.quaternion.clone();
 
-            let n1 = startPosition.clone().normalize(), n2 = targetPosition.clone().normalize();
-            let pDot = n1.dot(n2);
-            let posAxis = new THREE.Vector3(), posMaxAngle = Math.acos(Math.max(-1, Math.min(1, pDot)));
+            // 藉由 lookAt 矩陣直接建構目標視角的完美正交四元數 (Target Quaternion)
+            const targetMatrix = new THREE.Matrix4().lookAt(
+                targetPosition,
+                new THREE.Vector3(0, 0, 0),
+                targetUp
+            );
+            const targetQuat = new THREE.Quaternion().setFromRotationMatrix(targetMatrix);
 
-            if (Math.abs(pDot + 1) < 0.001) { 
-                posAxis.set(0, 1, 0); 
-                if (Math.abs(n1.y) > 0.9) posAxis.set(1, 0, 0); 
-                posAxis.projectOnPlane(n1).normalize();
-            } else {
-                posAxis.crossVectors(n1, n2).normalize();
+            // 檢查是否為 180 度對向切換 (如紅面切橘面、藍面切綠面)
+            const startDir = camera.position.clone().normalize();
+            const endDir = targetPosition.clone().normalize();
+            const isOpposite = startDir.dot(endDir) < -0.999;
+
+            // 若為 180 度對向切換，建立一個以「當前畫面 Up 軸」水平旋轉 90 度的中繼四元數，確保水平穩定繞行不歪斜
+            let midQuat = null;
+            if (isOpposite) {
+                const halfTurnQuat = new THREE.Quaternion().setFromAxisAngle(targetUp.clone().normalize(), Math.PI / 2);
+                midQuat = halfTurnQuat.multiply(startQuat);
             }
 
-            let u1 = startUp.clone().normalize(), u2 = targetUp.clone().normalize();
-            let uDot = u1.dot(u2);
-            let upAxis = new THREE.Vector3(), upMaxAngle = Math.acos(Math.max(-1, Math.min(1, uDot)));
+            const duration = 460;
+            const startTime = performance.now();
+            const currentQuat = new THREE.Quaternion();
 
-            if (Math.abs(uDot + 1) < 0.001) upAxis.copy(startPosition).normalize().negate();
-            else upAxis.crossVectors(u1, u2).normalize();
+            function step(now) {
+                const t = Math.min(1, (now - startTime) / duration);
+                // Smoothstep 餘弦緩動曲線
+                const easedT = 0.5 * (1 - Math.cos(t * Math.PI));
 
-            function animate() {
-                const t = Math.min(1, (performance.now() - startTime) / duration);
-                const easedT = 0.5 * (1 - Math.cos(t * Math.PI)); 
+                if (isOpposite && midQuat) {
+                    if (easedT < 0.5) {
+                        currentQuat.slerpQuaternions(startQuat, midQuat, easedT * 2);
+                    } else {
+                        currentQuat.slerpQuaternions(midQuat, targetQuat, (easedT - 0.5) * 2);
+                    }
+                } else {
+                    currentQuat.slerpQuaternions(startQuat, targetQuat, easedT);
+                }
 
-                if (posMaxAngle > 0) camera.position.copy(startPosition).applyAxisAngle(posAxis, posMaxAngle * easedT);
-                else camera.position.copy(targetPosition);
-
-                if (upMaxAngle > 0) camera.up.copy(startUp).applyAxisAngle(upAxis, upMaxAngle * easedT).normalize();
-                else camera.up.copy(targetUp).normalize();
-
-                camera.lookAt(0, 0, 0);
+                // 從四元數同步推導完全正交的 position (+Z軸) 與 up (+Y軸)，消除結尾跳動
+                camera.position.set(0, 0, distance).applyQuaternion(currentQuat);
+                camera.up.set(0, 1, 0).applyQuaternion(currentQuat).normalize();
+                camera.quaternion.copy(currentQuat);
                 camera.updateMatrixWorld();
 
                 if (t < 1) {
-                    cameraAnimationId = requestAnimationFrame(animate);
+                    cameraAnimationId = requestAnimationFrame(step);
                 } else {
                     camera.position.copy(targetPosition);
                     camera.up.copy(targetUp).normalize();
                     camera.lookAt(0, 0, 0);
                     camera.updateMatrixWorld();
-                    controls.update(); 
+                    controls.update();
                     cameraAnimationId = null;
                     setControlsEnabled(true);
                 }
             }
-            animate();
+            cameraAnimationId = requestAnimationFrame(step);
         }
 
         // --- UI 元件參照 ---
@@ -710,7 +777,7 @@
                             c.quaternion.copy(worldQuat);
                         });
 
-                        // 轉動中層更新姿態矩陣
+                        // 轉動中層更新核心姿態四元數
                         if (Math.abs(pivotPoint[axis]) < 0.5) {
                             const stepQ = new THREE.Quaternion().setFromAxisAngle(rotationAxisVec, targetAngle);
                             coreQuaternion.premultiply(stepQ);
@@ -780,7 +847,7 @@
             selectedCubie = null;
         }
 
-        // --- 空間顏色掃描與步驟翻譯（動態中心塊映射） ---
+        // --- 【方案 A 核心】：基於 coreQuaternion 的空間顏色掃描與步驟轉譯 ---
         function getFaceMaterialInDirection(cubie, worldDirection) {
             const localNormals = [
                 new THREE.Vector3(1, 0, 0),  new THREE.Vector3(-1, 0, 0),
@@ -800,67 +867,43 @@
             return cubie.material[bestIndex];
         }
 
-        function buildDynamicFaceMap() {
-            const centers = [
-                { face: 'U', dir: new THREE.Vector3(0, 1, 0), coord: [0, 1, 0] },
-                { face: 'D', dir: new THREE.Vector3(0, -1, 0), coord: [0, -1, 0] },
-                { face: 'R', dir: new THREE.Vector3(1, 0, 0), coord: [1, 0, 0] },
-                { face: 'L', dir: new THREE.Vector3(-1, 0, 0), coord: [-1, 0, 0] },
-                { face: 'F', dir: new THREE.Vector3(0, 0, 1), coord: [0, 0, 1] },
-                { face: 'B', dir: new THREE.Vector3(0, 0, -1), coord: [0, 0, -1] }
-            ];
-
-            const dynamicMap = new Map();
-            centers.forEach(({ face, dir, coord }) => {
-                const cubie = cubies.find(c => 
-                    Math.round(c.position.x / positionOffset) === coord[0] &&
-                    Math.round(c.position.y / positionOffset) === coord[1] &&
-                    Math.round(c.position.z / positionOffset) === coord[2]
-                );
-                if (cubie) {
-                    const mat = getFaceMaterialInDirection(cubie, dir);
-                    dynamicMap.set(mat, face);
-                }
-            });
-            return dynamicMap;
-        }
-
-        function getCubeStateString(dynamicMap) {
+        function getCubeStateString() {
             let result = '';
 
+            // 定義標準核心座標系下的 6 個面與 54 個掃描點
             const facesToScan = [
-                // U面 (+Y)
-                { dir: new THREE.Vector3(0, 1, 0), coords: [
+                // U面 (白心 +Y)
+                { localDir: new THREE.Vector3(0, 1, 0), coords: [
                     [-1, 1, -1], [0, 1, -1], [1, 1, -1],
                     [-1, 1,  0], [0, 1,  0], [1, 1,  0],
                     [-1, 1,  1], [0, 1,  1], [1, 1,  1]
                 ]},
-                // R面 (+X)
-                { dir: new THREE.Vector3(1, 0, 0), coords: [
+                // R面 (紅心 +X)
+                { localDir: new THREE.Vector3(1, 0, 0), coords: [
                     [1,  1,  1], [1,  1,  0], [1,  1, -1],
                     [1,  0,  1], [1,  0,  0], [1,  0, -1],
                     [1, -1,  1], [1, -1,  0], [1, -1, -1]
                 ]},
-                // F面 (+Z)
-                { dir: new THREE.Vector3(0, 0, 1), coords: [
+                // F面 (藍心 +Z)
+                { localDir: new THREE.Vector3(0, 0, 1), coords: [
                     [-1,  1, 1], [0,  1, 1], [1,  1, 1],
                     [-1,  0, 1], [0,  0, 1], [1,  0, 1],
                     [-1, -1, 1], [0, -1, 1], [1, -1, 1]
                 ]},
-                // D面 (-Y)
-                { dir: new THREE.Vector3(0, -1, 0), coords: [
+                // D面 (黃心 -Y)
+                { localDir: new THREE.Vector3(0, -1, 0), coords: [
                     [-1, -1,  1], [0, -1,  1], [1, -1,  1],
                     [-1, -1,  0], [0, -1,  0], [1, -1,  0],
                     [-1, -1, -1], [0, -1, -1], [1, -1, -1]
                 ]},
-                // L面 (-X)
-                { dir: new THREE.Vector3(-1, 0, 0), coords: [
+                // L面 (橘心 -X)
+                { localDir: new THREE.Vector3(-1, 0, 0), coords: [
                     [-1,  1, -1], [-1,  1,  0], [-1,  1,  1],
                     [-1,  0, -1], [-1,  0,  0], [-1,  0,  1],
                     [-1, -1, -1], [-1, -1,  0], [-1, -1,  1]
                 ]},
-                // B面 (-Z)
-                { dir: new THREE.Vector3(0, 0, -1), coords: [
+                // B面 (綠心 -Z)
+                { localDir: new THREE.Vector3(0, 0, -1), coords: [
                     [ 1,  1, -1], [ 0,  1, -1], [-1,  1, -1],
                     [ 1,  0, -1], [ 0,  0, -1], [-1,  0, -1],
                     [ 1, -1, -1], [ 0, -1, -1], [-1, -1, -1]
@@ -868,14 +911,22 @@
             ];
 
             facesToScan.forEach(face => {
-                face.coords.forEach(([x, y, z]) => {
+                // 將核心座標方向透過 coreQuaternion 轉換至當前世界座標方向
+                const worldDir = face.localDir.clone().applyQuaternion(coreQuaternion).normalize();
+
+                face.coords.forEach(([lx, ly, lz]) => {
+                    const worldCoord = new THREE.Vector3(lx, ly, lz).applyQuaternion(coreQuaternion);
+                    const wx = Math.round(worldCoord.x);
+                    const wy = Math.round(worldCoord.y);
+                    const wz = Math.round(worldCoord.z);
+
                     const cubie = cubies.find(c => 
-                        Math.round(c.position.x / positionOffset) === x &&
-                        Math.round(c.position.y / positionOffset) === y &&
-                        Math.round(c.position.z / positionOffset) === z
+                        Math.round(c.position.x / positionOffset) === wx &&
+                        Math.round(c.position.y / positionOffset) === wy &&
+                        Math.round(c.position.z / positionOffset) === wz
                     );
-                    const mat = getFaceMaterialInDirection(cubie, face.dir);
-                    result += dynamicMap.get(mat) || 'U';
+                    const mat = getFaceMaterialInDirection(cubie, worldDir);
+                    result += STANDARD_FACE_MAP.get(mat) || 'U';
                 });
             });
 
@@ -886,15 +937,30 @@
             const face = moveNotation[0];
             const modifier = moveNotation.length > 1 ? moveNotation[1] : '';
 
-            let axis = 'y', layerCoord = 1, baseDir = -1;
+            // 1. 取得該符號在核心座標系下的外法線向量
+            const localNormal = new THREE.Vector3();
             switch (face) {
-                case 'U': axis = 'y'; layerCoord =  1; baseDir = -1; break;
-                case 'D': axis = 'y'; layerCoord = -1; baseDir =  1; break;
-                case 'R': axis = 'x'; layerCoord =  1; baseDir = -1; break;
-                case 'L': axis = 'x'; layerCoord = -1; baseDir =  1; break;
-                case 'F': axis = 'z'; layerCoord =  1; baseDir = -1; break;
-                case 'B': axis = 'z'; layerCoord = -1; baseDir =  1; break;
+                case 'U': localNormal.set(0,  1,  0); break; // 白
+                case 'D': localNormal.set(0, -1,  0); break; // 黃
+                case 'R': localNormal.set(1,  0,  0); break; // 紅
+                case 'L': localNormal.set(-1, 0,  0); break; // 橘
+                case 'F': localNormal.set(0,  0,  1); break; // 藍
+                case 'B': localNormal.set(0,  0, -1); break; // 綠
             }
+
+            // 2. 透過 coreQuaternion 轉換為當前世界空間的實際軸向與層位置
+            const worldNormal = localNormal.clone().applyQuaternion(coreQuaternion);
+            const wx = Math.round(worldNormal.x);
+            const wy = Math.round(worldNormal.y);
+            const wz = Math.round(worldNormal.z);
+
+            let axis = 'y', layerCoord = 1;
+            if (Math.abs(wx) === 1) { axis = 'x'; layerCoord = wx; }
+            else if (Math.abs(wy) === 1) { axis = 'y'; layerCoord = wy; }
+            else if (Math.abs(wz) === 1) { axis = 'z'; layerCoord = wz; }
+
+            // 3. 右手定則：看著外法線順時針轉 90 度 = 繞外法線旋轉 -90 度 (direction = -layerCoord)
+            const baseDir = -layerCoord;
 
             const pivot = new THREE.Vector3();
             pivot[axis] = layerCoord * positionOffset;
@@ -942,14 +1008,11 @@
             solverStatus.textContent = '正在掃描方塊狀態...';
             solverStepsIndicator.textContent = '';
 
-            // 1. 動態計算當前空間中心塊方位
-            const dynamicMap = buildDynamicFaceMap();
-            
-            // 2. 【核心升級】：即時為小魔方蓋上本局公式對應的 U/D/F/B/L/R 標籤
-            updateGizmoLabels(dynamicMap);
+            // 顯示左下角小魔方的固定標準 U/D/F/B/L/R 標籤
+            setGizmoLabelMode(true);
 
-            const faceletStr = getCubeStateString(dynamicMap);
-            console.log('54-Facelet 狀態：', faceletStr);
+            const faceletStr = getCubeStateString();
+            console.log('54-Facelet 狀態 (方案A標準方位)：', faceletStr);
 
             if (!window.Cube) {
                 solverStatus.textContent = '錯誤：未載入 Cube 解題庫';
@@ -995,6 +1058,8 @@
             solveStepBtn.disabled = true;
             solvePlayBtn.textContent = '▶ 播放';
 
+            setGizmoLabelMode(true);
+
             if (!solverReady) {
                 solverStatus.textContent = '演算法查表中（初次約需 10 秒）...';
                 solverStepsIndicator.textContent = '請稍候，背景資料庫建表完成後會自動開始計算';
@@ -1011,8 +1076,8 @@
             solverContainer.style.display = 'none';
             controlsContainer.style.display = 'flex';
 
-            // 【核心升級】：退出解題模式時，清除小魔方標籤，無縫還原為純色海玻璃
-            updateGizmoLabels(null);
+            // 退出解題模式時，無縫切換回純色海玻璃快取貼圖
+            setGizmoLabelMode(false);
 
             setControlsEnabled(true);
         }
@@ -1116,6 +1181,7 @@
         // 打亂魔方
         async function scrambleCube() {
             dropdownMenu.classList.remove('show');
+            if (isAnimating) return;
             setControlsEnabled(false);
             moveHistory = []; 
 
@@ -1160,6 +1226,21 @@
             setControlsEnabled(true);
         }
 
+        // 【新增優化】：免重新整理網頁的快速重置（保留背景解題 Worker 狀態）
+        function resetCubeState() {
+            dropdownMenu.classList.remove('show');
+            if (isAnimating) return;
+
+            cubies.forEach(c => {
+                const { x, y, z } = c.userData.initCoord;
+                c.position.set(x * positionOffset, y * positionOffset, z * positionOffset);
+                c.quaternion.identity();
+            });
+            coreQuaternion.identity();
+            moveHistory = [];
+            animateCamera(new THREE.Vector3(4, 4, 6), new THREE.Vector3(0, 1, 0));
+        }
+
         async function undoMove() {
             if (moveHistory.length === 0 || isAnimating) return;
             const lastMove = moveHistory.pop();
@@ -1167,7 +1248,7 @@
         }
 
         scrambleBtn.addEventListener('click', scrambleCube);
-        resetBtn.addEventListener('click', () => { window.location.reload(); });
+        resetBtn.addEventListener('click', resetCubeState);
         undoBtn.addEventListener('click', undoMove);
         solveBtn.addEventListener('click', enterSolverMode);
 
@@ -1176,7 +1257,12 @@
         solveExitBtn.addEventListener('click', exitSolverMode);
 
         if (resetViewBtn) {
-            resetViewBtn.addEventListener('click', () => animateCamera(new THREE.Vector3(4, 4, 6), new THREE.Vector3(0, 1, 0)));
+            resetViewBtn.addEventListener('click', () => {
+                if (isAnimating) return;
+                const defaultPos = new THREE.Vector3(4, 4, 6).applyQuaternion(coreQuaternion);
+                const defaultUp = new THREE.Vector3(0, 1, 0).applyQuaternion(coreQuaternion);
+                animateCamera(defaultPos, defaultUp);
+            });
         }
 
         // --- 事件綁定 ---
@@ -1192,7 +1278,7 @@
         function animate() {
             requestAnimationFrame(animate);
             insideMaterial.uniforms.u_time.value = clock.getElapsedTime();
-            if (controls) controls.update(); 
+            if (controls && !cameraAnimationId) controls.update(); 
             
             if (gizmoRenderer && gizmoGroup) {
                 gizmoGroup.quaternion.copy(camera.quaternion).invert().multiply(coreQuaternion);

@@ -2070,8 +2070,8 @@ function clearFBInputs() {
     document.querySelectorAll("#ticketBooks tr:not(:first-child)").forEach((row, idx) => {
       let s = parseInt(row.querySelector('.ticket-start').value), e = parseInt(row.querySelector('.ticket-end').value);
       if (isNaN(s) || isNaN(e) || s > e) { errors.push(`第 ${idx+1} 本實體序號錯誤。`); return; }
-      if ((e - s + 1) > 100000 || (totalPaperSpan + (e - s + 1)) > 100000) {
-        errors.push(`第 ${idx+1} 本實體彩券數量超過系統安全上限 (總計最多 100,000 張)，請檢查是否輸入錯誤！`);
+      if ((e - s + 1) > 50000 || (totalPaperSpan + (e - s + 1)) > 50000) {
+        errors.push(`第 ${idx+1} 本實體彩券數量超過系統安全上限 (總計最多 50,000 張)，請檢查是否輸入錯誤！`);
         return;
       }
       totalPaperSpan += (e - s + 1);
@@ -2128,6 +2128,7 @@ function clearFBInputs() {
     });
 
     if (globalTicketsPool.length < totalNeeded) errors.push("⚠️ 總票數不足以抽出所有設定獎項！");
+    if (globalTicketsPool.length > 95000) errors.push(`⚠️ 總參加人數 (${globalTicketsPool.length} 人) 超過系統安全上限！`);
     if (errors.length > 0) { errorDiv.innerHTML = errors.join("<br>"); errorDiv.classList.remove("hidden"); return; }
     
     document.getElementById("setup-section").classList.add("hidden"); 

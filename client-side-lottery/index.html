@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券摸彩箱抽獎程式 V5.2.1 | 支援FB留言抽獎、線上線下混抽、個資隱碼保護</title>
+  <title>彩券摸彩箱抽獎程式 V5.3.0 | 支援FB留言抽獎、線上線下混抽、個資隱碼保護</title>
   <meta name="description" content="免費實用的網頁抽獎程式！支援實體摸彩券與數位名單雙軌混抽，一鍵智慧萃取 FB 留言，內建隱碼保護功能、頭獎老虎機動效。無須下載，點開即用。">
   <meta name="keywords" content="免費抽獎程式,FB留言抽獎,抽獎系統,線上抽獎,摸彩券程式">
   <style>
@@ -623,7 +623,7 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V5.2.1 (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V5.3.0 (點擊修改標題)</h1>
     
     <details class="instructions-panel">
       <summary>📖 點擊查看系統使用說明</summary>
@@ -2066,9 +2066,15 @@ function clearFBInputs() {
 
     document.getElementById("excludedNumbersInput").value.split(',').forEach(n => { if(!isNaN(parseInt(n.trim()))) excludes.add(parseInt(n.trim())); });
 
+    let totalPaperSpan = 0;
     document.querySelectorAll("#ticketBooks tr:not(:first-child)").forEach((row, idx) => {
       let s = parseInt(row.querySelector('.ticket-start').value), e = parseInt(row.querySelector('.ticket-end').value);
-      if (isNaN(s) || isNaN(e) || s > e) errors.push(`第 ${idx+1} 本實體序號錯誤。`);
+      if (isNaN(s) || isNaN(e) || s > e) { errors.push(`第 ${idx+1} 本實體序號錯誤。`); return; }
+      if ((e - s + 1) > 100000 || (totalPaperSpan + (e - s + 1)) > 100000) {
+        errors.push(`第 ${idx+1} 本實體彩券數量超過系統安全上限 (總計最多 100,000 張)，請檢查是否輸入錯誤！`);
+        return;
+      }
+      totalPaperSpan += (e - s + 1);
       for (let i = s; i <= e; i++) {
         if (!excludes.has(i)) {
           if (paperCheckSet.has(i)) errors.push(`實體序號 ${i} 重疊！`);
@@ -2100,12 +2106,25 @@ function clearFBInputs() {
     globalTicketsPool = [...tempPool]; originalTicketsPool = [...tempPool]; extraTicketsPool = [...tempPool];
     globalPrizes = []; let totalNeeded = 0;
     
+    let prizeNameCounter = {};
     document.querySelectorAll("#prizeTable tr:not(:first-child)").forEach((row, idx) => {
-      let n = row.querySelector('.prize-name').value, c = parseInt(row.querySelector('.prize-count').value), b = parseInt(row.querySelector('.prize-backup').value);
-      if(!n || isNaN(c) || c <= 0) errors.push(`第 ${idx+1} 列獎項設定異常。`);
+      // ★ 過濾單雙引號與反斜線、角括號，徹底根絕 onclick 字串斷裂與 XSS
+      let rawName = row.querySelector('.prize-name').value.trim().replace(/'/g, '＇').replace(/"/g, '＂').replace(/\\/g, '＼').replace(/</g, '＜').replace(/>/g, '＞');
+      let c = parseInt(row.querySelector('.prize-count').value), b = parseInt(row.querySelector('.prize-backup').value);
+      if(!rawName || isNaN(c) || c <= 0) errors.push(`第 ${idx+1} 列獎項設定異常。`);
+      
+      // ★ 同名獎項防覆蓋：若遇到重複名稱，自動加上 (2)、(3) 區分
+      let finalName = rawName;
+      if (prizeNameCounter[rawName]) {
+          prizeNameCounter[rawName]++;
+          finalName = `${rawName} (${prizeNameCounter[rawName]})`;
+      } else {
+          prizeNameCounter[rawName] = 1;
+      }
+
       totalNeeded += (c + b);
-      globalPrizes.push({ order: idx + 1, name: n, count: c, backupCount: b, effect: row.querySelector('.crown-icon').classList.contains('active-crown'), resolved: false });
-      drawResults[n] = { main: [], backup: [], voided: [] };
+      globalPrizes.push({ order: idx + 1, name: finalName, count: c, backupCount: b, effect: row.querySelector('.crown-icon').classList.contains('active-crown'), resolved: false });
+      drawResults[finalName] = { main: [], backup: [], voided: [] };
     });
 
     if (globalTicketsPool.length < totalNeeded) errors.push("⚠️ 總票數不足以抽出所有設定獎項！");
@@ -2570,8 +2589,17 @@ function clearFBInputs() {
   function showExtraPrizeModal() { document.getElementById("modal-extra").classList.remove("hidden"); }
   
   function executeExtraDraw() {
-    let n = document.getElementById("extra-name").value.trim(), c = parseInt(document.getElementById("extra-count").value);
-    if (!n || isNaN(c) || c <= 0) { alert("請輸入正確資訊！"); return; }
+    let rawName = document.getElementById("extra-name").value.trim().replace(/'/g, '＇').replace(/"/g, '＂').replace(/\\/g, '＼').replace(/</g, '＜').replace(/>/g, '＞');
+    let c = parseInt(document.getElementById("extra-count").value);
+    if (!rawName || isNaN(c) || c <= 0) { alert("請輸入正確資訊！"); return; }
+    
+    // ★ 同名加碼防覆蓋：若 extraResults 已存在同名獎項，自動遞增編號 (2)、(3)...
+    let n = rawName;
+    let dupCount = 2;
+    while (extraResults.hasOwnProperty(n)) {
+        n = `${rawName} (${dupCount})`;
+        dupCount++;
+    }
     
     if (!extraDrawSnapshot) {
         extraDrawSnapshot = {
@@ -3022,6 +3050,15 @@ function clearFBInputs() {
   function renderBlindBoxDirectly(prizeName, newWinners) {
       const p = globalPrizes.find(x => x.name === prizeName), area = document.getElementById("showcase-winner-result");
       const fullList = drawResults[prizeName].main, ticketSize = p.count > 10 ? 'ticket-sm' : 'ticket-lg';
+      
+      // ★ 效能保護鎖：若該獎項總人數 > 30 人，跳過盲盒閃爍動畫，直接瞬間渲染結果
+      if (fullList.length > 30 || newWinners.length === 0) {
+          area.innerHTML = fullList.map(t => generateTicketHTML(t, ticketSize, true, prizeName, p.count)).join('');
+          document.getElementById("decision-buttons").classList.remove("hidden");
+          updateStatusBar();
+          return;
+      }
+
       let mysteryBoxes = fullList.map(t => ({ revealed: !newWinners.find(nw => nw.sysId === t.sysId), winner: t }));
       const genRandomCode = () => { const chars = '0123456789ABCDEF'; let code = ''; for(let i=0; i<4; i++) code += chars[Math.floor(Math.random() * chars.length)]; return code; };
       const renderState = () => { area.innerHTML = mysteryBoxes.map(box => box.revealed ? generateTicketHTML(box.winner, ticketSize, true, prizeName, p.count) : `<span class="winner-ticket ${ticketSize} ticket-mystery"><span style="font-family:monospace; font-weight:bold;">${genRandomCode()}</span><div class="source-icon">🎲</div></span>`).join(''); };

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>彩券摸彩箱抽獎程式 V5.2.0 | 支援FB留言抽獎、線上線下混抽、個資隱碼保護</title>
+  <title>彩券摸彩箱抽獎程式 V5.2.1 | 支援FB留言抽獎、線上線下混抽、個資隱碼保護</title>
   <meta name="description" content="免費實用的網頁抽獎程式！支援實體摸彩券與數位名單雙軌混抽，一鍵智慧萃取 FB 留言，內建隱碼保護功能、頭獎老虎機動效。無須下載，點開即用。">
   <meta name="keywords" content="免費抽獎程式,FB留言抽獎,抽獎系統,線上抽獎,摸彩券程式">
   <style>
@@ -623,7 +623,7 @@
   </div>
 
   <div id="setup-section">
-    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V5.2.0 (點擊修改標題)</h1>
+    <h1 id="main-title" contenteditable="true">彩券抽獎系統 V5.2.1 (點擊修改標題)</h1>
     
     <details class="instructions-panel">
       <summary>📖 點擊查看系統使用說明</summary>
@@ -2895,7 +2895,15 @@ function clearFBInputs() {
       let maxAllowed = 9;
       let currentMaxPrefix = slotMaxStr.substring(0, slotCurrentReel);
       if (slotLockedPrefix === currentMaxPrefix) maxAllowed = parseInt(slotMaxStr[slotCurrentReel]);
-      let pickedDigit = Math.floor(Math.random() * (maxAllowed + 1));
+      // ★ 動態權重條件機率：統計當下符合前綴的倖存者，從中隨機抽一人取其下一碼 (不預抽最終得主，且保證每人總機率 100% 均等)
+      let validNextDigits = [];
+      for (let i = 0; i < globalTicketsPool.length; i++) {
+          let idxStr = String(i).padStart(slotDigitCount, '0');
+          if (idxStr.startsWith(slotLockedPrefix)) {
+              validNextDigits.push(parseInt(idxStr[slotCurrentReel], 10));
+          }
+      }
+      let pickedDigit = validNextDigits[Math.floor(Math.random() * validNextDigits.length)];
       clearInterval(slotIntervals[slotCurrentReel]);
       let reel = document.getElementById(`reel-${slotCurrentReel}`);
       let currentVisualDigit = parseInt(reel.innerText) || 0;

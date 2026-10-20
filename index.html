@@ -41,7 +41,7 @@
         #hex-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
 
         /* ==========================================
-           終極戰士風：分段式全息電子錶面板 (Predator LCD Panel)
+           終極戰士風：無邊框懸浮全息燈管 (Predator Floating Hologram)
            ========================================== */
         header { text-align: center; margin-bottom: 2rem; display: flex; flex-direction: column; align-items: center; }
         
@@ -50,35 +50,18 @@
             align-items: center;
             justify-content: center;
             gap: clamp(4px, 1.2vw, 10px);
-            padding: clamp(10px, 2vw, 16px) clamp(14px, 3vw, 28px);
-            background: rgba(4, 10, 16, 0.85);
-            border: 1px solid rgba(0, 191, 255, 0.35);
-            border-radius: 6px;
-            box-shadow: 
-                0 0 25px rgba(0, 191, 255, 0.15),
-                inset 0 0 20px rgba(0, 191, 255, 0.08);
+            padding: clamp(6px, 1.5vw, 12px) clamp(8px, 2vw, 16px);
+            background: transparent;
+            border: none;
+            box-shadow: none;
             cursor: pointer;
             user-select: none;
             position: relative;
-            /* 外星裝甲斜切角邊框感 */
-            clip-path: polygon(
-                12px 0, calc(100% - 12px) 0, 100% 12px, 
-                100% calc(100% - 12px), calc(100% - 12px) 100%, 
-                12px 100%, 0 calc(100% - 12px), 0 12px
-            );
+            transition: transform 0.08s ease;
         }
-        /* 面板上下機械裝飾刻線 */
-        .predator-panel::before, .predator-panel::after {
-            content: ''; position: absolute; left: 25%; right: 25%; height: 2px;
-            background: rgba(0, 191, 255, 0.45); pointer-events: none;
-        }
-        .predator-panel::before { top: 2px; }
-        .predator-panel::after { bottom: 2px; }
 
         .predator-panel.panel-glitch {
             transform: translateX(2px);
-            border-color: rgba(180, 245, 255, 0.8);
-            box-shadow: 0 0 35px rgba(0, 191, 255, 0.45), inset 0 0 25px rgba(0, 191, 255, 0.25);
         }
 
         .alien-digit {
@@ -281,7 +264,7 @@
     <div class="container">
         <header id="main-header">
             <h1 class="sr-only" id="sr-title">fan666rog - WELCOME</h1>
-            <!-- 終極戰士手腕風格：9 格分段式全息電子錶面板 -->
+            <!-- 終極戰士手腕風格：9 格無邊框分段式全息電子錶面板 -->
             <div id="predator-title" class="predator-panel" role="heading" aria-level="1" aria-label="fan666rog WELCOME 轉換面板" title="點擊切換外星解碼"></div>
             <div class="legend-area">
                 <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
@@ -537,65 +520,94 @@
                 }
             }
 
-            const STATE_FAN = 'FAN666ROG';
-            const STATE_WELCOME = '[WELCOME]'; // 7 字置中，左右第 1、9 格點亮外星邊框刻痕
-            let currentTitleState = STATE_FAN;
-            let scrambleTimer = null;
+            // 計算從「外星圖騰」逐步拆解筆畫、重組為「目標英文字」的過渡燈管組合
+            function buildMorphFrames(alienSegs, targetSegs) {
+                const alienOnly = alienSegs.filter(s => !targetSegs.includes(s));
+                const targetOnly = targetSegs.filter(s => !alienSegs.includes(s));
+                const shared = alienSegs.filter(s => targetSegs.includes(s));
 
-            // 外星機械硬切解碼特效 (不規則跳動、獨立鎖定、無平滑漸變)
+                // 步驟 A：退去約一半的外星多餘筆畫，點亮少許目標字母筆畫 + 1 個外星三角刻痕
+                const keepAlien1 = alienOnly.filter((_, idx) => idx % 2 === 0);
+                const addTarget1 = targetOnly.slice(0, Math.ceil(targetOnly.length * 0.35));
+                const frameA = [...new Set([...shared, ...keepAlien1, ...addTarget1, 16 + (alienSegs[0] % 4)])];
+
+                // 步驟 B：只留最後 1 根外星殘影筆畫，點亮 75% 以上的目標字母筆畫
+                const keepAlien2 = alienOnly.slice(0, 1);
+                const addTarget2 = targetOnly.slice(0, Math.ceil(targetOnly.length * 0.75));
+                const frameB = [...new Set([...shared, ...keepAlien2, ...addTarget2])];
+
+                return [frameA, frameB];
+            }
+
+            const STATE_FAN = 'FAN666ROG';
+            const STATE_WELCOME = '[WELCOME]';
+            let currentTitleState = STATE_FAN;
+            let activeTimeouts = [];
+
+            function clearDecodeTimeouts() {
+                activeTimeouts.forEach(t => clearTimeout(t));
+                activeTimeouts = [];
+            }
+
+            // 終極戰士電影開頭字幕風格：慢速外星圖騰靜置 ➔ 筆畫逐步拆解重組 ➔ 鎖定校準
             function triggerPredatorDecode(targetStr) {
-                if (scrambleTimer) clearInterval(scrambleTimer);
+                clearDecodeTimeouts();
                 currentTitleState = targetStr;
                 const paddedTarget = targetStr.toUpperCase().padEnd(NUM_DIGITS, ' ');
 
-                // 每個字位獨立設定隨機鎖定幀數 (打破從左到右乖乖排隊的滑順感)
-                const lockTickPerDigit = Array.from({ length: NUM_DIGITS }, () => 7 + Math.floor(Math.random() * 10));
-                const locked = new Array(NUM_DIGITS).fill(false);
-                let tick = 0;
-
-                // 解碼啟動瞬間面板微震一下
+                // 啟動瞬間微震一下
                 titlePanel.classList.add('panel-glitch');
-                setTimeout(() => titlePanel.classList.remove('panel-glitch'), 120);
+                activeTimeouts.push(setTimeout(() => titlePanel.classList.remove('panel-glitch'), 90));
 
-                scrambleTimer = setInterval(() => {
-                    tick++;
-                    let allDone = true;
+                for (let i = 0; i < NUM_DIGITS; i++) {
+                    const targetSegs = CHAR_MAP[paddedTarget[i]] || [];
+                    // 挑選兩組不同的外星圖騰作為初始與校準狀態
+                    const glyph1 = PREDATOR_GLYPHS[(i * 3 + Math.floor(Math.random() * 3)) % PREDATOR_GLYPHS.length];
+                    const glyph2 = PREDATOR_GLYPHS[(i * 3 + 5) % PREDATOR_GLYPHS.length];
+                    const [morphA, morphB] = buildMorphFrames(glyph2, targetSegs);
 
-                    for (let i = 0; i < NUM_DIGITS; i++) {
-                        if (tick >= lockTickPerDigit[i]) {
-                            if (!locked[i]) {
-                                // 剛鎖定的那一瞬間閃一下高壓白藍光 (Surge)
-                                locked[i] = true;
-                                setDigitSegments(i, CHAR_MAP[paddedTarget[i]] || [], true);
-                                if (Math.random() < 0.4) {
-                                    titlePanel.classList.add('panel-glitch');
-                                    setTimeout(() => titlePanel.classList.remove('panel-glitch'), 60);
-                                }
-                            } else {
-                                // 下一幀穩定為全息電光藍
-                                setDigitSegments(i, CHAR_MAP[paddedTarget[i]] || [], false);
-                            }
-                        } else {
-                            allDone = false;
-                            // 機械跳動感：偶爾故意整格斷電全暗 1 幀，或隨機切換外星圖騰
-                            if (Math.random() < 0.12) {
-                                setDigitSegments(i, []);
-                            } else {
-                                const randomGlyph = PREDATOR_GLYPHS[Math.floor(Math.random() * PREDATOR_GLYPHS.length)];
-                                const surgeFlash = Math.random() < 0.22;
-                                setDigitSegments(i, randomGlyph, surgeFlash);
-                            }
+                    // 帶有微微由左至右的雷射掃描時間差，外加少許機械不規則感
+                    const enterDelay = i * 35 + Math.floor(Math.random() * 25);
+                    const decodeBase = 480 + i * 75 + Math.floor(Math.random() * 35);
+
+                    // 階段 1：切換成第一組外星異形文字 (帶微閃)，並靜置約 0.45 秒讓人看清楚外星符號
+                    activeTimeouts.push(setTimeout(() => {
+                        setDigitSegments(i, glyph1, true);
+                        activeTimeouts.push(setTimeout(() => {
+                            setDigitSegments(i, glyph1, false);
+                        }, 70));
+                    }, enterDelay));
+
+                    // 階段 2：慢速切換至第二組外星校準圖騰 (咔噠第一拍)
+                    activeTimeouts.push(setTimeout(() => {
+                        setDigitSegments(i, glyph2, false);
+                    }, decodeBase));
+
+                    // 階段 3：筆畫重組 A — 退去部分外星斜線、浮現目標英文字母骨架 (第二拍 +210ms)
+                    activeTimeouts.push(setTimeout(() => {
+                        setDigitSegments(i, morphA, false);
+                    }, decodeBase + 210));
+
+                    // 階段 4：筆畫重組 B — 接近目標英文字形，僅留一絲外星殘影 (第三拍 +430ms，稍微減速)
+                    activeTimeouts.push(setTimeout(() => {
+                        setDigitSegments(i, morphB, false);
+                    }, decodeBase + 430));
+
+                    // 階段 5：最終校準鎖定 — 高壓白藍光閃爍 (Surge) 後定格為目標英文字 (第四拍 +670ms)
+                    activeTimeouts.push(setTimeout(() => {
+                        setDigitSegments(i, targetSegs, true);
+                        if (i % 3 === 1) {
+                            titlePanel.classList.add('panel-glitch');
+                            activeTimeouts.push(setTimeout(() => titlePanel.classList.remove('panel-glitch'), 60));
                         }
-                    }
-
-                    if (allDone) {
-                        clearInterval(scrambleTimer);
-                        scrambleTimer = null;
-                    }
-                }, 65); // 65ms 硬切節奏，呈現清楚的分段跳字機械感
+                        activeTimeouts.push(setTimeout(() => {
+                            setDigitSegments(i, targetSegs, false);
+                        }, 130));
+                    }, decodeBase + 670));
+                }
             }
 
-            // 優化 1A (錯峰排程)：初始顯示 fan666rog，待下方 3D 展示櫃微轉並完全靜止歸位 (1800ms) 後，於 1950ms 啟動外星解碼
+            // 錯峰排程：初始顯示 fan666rog，待下方 3D 展示櫃微轉並完全靜止歸位 (1800ms) 後，於 1950ms 啟動外星解碼
             renderStringToPanel(STATE_FAN);
             setTimeout(() => triggerPredatorDecode(STATE_WELCOME), 1950);
 
@@ -1002,7 +1014,7 @@
                               x = e.clientX - rect.left,
                               y = e.clientY - rect.top;
                         card.style.setProperty('--mouse-x', `${x}px`);
-                        card.style.setProperty('--mouse-y', `${y}px`);
+                        card.style.setProperty('--mouse-y', `${y}`);
                     }, { passive: true });
                 });
             }

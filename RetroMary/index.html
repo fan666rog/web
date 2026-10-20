@@ -2,64 +2,89 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>復古小瑪莉：零用錢殺手</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>復古小瑪莉：零用錢殺手 (街機完全版)</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="game-machine">
-        <div class="machine-header">復古小瑪莉：零用錢殺手</div>
-        <div class="display-panel top-display">
-            <div class="display-box"><label>WIN</label><div id="win-display" class="seven-segment">0000</div></div>
-            <div class="display-box"><label>CREDIT</label><div id="credit-display" class="seven-segment">1000</div></div>
+        <div class="top-bar">
+            <button id="sound-toggle" class="mini-btn">🔊 音效: 開</button>
+            <div class="machine-header">復古小瑪莉：零用錢殺手</div>
+            <button id="mom-money-btn" class="mini-btn">🪙 領零用錢</button>
         </div>
+
+        <div class="display-panel top-display">
+            <div class="display-box">
+                <label>WIN (贏分)</label>
+                <div id="win-display" class="seven-segment">0000</div>
+            </div>
+            <div class="display-box">
+                <label>CREDIT (代幣)</label>
+                <div id="credit-display" class="seven-segment">0100</div>
+            </div>
+        </div>
+
         <div id="main-board-container">
             <div id="main-board">
                 <div id="center-art">
                     <div class="art-content">
-                        <div class="jp-text">JP</div>
+                        <div class="jp-title">⚡ 送燈集氣 ⚡</div>
                         <div class="digits-container">
-                            <div id="jp-digit" class="seven-segment small">0</div>
-                            <div id="double-up-digit" class="seven-segment small blue-digit">1</div>
+                            <div class="digit-group">
+                                <span>JP</span>
+                                <div id="jp-digit" class="seven-segment small">0</div>
+                            </div>
+                            <div class="digit-group">
+                                <span>比倍</span>
+                                <div id="double-up-digit" class="seven-segment small blue-digit">8</div>
+                            </div>
                         </div>
-                        <div class="characters">🐢🔥🕹️</div>
+                        <div id="bonus-lamp" class="bonus-lamp">🚂 火車送燈待機中</div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <div id="message-bar">點擊水果直接押分（長按或連點），按「開始」自動續押！</div>
+
+        <!-- 押分區：手機版自動排為 4x2，點擊直接加注 -->
         <div id="betting-area" class="display-panel"></div>
+
+        <!-- 控制面板：修正手機版擠壓換行問題 -->
         <div id="control-panel">
             <button id="double-small-button" class="ctrl-button blue">1-4 小</button>
             <button id="collect-button" class="ctrl-button yellow">得分</button>
             <button id="start-button" class="ctrl-button">開始</button>
-            <button id="leave-button" class="ctrl-button green">離開</button>
+            <button id="clear-button" class="ctrl-button green">清除</button>
             <button id="double-big-button" class="ctrl-button red">6-9 大</button>
         </div>
-        <div id="message-bar">請點擊下方圖示進行押分</div>
-        <button id="help-button" class="help-button">遊戲說明</button>
+
+        <div class="footer-bar">
+            <button id="help-button" class="help-button">📖 街機規則與玩法說明</button>
+        </div>
 
         <div class="copyright">
-            © 2025 <a href="https://github.com/fan666rog/web" target="_blank" title="前往 fan666rog 的 GitHub">fan666rog</a> & Gemini. All Rights Reserved.
+            © 2025-2026 <a href="https://github.com/fan666rog/web" target="_blank" title="前往 fan666rog 的 GitHub">fan666rog</a> & Gemini. All Rights Reserved.
         </div>
     </div>
 
+    <!-- 遊戲說明彈窗 -->
     <div id="help-modal" class="modal-overlay">
         <div class="modal-content">
             <button id="close-help-button" class="close-button">&times;</button>
-            <h2>遊戲說明</h2>
-            <h3>一、 遊戲目標</h3>
-            <p>透過押分並轉動跑燈，在跑道上擊中您押分的圖示以贏得彩金，並挑戰刺激的「比大小」來讓彩金翻倍！</p>
-            <h3>二、 遊戲流程</h3>
-            <ol>
-                <li><strong>押分:</strong> 點擊下方8個圖示的 ▲/▼ 按鈕來增減押分單位 (0-9)。押注1單位的成本等於該圖示賠率。</li>
-                <li><strong>開始:</strong> 完成押分後，點擊紅色的圓形「開始」按鈕。</li>
-                <li><strong>計分:</strong> 中獎時，彩金 = 賠率 × (賠率 × 押分單位數)。</li>
-                <li><strong>比大小:</strong> 中獎後可挑戰，猜對翻倍，猜錯或開出5則歸零。</li>
-            </ol>
-            <h3>三、 特殊圖示與規則</h3>
+            <h2>🕹️ 正宗街機小瑪莉說明</h2>
+            <h3>一、 押注與計分（真實街機規格）</h3>
             <ul>
-                <li><strong>ONCE MORE (🔄):</strong> 免費再進行一次轉動！</li>
-                <li><strong>Jackpot (JP):</strong> 轉中 BAR 或 ❼❼ 時JP數字+1，集滿7可觸發神秘大獎 (待實裝)。</li>
+                <li><strong>直接點擊水果：</strong> 點擊下方 8 個圖示即可押注，每按一下固定消耗 <strong>1 枚代幣</strong>（上限 99 分）。</li>
+                <li><strong>彩金計算：</strong> 中獎彩金 ＝ <strong>該項目押分 × 賠率</strong>（例如押 BAR 2 分，中獎可得 2 × 50 = 100 分）。</li>
+                <li><strong>懶人連玩：</strong> 轉動結束後若不重新押分，直接按「開始」會<strong>自動照上一局的配置續押</strong>！若 WIN 區有贏分，按「開始」也會自動幫你收進口袋並開轉。</li>
+            </ul>
+            <h3>二、 特殊大獎與街機靈魂</h3>
+            <ul>
+                <li><strong>🔄 ONCE MORE (再轉一次)：</strong> 停在此格時押分不扣除，並<strong>隨機觸發「天女散花送燈（額外多送 1～3 顆跑燈）」</strong>！</li>
+                <li><strong>⚡ 集滿 7 點火車大獎 (JP)：</strong> 每次押分滿 5 分以上開轉、或擊中特殊格會累積中間的 JP 集氣字樣。集滿 <strong>7 點</strong> 立即觸發<strong>「火車連莊大送燈（一次噴出 3～4 顆燈同時開獎）」</strong>！</li>
+                <li><strong>🎲 比大小 (Double Up)：</strong> 中獎後可按「1-4 小」或「6-9 大」賭翻倍；若開出「5」為莊家通殺歸零。</li>
             </ul>
         </div>
     </div>

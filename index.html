@@ -132,6 +132,10 @@
             overflow: hidden; 
             user-select: none; 
             touch-action: pan-y; 
+            cursor: grab;
+        }
+        .carousel-scene.dragging {
+            cursor: grabbing;
         }
         
         .carousel-container {
@@ -159,6 +163,7 @@
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             box-shadow: 0 0 30px rgba(0, 191, 255, 0.4), inset 0 0 15px rgba(0, 191, 255, 0.1); 
             border-color: rgba(0, 191, 255, 0.6); 
+            cursor: default;
         }
         
         .project-card.active-front:hover {
@@ -192,12 +197,18 @@
         .project-card.active-front:hover h2 { color: var(--primary-glow-color); text-shadow: 0 0 8px rgba(0, 191, 255, 0.4); }
         .mobile-icon { width: 1.2rem; height: 1.2rem; fill: #00bfff; opacity: 0.7; flex-shrink: 0; }
         .project-card p { font-size: 0.95rem; color: #b0b0b0; flex-grow: 1; margin-bottom: 1.8rem; line-height: 1.6; }
+        
+        /* 修正 Bug 2：非正前方的卡片內部連結預設關閉點擊，避免穿透誤觸 */
         .project-card a {
             display: inline-block; background: transparent; color: var(--primary-glow-color);
             padding: 0.8rem 1.5rem; border-radius: 8px; text-decoration: none; text-align: center;
-            font-weight: bold; letter-spacing: 1px; border: 1px solid var(--primary-glow-color); transition: all 0.3s ease; pointer-events: auto;
+            font-weight: bold; letter-spacing: 1px; border: 1px solid var(--primary-glow-color); transition: all 0.3s ease;
+            pointer-events: none;
         }
-        .project-card a:hover { background-color: var(--primary-glow-color); color: #000; box-shadow: 0 0 15px rgba(0, 191, 255, 0.5); }
+        .project-card.active-front a {
+            pointer-events: auto;
+        }
+        .project-card.active-front a:hover { background-color: var(--primary-glow-color); color: #000; box-shadow: 0 0 15px rgba(0, 191, 255, 0.5); }
 
         /* --- 頁尾 --- */
         .gemini-text {
@@ -286,7 +297,7 @@
                         <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
                     </div>
                     <p>一個本地端執行的網頁抽獎程式，可設定標題主題、多個彩券本、手動名單或FB暱稱、獎項與排除號碼，確保抽獎公開透明。有兩種模式可供使用。建議使用PC操作較為方便。</p>
-                    <a href="./client-side-lottery/index.html" target="_blank">V5.3 開啟</a>
+                    <a href="./client-side-lottery/index.html" target="_blank" rel="noopener noreferrer">V5.3 開啟</a>
                 </div>
 
                 <div class="project-card" data-category="tool">
@@ -295,7 +306,7 @@
                         <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
                     </div>
                     <p>整合兩種民俗命理系統，可依據農曆年月日時辰查詢，並包含袁天罡秤骨命評。</p>
-                    <a href="./bazi-data-query-viewer/index.html" target="_blank">展示觀看</a>
+                    <a href="./bazi-data-query-viewer/index.html" target="_blank" rel="noopener noreferrer">展示觀看</a>
                 </div>
                 
                 <div class="project-card" data-category="tool">
@@ -304,7 +315,7 @@
                         <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
                     </div>
                     <p>可自訂獎項、權重、數量、顏色，權重越高中獎機率越大。支援更改主題與中獎紀錄功能。</p>
-                    <a href="./wheel-prize-picker/index.html" target="_blank">V3.2 開啟</a>
+                    <a href="./wheel-prize-picker/index.html" target="_blank" rel="noopener noreferrer">V3.2 開啟</a>
                 </div>
 
                 <div class="project-card" data-category="tool">
@@ -313,7 +324,7 @@
                         <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
                     </div>
                     <p>生命靈數計算和觀看，計算完畢後可以觀看總覽資料和詳細的計算方式解析。判斷邏輯為參考網路靈數解說資料。</p>
-                    <a href="./Numerology/index.html" target="_blank">展示觀看</a>
+                    <a href="./Numerology/index.html" target="_blank" rel="noopener noreferrer">展示觀看</a>
                 </div>
 
                 <div class="project-card" data-category="game">
@@ -322,7 +333,7 @@
                         <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
                     </div>
                     <p>這是一個約 1990 年的經典積木拼圖遊戲，賦予新生命程式化，挑戰你的空間創意邏輯。</p>
-                    <a href="./Ba/index.html" target="_blank">V1.5 遊玩</a>
+                    <a href="./Ba/index.html" target="_blank" rel="noopener noreferrer">V1.5 遊玩</a>
                 </div>
                 
                 <div class="project-card" data-category="game">
@@ -331,7 +342,7 @@
                         <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
                     </div>
                     <p>經典的跑燈遊戲，透過押分贏得彩金，並挑戰刺激的「比大小」讓彩金翻倍！</p>
-                    <a href="./RetroMary/index.html" target="_blank">V2.0 啟動</a>
+                    <a href="./RetroMary/index.html" target="_blank" rel="noopener noreferrer">V2.0 啟動</a>
                 </div>
 
                 <div class="project-card" data-category="game">
@@ -340,7 +351,7 @@
                         <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
                     </div>
                     <p>懷舊的貪食蛇遊戲，加入了隨機障礙物與可消除障礙物的特殊道具，增加挑戰性與變化。</p>
-                    <a href="./game-snake/snakeV151.html" target="_blank">V1.5.1 遊玩</a>
+                    <a href="./game-snake/snakeV151.html" target="_blank" rel="noopener noreferrer">V1.5.1 遊玩</a>
                 </div>
 
                 <div class="project-card" data-category="game">
@@ -349,7 +360,7 @@
                         <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
                     </div>
                     <p>這是一個使用 Three.js 函式庫建立的網頁版 3D 魔術方塊模擬器，具備完整的互動遊玩與視角旋轉功能。</p>
-                    <a href="./rubiks-cube/index.html" target="_blank">V3.6 啟動</a>
+                    <a href="./rubiks-cube/index.html" target="_blank" rel="noopener noreferrer">V3.6 啟動</a>
                 </div>
 
                 <div class="project-card" data-category="game">
@@ -358,7 +369,7 @@
                         <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
                     </div>
                     <p>一個經典的復古打磚塊遊戲，支援使用鍵盤或觸控來控制球拍，挑戰你的反應速度！(共3關)</p>
-                    <a href="./brick-breaker/index.html" target="_blank">V2.6 挑戰</a>
+                    <a href="./brick-breaker/index.html" target="_blank" rel="noopener noreferrer">V2.6 挑戰</a>
                 </div>
 
                 <div class="project-card" data-category="game">
@@ -367,7 +378,7 @@
                         <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
                     </div>
                     <p>經典的俄羅斯方塊遊戲，具備下落、旋轉與消除整行等玩法，考驗你的反應能力與空間佈局技巧！</p>
-                    <a href="./tetris/tetris.html" target="_blank">V1.0 遊玩</a>
+                    <a href="./tetris/tetris.html" target="_blank" rel="noopener noreferrer">V1.0 遊玩</a>
                 </div>
                 
                 <div class="project-card" data-category="tool">
@@ -375,7 +386,7 @@
                         <h2>104/87鍵 鍵盤測試</h2>
                     </div>
                     <p>一個用於測試實體鍵盤按鍵是否正常的除錯工具，可即時切換 104 鍵與 87 鍵配置佈局。</p>
-                    <a href="./104_87key_test/index.html" target="_blank">PC版 專用</a>
+                    <a href="./104_87key_test/index.html" target="_blank" rel="noopener noreferrer">PC版 專用</a>
                 </div>
             </main>
         </div>
@@ -644,29 +655,27 @@
             const totalImages = 12;
             let bgLoadStarted = false;
 
+            // 修正 Bug 5：補償 window.scrollX / scrollY，避免頁面捲動時縮放視窗造成安全迴避區計算錯位
             function getValidHexPool() {
                 if (hexCenters.length === 0) return { left: [], right: [] };
 
-                const carouselScene = document.querySelector('.carousel-scene');
-                let carouselRect = { left: 0, right: 0, top: 0, bottom: 0 };
-                if (carouselScene) {
-                    const bounds = carouselScene.getBoundingClientRect();
-                    carouselRect = { left: bounds.left - 50, right: bounds.right + 50, top: bounds.top - 50, bottom: bounds.bottom + 50 };
-                }
+                const scrollX = window.scrollX || window.pageXOffset || 0;
+                const scrollY = window.scrollY || window.pageYOffset || 0;
 
-                const header = document.getElementById('main-header');
-                let headerRect = { left: 0, right: 0, top: 0, bottom: 0 };
-                if (header) {
-                    const bounds = header.getBoundingClientRect();
-                    headerRect = { left: bounds.left - 30, right: bounds.right + 30, top: bounds.top - 30, bottom: bounds.bottom + 30 };
-                }
+                const getStaticBounds = (el, padX, padTop, padBottom) => {
+                    if (!el) return { left: 0, right: 0, top: 0, bottom: 0 };
+                    const b = el.getBoundingClientRect();
+                    return {
+                        left: b.left + scrollX - padX,
+                        right: b.right + scrollX + padX,
+                        top: b.top + scrollY - padTop,
+                        bottom: b.bottom + scrollY + padBottom
+                    };
+                };
 
-                const footer = document.getElementById('main-footer');
-                let footerRect = { left: 0, right: 0, top: height, bottom: height };
-                if (footer) {
-                    const bounds = footer.getBoundingClientRect();
-                    footerRect = { left: bounds.left - 30, right: bounds.right + 30, top: bounds.top - 30, bottom: bounds.bottom + 50 };
-                }
+                const carouselRect = getStaticBounds(document.querySelector('.carousel-scene'), 50, 50, 50);
+                const headerRect = getStaticBounds(document.getElementById('main-header'), 30, 30, 30);
+                const footerRect = getStaticBounds(document.getElementById('main-footer'), 30, 30, 50);
 
                 let validCenters = hexCenters.filter(c => {
                     let inCarousel = c.x > carouselRect.left && c.x < carouselRect.right && c.y > carouselRect.top && c.y < carouselRect.bottom;
@@ -827,19 +836,37 @@
                 meteors.push({ x1: line.x1, y1: line.y1, x2: line.x2, y2: line.y2, progress: 0, speed: 0.015 + Math.random() * 0.02, length: 0.3 + Math.random() * 0.4, opacity: 1 });
             }
 
+            // 優化項目 7：移除高消耗的 shadowBlur，改以雙層線段模擬電光發光感
             function animateCanvas() {
                 drawGrid();
                 if(Math.random() < 0.08 && meteors.length < 25) spawnMeteor();
+                ctx.lineCap = 'round';
                 for (let i = meteors.length - 1; i >= 0; i--) {
                     let m = meteors[i]; m.progress += m.speed;
                     let tailP = Math.max(0, m.progress - m.length), headP = Math.min(1, m.progress);
                     let hX = m.x1 + (m.x2 - m.x1) * headP, hY = m.y1 + (m.y2 - m.y1) * headP;
                     let tX = m.x1 + (m.x2 - m.x1) * tailP, tY = m.y1 + (m.y2 - m.y1) * tailP;
-                    ctx.beginPath();
+
                     let gradient = ctx.createLinearGradient(tX, tY, hX, hY);
-                    gradient.addColorStop(0, 'rgba(0, 191, 255, 0)'); gradient.addColorStop(1, meteorColor); 
-                    ctx.strokeStyle = gradient; ctx.lineWidth = 2.5; ctx.shadowColor = meteorColor; ctx.shadowBlur = 10; 
-                    ctx.moveTo(tX, tY); ctx.lineTo(hX, hY); ctx.stroke(); ctx.shadowBlur = 0;
+                    gradient.addColorStop(0, 'rgba(0, 191, 255, 0)');
+                    gradient.addColorStop(1, meteorColor);
+
+                    // 第一層：外圍柔和電光暈
+                    ctx.beginPath();
+                    ctx.strokeStyle = gradient;
+                    ctx.lineWidth = 6;
+                    ctx.globalAlpha = 0.25;
+                    ctx.moveTo(tX, tY); ctx.lineTo(hX, hY);
+                    ctx.stroke();
+
+                    // 第二層：高亮核心電流
+                    ctx.beginPath();
+                    ctx.strokeStyle = gradient;
+                    ctx.lineWidth = 2.2;
+                    ctx.globalAlpha = 1;
+                    ctx.moveTo(tX, tY); ctx.lineTo(hX, hY);
+                    ctx.stroke();
+
                     if (m.progress - m.length > 1) meteors.splice(i, 1);
                 }
                 requestAnimationFrame(animateCanvas);
@@ -874,6 +901,8 @@
             let theta = 0;
             let visibleCards = allCards;
             let isDragging = false;
+            let hasInteracted = false; // 修正項目 3：防止使用者提早互動後被進場微轉拉回
+            let dragDistance = 0;      // 紀錄拖曳位移，區分「純點擊側面卡片」與「拖曳旋轉」
             let lastActiveIndex = -1;
 
             function updateCarouselTransform(forceCardUpdate = false) {
@@ -910,7 +939,8 @@
                         card.classList.remove('active-front');
                         card.style.opacity = 0.3;
                         card.style.transform = `rotateY(${cardAngle}deg) translateZ(${radius}px) scale(0.85)`;
-                        card.style.pointerEvents = 'none';
+                        // 允許側面可見卡片接收點擊以旋轉至正中央（內部 <a> 已被 CSS pointer-events: none 保護）
+                        card.style.pointerEvents = 'auto';
                     }
                 });
             }
@@ -932,14 +962,14 @@
                 updateCarouselTransform(true);
             }
 
-            // 優化 1A & 3：600ms 開始微轉、1200ms 拉回、1800ms 完全靜止；並傳入 false 避免無謂重繪 11 張子卡片 DOM
+            // 進場微轉提示：若使用者已經開始操作 (hasInteracted)，則立即中止微轉排程
             function playIntroNudge() {
                 setTimeout(() => {
-                    if(isDragging) return; 
+                    if (isDragging || hasInteracted) return; 
                     currentAngle = -22;
                     updateCarouselTransform(false);
                     setTimeout(() => {
-                        if(isDragging) return;
+                        if (isDragging || hasInteracted) return;
                         currentAngle = 0;
                         updateCarouselTransform(false);
                     }, 600);
@@ -951,37 +981,80 @@
             let startAngle = 0;
             
             carouselScene.addEventListener('pointerdown', (e) => {
+                hasInteracted = true;
                 isDragging = true;
+                dragDistance = 0;
                 startX = e.clientX;
                 startAngle = currentAngle;
                 carousel.style.transition = 'none'; 
-                carouselScene.style.cursor = 'grabbing';
+                carouselScene.classList.add('dragging');
             });
 
             window.addEventListener('pointermove', (e) => {
                 if (!isDragging) return;
                 const dx = e.clientX - startX;
+                dragDistance = Math.max(dragDistance, Math.abs(dx));
                 currentAngle = startAngle + (dx * 0.4);
                 updateCarouselTransform(false);
             }, { passive: true });
 
-            window.addEventListener('pointerup', () => {
+            // 修正項目 4：統一處理 pointerup 與 pointercancel，防止手機斜滑捲動時卡死
+            function endDrag() {
                 if (!isDragging) return;
                 isDragging = false;
-                carouselScene.style.cursor = 'default';
+                carouselScene.classList.remove('dragging');
                 
                 carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
                 
-                if(theta > 0) {
+                if (theta > 0) {
                     currentAngle = Math.round(currentAngle / theta) * theta;
                 }
                 updateCarouselTransform(true);
+            }
+
+            window.addEventListener('pointerup', endDrag);
+            window.addEventListener('pointercancel', endDrag);
+            window.addEventListener('lostpointercapture', endDrag);
+
+            // 優化項目 6A：點擊左右側面半透明卡片時，自動最短路徑旋轉至正中央
+            allCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    if (dragDistance > 6) return; // 屬於拖曳放開，不觸發點擊切換
+                    const idx = visibleCards.indexOf(card);
+                    if (idx === -1 || card.classList.contains('active-front')) return;
+
+                    hasInteracted = true;
+                    const cardAngle = theta * idx;
+                    let diff = ((cardAngle + currentAngle) % 360 + 360) % 360;
+                    if (diff > 180) diff -= 360;
+
+                    carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                    currentAngle -= diff;
+                    updateCarouselTransform(true);
+                });
+            });
+
+            // 優化項目 6B：支援鍵盤左右方向鍵切換作品
+            window.addEventListener('keydown', (e) => {
+                if (theta === 0 || visibleCards.length <= 1) return;
+                if (e.key === 'ArrowLeft') {
+                    hasInteracted = true;
+                    carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                    currentAngle += theta;
+                    updateCarouselTransform(true);
+                } else if (e.key === 'ArrowRight') {
+                    hasInteracted = true;
+                    carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                    currentAngle -= theta;
+                    updateCarouselTransform(true);
+                }
             });
 
             // --- 分類篩選器 ---
             const filterBtns = document.querySelectorAll('.filter-btn');
             filterBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
+                    hasInteracted = true;
                     filterBtns.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     const filterValue = btn.getAttribute('data-filter');
@@ -992,6 +1065,7 @@
                         visibleCards = allCards.filter(card => card.getAttribute('data-category') === filterValue);
                     }
                     currentAngle = 0;
+                    carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
                     setupCarousel();
                 });
             });
@@ -1008,6 +1082,7 @@
             });
 
             // --- 游標探照燈 (僅在支援滑鼠游標的設備上啟用) ---
+            // 修正 Bug 1：補齊 --mouse-y 的 px 單位
             if (window.matchMedia('(hover: hover)').matches) {
                 allCards.forEach(card => {
                     card.addEventListener('mousemove', e => {
@@ -1015,7 +1090,7 @@
                               x = e.clientX - rect.left,
                               y = e.clientY - rect.top;
                         card.style.setProperty('--mouse-x', `${x}px`);
-                        card.style.setProperty('--mouse-y', `${y}`);
+                        card.style.setProperty('--mouse-y', `${y}px`);
                     }, { passive: true });
                 });
             }

@@ -400,7 +400,7 @@
     <footer id="main-footer">
         <div class="footer-content">
             <div class="copyright">
-                &copy; 2026/1016
+                &copy; 2026/1020
                 <a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer" class="github-link">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
                     fan666rog
@@ -595,9 +595,9 @@
                 }, 65); // 65ms 硬切節奏，呈現清楚的分段跳字機械感
             }
 
-            // 初始顯示 fan666rog，1.5 秒後外星解碼為 [WELCOME]
+            // 優化 1A (錯峰排程)：初始顯示 fan666rog，待下方 3D 展示櫃微轉並完全靜止歸位 (1800ms) 後，於 1950ms 啟動外星解碼
             renderStringToPanel(STATE_FAN);
-            setTimeout(() => triggerPredatorDecode(STATE_WELCOME), 1500);
+            setTimeout(() => triggerPredatorDecode(STATE_WELCOME), 1950);
 
             titlePanel.addEventListener('click', () => {
                 const nextState = (currentTitleState === STATE_WELCOME) ? STATE_FAN : STATE_WELCOME;
@@ -919,17 +919,18 @@
                 updateCarouselTransform(true);
             }
 
+            // 優化 1A & 3：600ms 開始微轉、1200ms 拉回、1800ms 完全靜止；並傳入 false 避免無謂重繪 11 張子卡片 DOM
             function playIntroNudge() {
                 setTimeout(() => {
                     if(isDragging) return; 
                     currentAngle = -22;
-                    updateCarouselTransform(true);
+                    updateCarouselTransform(false);
                     setTimeout(() => {
                         if(isDragging) return;
                         currentAngle = 0;
-                        updateCarouselTransform(true);
+                        updateCarouselTransform(false);
                     }, 600);
-                }, 800);
+                }, 600);
             }
 
             // --- 觸控與拖曳控制 ---

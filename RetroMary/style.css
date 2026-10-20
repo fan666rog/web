@@ -1,61 +1,425 @@
-/* 基本設定 */
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #1a1a1a; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 10px; box-sizing: border-box; }
-#game-machine { background: linear-gradient(180deg, #004d00, #003300); border: 5px solid #333; box-shadow: 0 0 20px rgba(0,0,0,0.7), inset 0 0 15px rgba(255,255,255,0.1); border-radius: 20px; padding: 15px; width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; }
-.machine-header { color: #ffd700; font-size: 24px; font-weight: bold; text-align: center; text-shadow: 2px 2px 4px #000; }
-.display-panel { background-color: #2c2c2c; border: 2px solid #555; border-radius: 10px; padding: 10px; display: flex; justify-content: space-around; gap: 10px; }
-.display-box { text-align: center; width: 45%; }
-.display-box label { color: #fff; font-weight: bold; font-size: 16px; }
-.seven-segment { background-color: #000; color: #ff4141; font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: bold; padding: 5px; border-radius: 5px; letter-spacing: 2px; text-shadow: 0 0 5px #ff4141; }
-#main-board-container { background-color: #a52a2a; border: 4px solid #6b2020; padding: 10px; border-radius: 5px; }
-#main-board { display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(7, 1fr); gap: 5px; background-color: #000; padding: 5px; }
-.track-item { background-color: #f0f0f0; border: 2px solid #555; border-radius: 4px; display: flex; flex-direction: column; justify-content: center; align-items: center; aspect-ratio: 1 / 1; font-size: clamp(16px, 3vw, 20px); font-weight: bold; position: relative; transition: all 0.05s; }
-.track-item.active { background-color: #ffd700; box-shadow: 0 0 15px 5px #ffc400; transform: scale(1.1); z-index: 10; }
-#center-art { grid-column: 2 / 7; grid-row: 2 / 7; background: linear-gradient(135deg, #4169e1, #1e90ff); border-radius: 10px; border: 2px solid #fff; display: flex; justify-content: center; align-items: center; }
-.art-content { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.digits-container { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 4px 0; }
-.jp-text { color: #ff0000; font-size: 24px; font-weight: bold; -webkit-text-stroke: 1px yellow; text-shadow: 2px 2px 2px #000; }
-.seven-segment.small { font-size: 20px; padding: 2px 5px; margin: 0; display: inline-block; }
-.blue-digit { color: #00bfff; text-shadow: 0 0 5px #00bfff; }
-.characters { font-size: 28px; }
-#betting-area { display: flex; flex-wrap: nowrap; justify-content: center; gap: 5px; padding: 8px; }
-.bet-item { background: linear-gradient(180deg, #666, #444); border: 2px solid #888; border-radius: 8px; color: white; padding: 5px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; flex: 1; min-width: 40px; }
-.bet-icon { font-size: clamp(18px, 4vw, 22px); margin: 2px 0; }
-.bet-payout { font-size: clamp(10px, 2.5vw, 12px); font-weight: bold; color: #ffc400; background-color: rgba(0,0,0,0.3); padding: 0 4px; border-radius: 4px; margin-bottom: 2px; }
-.bet-amount { background-color: #000; color: #00ff00; font-family: 'Courier New', Courier, monospace; font-weight: bold; font-size: clamp(16px, 3.5vw, 18px); width: 100%; text-align: center; padding: 2px 0; border-radius: 3px; border: 1px solid #333; }
-.bet-button { background: linear-gradient(180deg, #888, #666); border: 1px solid #aaa; color: #fff; border-radius: 4px; cursor: pointer; font-size: 10px; line-height: 1; padding: 2px 6px; width: 80%; }
-.bet-button:active { background: linear-gradient(180deg, #666, #555); }
-#control-panel { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; align-items: center; }
-.ctrl-button { border: none; border-radius: 8px; padding: 12px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; box-shadow: 0 4px rgba(0,0,0,0.4); transition: all 0.1s ease; border-bottom: 4px solid rgba(0,0,0,0.4); width: auto; min-height: 50px; display: flex; justify-content: center; align-items: center; }
-.ctrl-button:active { transform: translateY(2px); box-shadow: 0 2px #666; }
-.ctrl-button:disabled { opacity: 0.6; cursor: not-allowed; }
-.ctrl-button.green { background-color: #228b22; }
-.ctrl-button.yellow { background-color: #daa520; }
-.ctrl-button.blue { background-color: #1e90ff; }
-.ctrl-button.red { background-color: #d2691e; }
-#start-button { background-color: #dc143c; border-radius: 50%; width: 60px; height: 60px; padding: 0; flex-shrink: 0; justify-self: center; }
-#message-bar { background-color: #000; color: #ffff00; text-align: center; padding: 8px; border-radius: 5px; font-weight: bold; min-height: 24px; }
-.help-button { background-color: #6c757d; color: white; border: none; border-radius: 5px; padding: 8px 12px; margin-top: 10px; width: 100%; cursor: pointer; font-size: 16px; }
-.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); justify-content: center; align-items: center; z-index: 1000; }
-.modal-content { background: #f0e68c; color: #333; padding: 20px 30px; border-radius: 15px; border: 5px solid #8b4513; max-width: 90%; width: 450px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-.modal-content h2 { text-align: center; margin-top: 0; color: #a52a2a; }
-.modal-content h3 { border-bottom: 2px solid #d2b48c; padding-bottom: 5px; margin-top: 20px; color: #8b4513; }
-.modal-content p, .modal-content li { line-height: 1.6; }
-.close-button { position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; color: #8b4513; background: none; border: none; cursor: pointer; }
-
-/* --- 修改重點：新增版權宣告樣式 --- */
-.copyright {
-    text-align: center;
-    margin-top: 15px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.7);
+/* 基本與防誤觸設定 */
+* {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
 }
-.copyright a {
-    color: inherit; /* 繼承父元素的顏色 */
-    text-decoration: none; /* 移除底線 */
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #121212;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 8px;
+}
+
+#game-machine {
+    background: linear-gradient(180deg, #004d00, #002600);
+    border: 4px solid #3a3a3a;
+    box-shadow: 0 0 25px rgba(0,0,0,0.9), inset 0 0 15px rgba(255,255,255,0.1);
+    border-radius: 18px;
+    padding: 12px;
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* 頂部標題與小按鈕列 */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px;
+}
+
+.machine-header {
+    color: #ffd700;
+    font-size: clamp(16px, 4.5vw, 20px);
+    font-weight: 900;
+    text-align: center;
+    text-shadow: 2px 2px 4px #000;
+    white-space: nowrap;
+}
+
+.mini-btn {
+    background: #333;
+    color: #fff;
+    border: 1px solid #666;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.mini-btn:active { background: #555; }
+
+/* 數位顯示面板 */
+.display-panel {
+    background-color: #242424;
+    border: 2px solid #555;
+    border-radius: 10px;
+    padding: 8px;
+    display: flex;
+    justify-content: space-around;
+    gap: 8px;
+}
+
+.display-box {
+    text-align: center;
+    width: 48%;
+}
+
+.display-box label {
+    color: #ccc;
+    font-weight: bold;
+    font-size: 12px;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.seven-segment {
+    background-color: #000;
+    color: #ff3b3b;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: clamp(22px, 6vw, 28px);
+    font-weight: bold;
+    padding: 4px;
+    border-radius: 5px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 6px #ff3b3b;
+    border: 1px solid #333;
+}
+
+/* 主跑道盤面 */
+#main-board-container {
+    background-color: #8b1e1e;
+    border: 3px solid #5a1212;
+    padding: 6px;
+    border-radius: 8px;
+}
+
+#main-board {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(7, 1fr);
+    gap: 4px;
+    background-color: #000;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.track-item {
+    background-color: #f5f5f5;
+    border: 2px solid #555;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    aspect-ratio: 1 / 1;
+    font-size: clamp(14px, 4.2vw, 20px);
+    font-weight: 900;
+    position: relative;
+    transition: transform 0.05s, background-color 0.05s;
+}
+
+.track-item .mini-odds {
+    font-size: 9px;
+    color: #444;
+    line-height: 1;
+    margin-top: -2px;
+}
+
+/* 跑燈高亮與多燈特效 */
+.track-item.active {
+    background-color: #ffd700;
+    border-color: #fff;
+    box-shadow: 0 0 14px 4px #ffae00;
+    transform: scale(1.08);
+    z-index: 10;
+}
+
+.track-item.bonus-hit {
+    background-color: #00ffff;
+    border-color: #fff;
+    box-shadow: 0 0 15px 5px #00bfff;
+    transform: scale(1.08);
+    z-index: 11;
+}
+
+/* 中央藝術區 */
+#center-art {
+    grid-column: 2 / 7;
+    grid-row: 2 / 7;
+    background: radial-gradient(circle, #1e5799 0%, #0a2342 100%);
+    border-radius: 8px;
+    border: 2px solid #ffd700;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 6px;
+}
+
+.art-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+}
+
+.jp-title {
+    color: #ffd700;
+    font-size: clamp(13px, 3.8vw, 17px);
+    font-weight: bold;
+    text-shadow: 1px 1px 3px #000;
+}
+
+.digits-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+}
+
+.digit-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #fff;
+    font-size: 11px;
+    gap: 2px;
+}
+
+.seven-segment.small {
+    font-size: clamp(18px, 5vw, 22px);
+    padding: 2px 10px;
+}
+
+.blue-digit {
+    color: #00e5ff;
+    text-shadow: 0 0 6px #00e5ff;
+}
+
+.bonus-lamp {
+    background: rgba(0, 0, 0, 0.5);
+    color: #aaa;
+    font-size: clamp(11px, 3vw, 13px);
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid #444;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.bonus-lamp.active {
+    background: #ff0044;
+    color: #fff;
+    border-color: #ffff00;
+    box-shadow: 0 0 12px #ff0044;
+    animation: blink 0.4s infinite alternate;
+}
+
+@keyframes blink {
+    from { transform: scale(1); }
+    to { transform: scale(1.06); }
+}
+
+/* 訊息提示列 */
+#message-bar {
+    background-color: #000;
+    color: #ffff00;
+    text-align: center;
+    padding: 7px 6px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: clamp(12px, 3.5vw, 14px);
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #444;
+}
+
+/* 押分區：採用 4x2 網格，徹底解決手機版左右裁切問題 */
+#betting-area {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    padding: 8px;
+}
+
+.bet-item {
+    background: linear-gradient(180deg, #505050, #333333);
+    border: 2px solid #777;
+    border-radius: 8px;
+    color: white;
+    padding: 6px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.05s, border-color 0.1s;
+}
+
+.bet-item:active {
+    transform: scale(0.95);
+}
+
+.bet-item.has-bet {
+    border-color: #ffd700;
+    background: linear-gradient(180deg, #5a4b1c, #332a0d);
+}
+
+.bet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 4px;
+}
+
+.bet-icon {
+    font-size: clamp(18px, 5vw, 22px);
+}
+
+.bet-payout {
+    font-size: 11px;
+    font-weight: bold;
+    color: #ffd700;
+    background-color: rgba(0,0,0,0.45);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+.bet-amount {
+    background-color: #000;
+    color: #00ff00;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    font-size: clamp(16px, 4.5vw, 19px);
+    width: 100%;
+    text-align: center;
+    padding: 2px 0;
+    margin-top: 4px;
+    border-radius: 4px;
+    border: 1px solid #333;
+}
+
+/* 控制按鈕區：修復「6-9 大」換行與凸出問題 */
+#control-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto 1fr 1fr;
+    gap: 6px;
+    align-items: center;
+}
+
+.ctrl-button {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 4px;
+    font-size: clamp(13px, 3.6vw, 15px);
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px rgba(0,0,0,0.5);
+    transition: all 0.1s ease;
+    border-bottom: 3px solid rgba(0,0,0,0.4);
+    height: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    white-space: nowrap; /* 強制不換行 */
+}
+
+.ctrl-button:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 2px rgba(0,0,0,0.5);
+}
+
+.ctrl-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.ctrl-button.green { background-color: #2e8b57; }
+.ctrl-button.yellow { background-color: #d49b00; }
+.ctrl-button.blue { background-color: #1e78ff; }
+.ctrl-button.red { background-color: #d9531e; }
+
+#start-button {
+    background: radial-gradient(circle at 30% 30%, #ff3b56, #b8001f);
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    font-size: 16px;
+    border: 2px solid #ff99a8;
+    justify-self: center;
+}
+
+.help-button {
+    background-color: #495057;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px;
+    width: 100%;
+    cursor: pointer;
+    font-size: 14px;
     font-weight: bold;
 }
-.copyright a:hover {
-    text-decoration: underline; /* 滑鼠懸停時顯示底線 */
+
+/* 彈窗樣式 */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 15px;
 }
+
+.modal-content {
+    background: #fff8dc;
+    color: #222;
+    padding: 20px;
+    border-radius: 14px;
+    border: 4px solid #8b4513;
+    max-width: 440px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+    font-size: 14px;
+}
+
+.modal-content h2 { text-align: center; margin-top: 0; color: #a52a2a; }
+.modal-content h3 { border-bottom: 2px solid #d2b48c; padding-bottom: 4px; margin-top: 15px; color: #8b4513; }
+.modal-content ul { padding-left: 20px; line-height: 1.6; }
+.close-button {
+    position: absolute; top: 10px; right: 14px;
+    font-size: 26px; font-weight: bold; color: #8b4513;
+    background: none; border: none; cursor: pointer;
+}
+
+.copyright {
+    text-align: center;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.65);
+}
+.copyright a { color: #ffd700; text-decoration: none; font-weight: bold; }

@@ -1,51 +1,146 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
-    font-family: sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: #f0f0f0;
+    margin: 0;
+    background-color: #f0f2f5;
 }
 
 .keyboard-container {
-    background-color: #ddd;
-    padding: 10px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background-color: #d8dce3;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
     width: fit-content;
+    margin-bottom: 20px;
 }
 
+/* 頂部控制與狀態面板 */
+.top-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.controls-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+#layout-select, .action-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+    border: 1px solid #b0b8c4;
+    border-radius: 6px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.action-btn:hover {
+    background-color: #e9ecef;
+}
+
+.primary-btn {
+    background-color: #2563eb;
+    color: #fff;
+    border-color: #1d4ed8;
+}
+
+.primary-btn:hover {
+    background-color: #1d4ed8;
+}
+
+.status-panel {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    background-color: #cbd2d9;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #1f2937;
+}
+
+.status-item span {
+    font-weight: bold;
+    font-family: monospace;
+    background: #fff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+}
+
+.ime-warning {
+    width: 100%;
+    text-align: center;
+    background-color: #fef3c7;
+    color: #b45309;
+    border: 1px solid #f59e0b;
+    padding: 6px;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* 注意事項區塊 */
+.notice-content {
+    background-color: #fff;
+    border: 1px solid #cbd2d9;
+    border-radius: 8px;
+    padding: 12px 18px;
+    text-align: left;
+    font-size: 13px;
+    color: #374151;
+    margin-bottom: 14px;
+    max-width: 960px;
+    line-height: 1.6;
+}
+
+.notice-content ul {
+    margin: 6px 0 0 0;
+    padding-left: 20px;
+}
+
+/* 鍵盤主區域 */
 .keyboard {
     display: flex;
-    /* flex-direction: row;  不需要显式声明，默认就是 row */
-    gap: 3px; /* 控制按键之间的基本间距 */
-    align-items: flex-end; /* 关键：使所有子元素底部对齐 */
+    gap: 3px;
+    align-items: flex-end;
 }
 
 .left-section,
-.right-section {
-    display: flex;
-    flex-direction: column;
-}
-
-/* 右侧区域 */
-.right-section {
-    margin-left: 10px; /* 与左侧区域的间距 */
-}
-
-/* 数字小键盘区域 */
-.numpad-section {
-    display: flex;
-    flex-direction: column;
-    margin-left: 10px; /* 与左侧区域的间距 */
-}
-
-/* 数字小键盘侧边区域 */
+.right-section,
+.numpad-section,
 .numpad-side-section {
     display: flex;
     flex-direction: column;
-    margin-left: 0px;/*間距*/
-    gap: 3px; /* 新增：设置垂直间距 */
+}
+
+.right-section,
+.numpad-section {
+    margin-left: 10px;
+}
+
+.numpad-side-section {
+    margin-left: 0;
+    gap: 3px;
 }
 
 .row {
@@ -53,73 +148,78 @@ body {
     margin-bottom: 3px;
 }
 
-.top-row-left {
-    display: flex;
-    gap: 5px;
+.row > * {
+    margin-right: 3px;
+}
+
+.row > *:last-child {
+    margin-right: 0;
 }
 
 .f-key-group {
     display: flex;
-    gap: 5px; /* F 键组内间距 */
+    gap: 5px;
 }
 
+/* 按鍵基礎樣式 */
 .key {
     width: 45px;
     height: 45px;
-    background-color: #fff;
-    border: 1px solid #ccc;
+    background-color: #ffffff;
+    border: 1px solid #b8c0cc;
+    border-bottom: 3px solid #9aa5b4;
     border-radius: 5px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 14px;
-    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1f2937;
     user-select: none;
-    margin-right: 3px; /* 按键右边距 */
+    transition: transform 0.05s, background-color 0.1s;
 }
 
-/* 特殊按键尺寸 */
-.tab                  { width: calc(45px * 1.66); }
-.capslock             { width: calc(45px * 2.11); }
-.shift[data-key="ShiftLeft"]  { width: calc(45px * 2.44); }
-.shift[data-key="ShiftRight"] { width: calc(45px * 2.95); }
-.enter                { width: calc(45px * 2.18); }
-.backslash            { width: calc(45px * 1.53); }
-.backspace            { width: calc(45px * 2.17); }
-.space                { width: calc(45px * 7.50); }
-.ctrl, .MetaLeft, .MetaRight  { width: calc(45px * 1.89); }
-.alt                  { width: calc(45px * 1.33); }
-
-/* "+" 键的特殊高度 */
-.numpad-side-section .key[data-key="NumpadAdd"] {
-    height: calc(2 * 45px + 5px); /* 两个按键高度 + 一个间距 */
+/* 狀態 1：已測試過（綠色記憶標記） */
+.key.tested {
+    background-color: #dcfce7;
+    border-color: #4ade80;
+    border-bottom-color: #22c55e;
+    color: #166534;
 }
 
-/* "Enter" 键的特殊高度 */
-.numpad-side-section .numpad-enter {
-    height: calc(2 * 45px + 5px); /* 两个按键高度 + 一个间距 */
-    margin-bottom: 3px; /* 或您需要的间距值 */
-}
-
-
-/* 按下效果 */
+/* 狀態 2：正在按住（藍色即時觸發，優先權高於 tested） */
 .key.pressed {
-    background-color: #aaa;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    background-color: #3b82f6 !important;
+    border-color: #2563eb !important;
+    border-bottom-width: 1px !important;
+    color: #ffffff !important;
     transform: translateY(2px);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
 }
 
-/* 禁用的样式 */
+/* 狀態 3：87 鍵禁用狀態 */
 .key.disabled {
-    background-color: #ccc;
-    color: #888;
-    cursor: not-allowed;
+    background-color: #e5e7eb !important;
+    border-color: #d1d5db !important;
+    color: #9ca3af !important;
     pointer-events: none;
-    /* 阻止鼠标事件 */
-    border-color: #999;
 }
 
-/* 方向键 */
+/* 特殊按鍵尺寸調整 */
+.key[data-key="Escape"]          { margin-right: 51px; }
+.tab                             { width: calc(45px * 1.66); }
+.backslash                       { width: calc(45px * 1.53); }
+.capslock                        { width: calc(45px * 2.11); }
+.enter                           { width: calc(45px * 2.18); }
+.backspace                       { width: calc(45px * 2.17); }
+.shift[data-key="ShiftLeft"]     { width: calc(45px * 2.44); }
+.shift[data-key="ShiftRight"]    { width: calc(45px * 2.95); }
+
+/* 底排按鍵比例 (Ctrl / Win / Alt / Space / Menu) */
+.ctrl, .win, .alt, .menu         { width: calc(45px * 1.32); }
+.space                           { width: calc(45px * 6.55); }
+
+/* 方向鍵與編輯區 */
 .arrow-keys-container {
     display: flex;
     flex-direction: column;
@@ -132,207 +232,33 @@ body {
 
 .arrow-keys-row {
     margin-top: auto;
-    /* 方向键推到最下 */
 }
 
-.arrow-keys-container>.key[data-key="ArrowUp"] {
+.arrow-keys-container > .key[data-key="ArrowUp"] {
     margin-bottom: 3px;
 }
 
-/* Esc 键 */
-.key[data-key="Escape"] {
-    margin-right: 51px;
-    /* Esc 与 F1 间距 */
-}
-
-/* NumLock 键 */
-.key[data-key="NumLock"] {
-    margin-right: 3px;
-}
-
-/* 通用间距 */
-.row>* {
-    margin-right: 3px;
-}
-
-.row>*:last-child {
-    margin-right: 0;
-}
-
-/* 模式选择器样式 */
-.mode-selector {
-    margin-bottom: 10px;
-    /* 与键盘的间距 */
-    text-align: center;
-    /* 文本居中 */
-}
-
-/* 数字键区域 */
-.numpad-section .key {
-    width: 45px;
-    /* 统一数字键的宽度 */
-    height: 45px;
-    /* 统一数字键的高度 */
-}
-
-/* 數字鍵右邊區塊 */
-.numpad-side-section .key {
-    width: 45px;
-    /* 统一数字键的宽度 */
-    /*height: 45px;  不再需要單獨設置*/
-    /* 统一数字键的高度 */
-}
-
+/* 數字小鍵盤區 */
 .numpad-section .numpad-zero {
-    width: 95px;
-    /* 0 鍵寬度 */
+    width: 93px;
+}
+
+.numpad-side-section .key[data-key="NumpadAdd"],
+.numpad-side-section .numpad-enter {
+    height: calc(2 * 45px + 3px);
+}
+
+.numpad-side-section .numpad-enter {
+    margin-bottom: 3px;
 }
 
 .invisible-key {
     visibility: hidden;
 }
 
-/* 响应式调整 */
-@media (max-width: 768px) {
-    .key {
-        width: 35px;
-        height: 35px;
-        font-size: 12px;
-    }
-
-    /* 特殊按键尺寸 (响应式) */
-    .tab                  { width: calc(35px * 1.66); }
-    .capslock             { width: calc(35px * 2.11); }
-    .shift[data-key="ShiftLeft"]  { width: calc(35px * 2.44); }
-    .shift[data-key="ShiftRight"] { width: calc(35px * 2.95); }
-    .enter                { width: calc(35px * 2.18); }
-    .backslash            { width: calc(35px * 1.53); }
-    .backspace            { width: calc(35px * 2.17); }
-    .space                { width: calc(35px * 7.50); }
-    .ctrl, .MetaLeft, .MetaRight  { width: calc(35px * 1.89); }
-    .alt                  { width: calc(35px * 1.34); }
-
-    /* Esc 键 (响应式) */
-    .key[data-key="Escape"] {
-        margin-right: 40px;
-    }
-
-    /* NumLock 键 (响应式) */
-    .key[data-key="NumLock"] {
-        margin-right: 2px;
-    }
-
-    /* 通用间距 (响应式) */
-    .row > * {
-        margin-right: 2px;
-    }
-    .row > *:last-child {
-        margin-right: 0;
-    }
-
-    .f-key-group {
-        gap: 3px; /* 减小组内间距 */
-    }
-    .top-row-left{
-        gap: 3px;
-    }
-
-     /* 数字键区域 (响应式) */
-    .numpad-section .key {
-        width: 35px;
-        /* 统一数字键的宽度 */
-        height: 35px;
-        /* 统一数字键的高度 */
-    }
-
-    /* 數字鍵右邊區塊 (响应式) */
-    .numpad-side-section .key{
-        width: 35px;
-        /* 统一数字键的宽度 */
-        /*height: 35px;  不再需要*/
-        /* 统一数字键的高度 */
-    }
-
-    .numpad-section .numpad-zero {
-        width: 75px;
-        /* 0 鍵寬度 */
-    }
-
-    /* "+" 键的特殊高度 */
-    .numpad-side-section .key[data-key="NumpadAdd"] {
-        height: calc(2 * 45px + 5px); /* 两个按键高度 + 一个间距 */
-    }
-
-    /* "Enter" 键的特殊高度 */
-    .numpad-side-section .numpad-enter {
-        height: calc(2 * 45px + 5px); /* 两个按键高度 + 一个间距 */
-        margin-bottom: 3px; /* 或您需要的间距值 */
-    }
-}
-/* === 新增：注意事項樣式 === */
-.notice-section {
-    margin-top: 10px; /* 與上方間距 */
-    margin-bottom: 15px; /* 與下方鍵盤間距 */
-    text-align: center;
-}
-
-.notice-toggle-btn {
-    padding: 5px 10px;
-    cursor: pointer;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #e9e9e9;
-    margin-bottom: 5px;
-}
-
-.notice-content {
-    background-color: #eee;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 10px;
-    text-align: left;
-    font-size: 13px;
-    color: #333;
-    margin-top: 5px;
-    /* 以下為控制顯示/隱藏 */
-    display: block; /* 預設顯示，讓JS控制 */
-}
-
-.notice-content.hidden {
-    display: none;
-}
-/* === /新增：注意事項樣式 === */
-
-
-/* === 新增：版權宣告樣式 === */
 footer {
-    margin-top: 30px; /* 與鍵盤容器的間距 */
     padding: 10px;
     text-align: center;
-    font-size: 0.8em;
-    color: #666;
-}
-/* === /新增：版權宣告樣式 === */
-
-/* 調整 body 以容納 footer */
-body {
-    display: flex;
-    flex-direction: column; /* 讓 footer 能在 container 下方 */
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    /* 其他 body 樣式保持不變 */
-    font-family: sans-serif;
-    background-color: #f0f0f0;
-}
-
-/* 可能需要調整 keyboard-container 的下邊距 */
-.keyboard-container {
-    margin-bottom: 20px; /* 為 footer 留出空間 */
-     /* 其他 keyboard-container 樣式保持不變 */
-    background-color: #ddd;
-    padding: 10px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    width: fit-content;
+    font-size: 0.85em;
+    color: #6b7280;
 }

@@ -1,7 +1,9 @@
 這是一個清除華碩AC軟體產生的LOG日誌bat
 
 由Gemini4 Argon編寫，我提供遇到的資料夾和規則給他
-主要是清理這裡面的log
+主要是清理這裡面C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis的log
+程式點擊執行時，會先進行提權，不然無法清理系統資料夾的檔案
+會先掃描檔案，顯示給你看之後，經過你的同意，才會進行清理刪除
 
 目前規則一 Gamefirst資料夾，裡面log全清後，開機會自動生成今日新的log，算是安全過關
 其餘資料夾和規則制定中

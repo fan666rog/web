@@ -1,7 +1,7 @@
 <# :
 @echo off
 chcp 65001 >nul
-title AC日誌LOG清理工具20261110
+title AC日誌LOG清理工具
 
 :: 檢查是否具備系統管理員權限，若無則自動申請提權
 net session >nul 2>&1
@@ -21,22 +21,30 @@ exit /b
 # 【規則參數說明】
 #   Name       : 顯示在畫面上的規則名稱
 #   Path       : 資料夾完整路徑
-#   KeepDays   : 保留近幾天的日誌 (設為 0 代表全部清空；設為 3 代表保留近 3 天)
-#   Extensions : 要清理的副檔名 (例如 @(".log") 或 @(".log", ".txt"))
-#   Recurse    : 是否連同內部的子資料夾一起清理 ($true = 是, $false = 否)
+#   KeepDays   : 保留最新的幾個「有紀錄的日期(開機日)」(0 = 全部清空；3 = 保留最新 3 個日期的檔案)
+#   Filter     : 檔名過濾規則 (預設 "*.log" 代表所有 log 檔；也可指定如 "ROGLiveService_*.log")
+#   Recurse    : 是否連同內部的子資料夾一起掃描 ($true = 是, $false = 否)
 # ==============================================================================
 
-$Rules = @(
-    # --- 規則 1：GameFirst (全清 .log) ---
-    @{
-        Name       = "GameFirst 日誌"
-        Path       = "C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\GameFirst"
-        KeepDays   = 0
-        Extensions = @(".log")
-        Recurse    = $true
-    }
+$BasePath = "C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis"
 
-    # --- 之後要新增其他 AC 資料夾，請直接往下複製貼上區塊 ---
+$Rules = @(
+    # --- 1. 全部清空區 ---
+    @{ Name = "GameFirst";         Path = "$BasePath\GameFirst";         KeepDays = 0; Filter = "*.log"; Recurse = $true  },
+
+    # --- 2. 保留最新 3 個開機日區 ---
+    @{ Name = "AacAIOFanSetup";    Path = "$BasePath\AacAIOFanSetup";    KeepDays = 3; Filter = "*.log"; Recurse = $false },
+    @{ Name = "AacKBSetup";        Path = "$BasePath\AacKBSetup";        KeepDays = 3; Filter = "*.log"; Recurse = $false },
+    @{ Name = "AacMouseSetup";     Path = "$BasePath\AacMouseSetup";     KeepDays = 3; Filter = "*.log"; Recurse = $false },
+    @{ Name = "AcNodeAddon";       Path = "$BasePath\AcNodeAddon";       KeepDays = 3; Filter = "*.log"; Recurse = $false },
+    @{ Name = "AIOFanSDK";         Path = "$BasePath\AIOFanSDK";         KeepDays = 3; Filter = "*.log"; Recurse = $false },
+    @{ Name = "AppLog";            Path = "$BasePath\AppLog";            KeepDays = 3; Filter = "*.log"; Recurse = $false },
+    @{ Name = "KeyboardSDK";       Path = "$BasePath\KeyboardSDK";       KeepDays = 3; Filter = "*.log"; Recurse = $false },
+    @{ Name = "MouseSDK";          Path = "$BasePath\MouseSDK";          KeepDays = 3; Filter = "*.log"; Recurse = $false },
+    @{ Name = "ROG Live Service";  Path = "$BasePath\ROG Live Service";  KeepDays = 3; Filter = "ROGLiveService_*.log"; Recurse = $false },
+    @{ Name = "UnifyScanner";      Path = "$BasePath\UnifyScanner";      KeepDays = 3; Filter = "*.log"; Recurse = $false }
+
+    # --- 之後要新增其他 AC 資料夾，請直接往下複製貼上 ---
 )
 
 # ==============================================================================
@@ -49,76 +57,75 @@ Write-Host "                     AC日誌LOG清理工具                    " -F
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host ""
 
-$Today = (Get-Date).Date
 $FilesToDelete = New-Object System.Collections.Generic.List[System.IO.FileInfo]
 $RuleIndex = 0
 
+# 輔助函式：取得檔案對應的日期字串 (優先解析檔名中的 YYYY-MM-DD，若無則取檔案修改日期)
+function Get-FileLogDate ($File) {
+    if ($File.BaseName -match '(\d{4}-\d{2}-\d{2})') {
+        return $matches[1]
+    }
+    return $File.LastWriteTime.ToString('yyyy-MM-dd')
+}
+
 foreach ($Rule in $Rules) {
     $RuleIndex++
-    $KeepText = if ($Rule.KeepDays -le 0) { "全部清空" } else { "保留近 $($Rule.KeepDays) 天" }
-    Write-Host "[規則 $RuleIndex] $($Rule.Name) ($KeepText)" -ForegroundColor Yellow
+    $KeepText = if ($Rule.KeepDays -le 0) { "全部清空" } else { "保留最新 $($Rule.KeepDays) 個紀錄日" }
+    Write-Host "[規則 $RuleIndex] $($Rule.Name) ($KeepText | 目標: $($Rule.Filter))" -ForegroundColor Yellow
     Write-Host "  路徑: $($Rule.Path)" -ForegroundColor DarkGray
 
     if (-not (Test-Path -LiteralPath $Rule.Path)) {
-        Write-Host "  -> 找不到此資料夾，自動略過。" -ForegroundColor DarkGray
+        Write-Host "  -> 電腦無此資料夾，自動略過。" -ForegroundColor DarkGray
         Write-Host ""
         continue
     }
 
     # 取得符合條件之檔案
     if ($Rule.Recurse) {
-        $Files = Get-ChildItem -LiteralPath $Rule.Path -File -Recurse -ErrorAction SilentlyContinue
+        $Files = Get-ChildItem -Path $Rule.Path -Filter $Rule.Filter -File -Recurse -ErrorAction SilentlyContinue
     } else {
-        $Files = Get-ChildItem -LiteralPath $Rule.Path -File -ErrorAction SilentlyContinue
+        $Files = Get-ChildItem -Path $Rule.Path -Filter $Rule.Filter -File -ErrorAction SilentlyContinue
+    }
+
+    if (-not $Files -or $Files.Count -eq 0) {
+        Write-Host "  -> 資料夾內無符合條件之日誌檔。" -ForegroundColor Green
+        Write-Host ""
+        continue
+    }
+
+    # 為每個檔案標記所屬日期
+    $FileEntries = foreach ($File in $Files) {
+        [PSCustomObject]@{
+            File    = $File
+            DateStr = Get-FileLogDate $File
+        }
+    }
+
+    # 判斷哪些檔案需要刪除
+    if ($Rule.KeepDays -le 0) {
+        $TargetEntries = $FileEntries
+    } else {
+        # 取出所有不重複的日期，由新到舊排序，挑出要保留的前 N 個最新日期
+        $UniqueDates = $FileEntries | Select-Object -ExpandProperty DateStr -Unique | Sort-Object -Descending
+        $KeepDates = $UniqueDates | Select-Object -First $Rule.KeepDays
+
+        if ($KeepDates.Count -gt 0) {
+            Write-Host "  -> 系統保留日期: $($KeepDates -join ', ')" -ForegroundColor DarkCyan
+        }
+
+        $TargetEntries = $FileEntries | Where-Object { $KeepDates -notcontains $_.DateStr }
     }
 
     $MatchedCount = 0
-    foreach ($File in $Files) {
-        # 1. 檢查副檔名是否符合 (不分大小寫)
-        if ($Rule.Extensions -notcontains $File.Extension.ToLower()) {
-            continue
-        }
-
-        # 2. 檢查保留天數
-        $ShouldDelete = $false
-        $DateInfoText = ""
-
-        if ($Rule.KeepDays -le 0) {
-            $ShouldDelete = $true
-            $DateInfoText = $File.LastWriteTime.ToString("yyyy-MM-dd")
-        } else {
-            $CutoffDate = $Today.AddDays(-$Rule.KeepDays)
-            $FileDate = $null
-
-            # 優先從檔名抓取 YYYY-MM-DD 日期 (例如 ArmouryCrate.Service_2026-11-10_01.log)
-            if ($File.BaseName -match '(\d{4}-\d{2}-\d{2})') {
-                try {
-                    $FileDate = [datetime]::ParseExact($matches[1], 'yyyy-MM-dd', $null)
-                    $DateInfoText = "檔名日期: $($matches[1])"
-                } catch {
-                    $FileDate = $File.LastWriteTime.Date
-                    $DateInfoText = "修改日期: $($File.LastWriteTime.ToString('yyyy-MM-dd'))"
-                }
-            } else {
-                $FileDate = $File.LastWriteTime.Date
-                $DateInfoText = "修改日期: $($File.LastWriteTime.ToString('yyyy-MM-dd'))"
-            }
-
-            if ($FileDate -lt $CutoffDate) {
-                $ShouldDelete = $true
-            }
-        }
-
-        if ($ShouldDelete) {
-            $FilesToDelete.Add($File)
-            $MatchedCount++
-            $SizeKB = "{0:N1} KB" -f ($File.Length / 1KB)
-            Write-Host "  -> 發現: $($File.Name) ($SizeKB | $DateInfoText)" -ForegroundColor Gray
-        }
+    foreach ($Entry in $TargetEntries) {
+        $FilesToDelete.Add($Entry.File)
+        $MatchedCount++
+        $SizeKB = "{0:N1} KB" -f ($Entry.File.Length / 1KB)
+        Write-Host "  -> 待刪舊檔: $($Entry.File.Name) ($SizeKB | 日期: $($Entry.DateStr))" -ForegroundColor Gray
     }
 
     if ($MatchedCount -eq 0) {
-        Write-Host "  -> 無符合條件之舊日誌。" -ForegroundColor Green
+        Write-Host "  -> 目前無超過保留範圍之舊日誌。" -ForegroundColor Green
     }
     Write-Host ""
 }
@@ -126,7 +133,7 @@ foreach ($Rule in $Rules) {
 Write-Host "----------------------------------------------------------" -ForegroundColor Cyan
 
 if ($FilesToDelete.Count -eq 0) {
-    Write-Host "掃描完成！目前沒有任何需要清理的日誌檔案。" -ForegroundColor Green
+    Write-Host "掃描完成！目前沒有任何需要清理的舊日誌檔案。" -ForegroundColor Green
     Write-Host ""
     Read-Host "請按 Enter 鍵結束程式"
     exit
@@ -137,10 +144,10 @@ $TotalMB = "{0:N2} MB" -f ($TotalBytes / 1MB)
 $TotalKB = "{0:N1} KB" -f ($TotalBytes / 1KB)
 $SizeDisplay = if ($TotalBytes -ge 1MB) { $TotalMB } else { $TotalKB }
 
-Write-Host "掃描完成！共找到 $($FilesToDelete.Count) 個日誌檔案，預計可釋放 $SizeDisplay 空間。" -ForegroundColor White
+Write-Host "掃描完成！共找到 $($FilesToDelete.Count) 個舊日誌檔案，預計可釋放 $SizeDisplay 空間。" -ForegroundColor White
 Write-Host "----------------------------------------------------------" -ForegroundColor Cyan
 
-$Confirm = Read-Host "請確認以上清單，是否要永久刪除這些檔案？ (輸入 Y 確認刪除 / 其他鍵取消)"
+$Confirm = Read-Host "請確認以上清單，是否要永久刪除這些舊檔案？ (輸入 Y 確認刪除 / 其他鍵取消)"
 if ($Confirm -notmatch '^[Yy]$') {
     Write-Host ""
     Write-Host "已取消刪除作業，未更動任何檔案。" -ForegroundColor Yellow
@@ -164,7 +171,7 @@ foreach ($File in $FilesToDelete) {
         $DeletedCount++
         $FreedBytes += $FileSize
     } catch {
-        Write-Host "  [略過 - 檔案正被系統或背景服務使用中] $($File.Name)" -ForegroundColor Yellow
+        Write-Host "  [略過 - 檔案正被背景服務使用中] $($File.Name)" -ForegroundColor Yellow
         $SkippedCount++
     }
 }
@@ -177,7 +184,7 @@ Write-Host ""
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host "清理完成！成功刪除: $DeletedCount 個檔案 (釋放 $FreedDisplay)" -ForegroundColor Green
 if ($SkippedCount -gt 0) {
-    Write-Host "略過無法清理之檔案: $SkippedCount 個 (可能正由 AC 背景服務寫入中)" -ForegroundColor Yellow
+    Write-Host "略過無法清理之檔案: $SkippedCount 個 (正由 AC 背景服務寫入中)" -ForegroundColor Yellow
 }
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host ""

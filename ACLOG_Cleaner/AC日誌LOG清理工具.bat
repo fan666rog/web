@@ -22,7 +22,7 @@ exit /b
 #   Name       : 顯示在畫面上的規則名稱
 #   Path       : 資料夾完整路徑
 #   KeepDays   : 保留最新的幾個「有紀錄的日期(開機日)」(0 = 全部清空；3 = 保留最新 3 個日期的檔案)
-#   Filter     : 檔名過濾規則 (預設 "*.log" 代表所有 log 檔；也可指定特定前綴)
+#   Filter     : 檔名過濾規則 (預設 "*.log" 代表所有 log 檔；也可指定特定檔名或前綴)
 #   Recurse    : 是否連同內部的子資料夾一起掃描 ($true = 是, $false = 否)
 # ==============================================================================
 
@@ -30,20 +30,23 @@ $BasePath = "C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis"
 
 $Rules = [System.Collections.Generic.List[hashtable]]::new()
 
-# --- 1. 系統共用區 (C:\ProgramData) ---
-$Rules.Add(@{ Name = "GameFirst";         Path = "$BasePath\GameFirst";         KeepDays = 0; Filter = "*.log"; Recurse = $true  })
-$Rules.Add(@{ Name = "AacAIOFanSetup";    Path = "$BasePath\AacAIOFanSetup";    KeepDays = 3; Filter = "*.log"; Recurse = $false })
-$Rules.Add(@{ Name = "AacKBSetup";        Path = "$BasePath\AacKBSetup";        KeepDays = 3; Filter = "*.log"; Recurse = $false })
-$Rules.Add(@{ Name = "AacMouseSetup";     Path = "$BasePath\AacMouseSetup";     KeepDays = 3; Filter = "*.log"; Recurse = $false })
-$Rules.Add(@{ Name = "AcNodeAddon";       Path = "$BasePath\AcNodeAddon";       KeepDays = 3; Filter = "*.log"; Recurse = $false })
-$Rules.Add(@{ Name = "AIOFanSDK";         Path = "$BasePath\AIOFanSDK";         KeepDays = 3; Filter = "*.log"; Recurse = $false })
-$Rules.Add(@{ Name = "AppLog (系統)";     Path = "$BasePath\AppLog";            KeepDays = 3; Filter = "*.log"; Recurse = $false })
-$Rules.Add(@{ Name = "KeyboardSDK";       Path = "$BasePath\KeyboardSDK";       KeepDays = 3; Filter = "*.log"; Recurse = $false })
-$Rules.Add(@{ Name = "MouseSDK";          Path = "$BasePath\MouseSDK";          KeepDays = 3; Filter = "*.log"; Recurse = $false })
-$Rules.Add(@{ Name = "ROG Live Service";  Path = "$BasePath\ROG Live Service";  KeepDays = 3; Filter = "ROGLiveService_*.log"; Recurse = $false })
-$Rules.Add(@{ Name = "UnifyScanner";      Path = "$BasePath\UnifyScanner";      KeepDays = 3; Filter = "*.log"; Recurse = $false })
+# --- 1. 系統共用區：發現即全清 (KeepDays = 0) ---
+$Rules.Add(@{ Name = "GameFirst";                 Path = "$BasePath\GameFirst";         KeepDays = 0; Filter = "*.log"; Recurse = $true  })
+$Rules.Add(@{ Name = "ErrorReporter (錯誤回報)";  Path = "$BasePath";                   KeepDays = 0; Filter = "ArmouryCrate.ErrorReporter.txt"; Recurse = $false })
 
-# --- 2. 使用者個人資料夾區 (自動偵測電腦內所有使用者帳號的 AppData\Local) ---
+# --- 2. 系統共用區：保留最新 3 個開機日 (KeepDays = 3) ---
+$Rules.Add(@{ Name = "AacAIOFanSetup";            Path = "$BasePath\AacAIOFanSetup";    KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "AacKBSetup";                Path = "$BasePath\AacKBSetup";        KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "AacMouseSetup";             Path = "$BasePath\AacMouseSetup";     KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "AcNodeAddon";               Path = "$BasePath\AcNodeAddon";       KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "AIOFanSDK";                 Path = "$BasePath\AIOFanSDK";         KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "AppLog (系統)";             Path = "$BasePath\AppLog";            KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "KeyboardSDK";               Path = "$BasePath\KeyboardSDK";       KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "MouseSDK";                  Path = "$BasePath\MouseSDK";          KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "ROG Live Service";          Path = "$BasePath\ROG Live Service";  KeepDays = 3; Filter = "ROGLiveService_*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "UnifyScanner";              Path = "$BasePath\UnifyScanner";      KeepDays = 3; Filter = "*.log"; Recurse = $false })
+
+# --- 3. 使用者個人資料夾區 (自動偵測電腦內所有使用者帳號的 AppData\Local) ---
 $UserFolders = Get-ChildItem -Path "C:\Users" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -notin @("Public", "Default", "Default User", "All Users") }
 $AddedUserPaths = @()
 

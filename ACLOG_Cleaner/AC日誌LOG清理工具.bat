@@ -22,30 +22,56 @@ exit /b
 #   Name       : 顯示在畫面上的規則名稱
 #   Path       : 資料夾完整路徑
 #   KeepDays   : 保留最新的幾個「有紀錄的日期(開機日)」(0 = 全部清空；3 = 保留最新 3 個日期的檔案)
-#   Filter     : 檔名過濾規則 (預設 "*.log" 代表所有 log 檔；也可指定如 "ROGLiveService_*.log")
+#   Filter     : 檔名過濾規則 (預設 "*.log" 代表所有 log 檔；也可指定特定前綴)
 #   Recurse    : 是否連同內部的子資料夾一起掃描 ($true = 是, $false = 否)
 # ==============================================================================
 
 $BasePath = "C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis"
 
-$Rules = @(
-    # --- 1. 全部清空區 ---
-    @{ Name = "GameFirst";         Path = "$BasePath\GameFirst";         KeepDays = 0; Filter = "*.log"; Recurse = $true  },
+$Rules = [System.Collections.Generic.List[hashtable]]::new()
 
-    # --- 2. 保留最新 3 個開機日區 ---
-    @{ Name = "AacAIOFanSetup";    Path = "$BasePath\AacAIOFanSetup";    KeepDays = 3; Filter = "*.log"; Recurse = $false },
-    @{ Name = "AacKBSetup";        Path = "$BasePath\AacKBSetup";        KeepDays = 3; Filter = "*.log"; Recurse = $false },
-    @{ Name = "AacMouseSetup";     Path = "$BasePath\AacMouseSetup";     KeepDays = 3; Filter = "*.log"; Recurse = $false },
-    @{ Name = "AcNodeAddon";       Path = "$BasePath\AcNodeAddon";       KeepDays = 3; Filter = "*.log"; Recurse = $false },
-    @{ Name = "AIOFanSDK";         Path = "$BasePath\AIOFanSDK";         KeepDays = 3; Filter = "*.log"; Recurse = $false },
-    @{ Name = "AppLog";            Path = "$BasePath\AppLog";            KeepDays = 3; Filter = "*.log"; Recurse = $false },
-    @{ Name = "KeyboardSDK";       Path = "$BasePath\KeyboardSDK";       KeepDays = 3; Filter = "*.log"; Recurse = $false },
-    @{ Name = "MouseSDK";          Path = "$BasePath\MouseSDK";          KeepDays = 3; Filter = "*.log"; Recurse = $false },
-    @{ Name = "ROG Live Service";  Path = "$BasePath\ROG Live Service";  KeepDays = 3; Filter = "ROGLiveService_*.log"; Recurse = $false },
-    @{ Name = "UnifyScanner";      Path = "$BasePath\UnifyScanner";      KeepDays = 3; Filter = "*.log"; Recurse = $false }
+# --- 1. 系統共用區 (C:\ProgramData) ---
+$Rules.Add(@{ Name = "GameFirst";         Path = "$BasePath\GameFirst";         KeepDays = 0; Filter = "*.log"; Recurse = $true  })
+$Rules.Add(@{ Name = "AacAIOFanSetup";    Path = "$BasePath\AacAIOFanSetup";    KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "AacKBSetup";        Path = "$BasePath\AacKBSetup";        KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "AacMouseSetup";     Path = "$BasePath\AacMouseSetup";     KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "AcNodeAddon";       Path = "$BasePath\AcNodeAddon";       KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "AIOFanSDK";         Path = "$BasePath\AIOFanSDK";         KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "AppLog (系統)";     Path = "$BasePath\AppLog";            KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "KeyboardSDK";       Path = "$BasePath\KeyboardSDK";       KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "MouseSDK";          Path = "$BasePath\MouseSDK";          KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "ROG Live Service";  Path = "$BasePath\ROG Live Service";  KeepDays = 3; Filter = "ROGLiveService_*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "UnifyScanner";      Path = "$BasePath\UnifyScanner";      KeepDays = 3; Filter = "*.log"; Recurse = $false })
 
-    # --- 之後要新增其他 AC 資料夾，請直接往下複製貼上 ---
-)
+# --- 2. 使用者個人資料夾區 (自動偵測電腦內所有使用者帳號的 AppData\Local) ---
+$UserFolders = Get-ChildItem -Path "C:\Users" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -notin @("Public", "Default", "Default User", "All Users") }
+$AddedUserPaths = @()
+
+foreach ($User in $UserFolders) {
+    $UserAppLogPath = Join-Path $User.FullName "AppData\Local\ASUS\Armoury Crate Diagnosis\AppLog"
+    if (Test-Path -LiteralPath $UserAppLogPath) {
+        $AddedUserPaths += $UserAppLogPath
+        $Rules.Add(@{
+            Name     = "AppLog - UserSessionHelper (使用者: $($User.Name))"
+            Path     = $UserAppLogPath
+            KeepDays = 3
+            Filter   = "ArmouryCrate.UserSessionHelper_*.log"
+            Recurse  = $false
+        })
+    }
+}
+
+# 若電腦無一個帳號存在該資料夾，仍加入一筆當前使用者的預設路徑供畫面顯示「略過」提示
+$DefaultUserAppLog = "$env:LOCALAPPDATA\ASUS\Armoury Crate Diagnosis\AppLog"
+if ($AddedUserPaths.Count -eq 0) {
+    $Rules.Add(@{
+        Name     = "AppLog - UserSessionHelper (當前使用者)"
+        Path     = $DefaultUserAppLog
+        KeepDays = 3
+        Filter   = "ArmouryCrate.UserSessionHelper_*.log"
+        Recurse  = $false
+    })
+}
 
 # ==============================================================================
 # 以下為核心執行程式，無須修改

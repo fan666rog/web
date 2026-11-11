@@ -21,7 +21,7 @@
 
 #### 📂 目前支援清理的資料夾清單
 * **1. 系統目錄 (`C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis`)：**
-  * **全部清空 `.log`：** `GameFirst`
+  * **發現即全清：** `GameFirst` 內所有 `.log`、根目錄下因更新或異常觸發產生的 `ArmouryCrate.ErrorReporter.txt` 錯誤回報檔。
   * **保留最新 3 個紀錄日：** `AacAIOFanSetup`、`AacKBSetup`、`AacMouseSetup`、`AcNodeAddon`、`AIOFanSDK`、`AppLog`、`KeyboardSDK`、`MouseSDK`、`UnifyScanner`
   * **指定前綴保留最新 3 個紀錄日：** `ROG Live Service`（僅清理 `ROGLiveService_*.log`）
 * **2. 使用者個人目錄 (`C:\Users\[使用者名稱]\AppData\Local\ASUS\Armoury Crate Diagnosis\AppLog`)：**

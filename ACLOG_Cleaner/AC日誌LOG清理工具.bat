@@ -22,7 +22,7 @@ exit /b
 #   Name       : 顯示在畫面上的規則名稱
 #   Path       : 資料夾完整路徑
 #   KeepDays   : 保留最新的幾個「有紀錄的日期(開機日)」(0 = 全部清空；3 = 保留最新 3 個日期的檔案)
-#   Filter     : 檔名過濾規則 (預設 "*.log" 代表所有 log 檔；也可指定特定檔名或前綴)
+#   Filter     : 檔名過濾規則 (預設 "*.log" 代表所有 log 檔；也可指定特定檔名、前綴或萬用字元)
 #   Recurse    : 是否連同內部的子資料夾一起掃描 ($true = 是, $false = 否)
 # ==============================================================================
 
@@ -42,11 +42,34 @@ $Rules.Add(@{ Name = "AcNodeAddon";               Path = "$BasePath\AcNodeAddon"
 $Rules.Add(@{ Name = "AIOFanSDK";                 Path = "$BasePath\AIOFanSDK";         KeepDays = 3; Filter = "*.log"; Recurse = $false })
 $Rules.Add(@{ Name = "AppLog (系統)";             Path = "$BasePath\AppLog";            KeepDays = 3; Filter = "*.log"; Recurse = $false })
 $Rules.Add(@{ Name = "KeyboardSDK";               Path = "$BasePath\KeyboardSDK";       KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "LightingService";           Path = "$BasePath\LightingService";   KeepDays = 3; Filter = "LightingService.log*"; Recurse = $false })
 $Rules.Add(@{ Name = "MouseSDK";                  Path = "$BasePath\MouseSDK";          KeepDays = 3; Filter = "*.log"; Recurse = $false })
 $Rules.Add(@{ Name = "ROG Live Service";          Path = "$BasePath\ROG Live Service";  KeepDays = 3; Filter = "ROGLiveService_*.log"; Recurse = $false })
 $Rules.Add(@{ Name = "UnifyScanner";              Path = "$BasePath\UnifyScanner";      KeepDays = 3; Filter = "*.log"; Recurse = $false })
 
-# --- 3. 使用者個人資料夾區 (自動偵測電腦內所有使用者帳號的 AppData\Local) ---
+# --- 3. Framework 隨機碼子資料夾區 (自動偵測各子目錄並各自獨立保留最新 3 個開機日) ---
+$FrameworkBase = "$BasePath\Framework"
+if (Test-Path -LiteralPath $FrameworkBase) {
+    $FrameworkSubDirs = Get-ChildItem -LiteralPath $FrameworkBase -Directory -ErrorAction SilentlyContinue
+    if ($FrameworkSubDirs -and $FrameworkSubDirs.Count -gt 0) {
+        foreach ($SubDir in $FrameworkSubDirs) {
+            $ShortName = if ($SubDir.Name.Length -gt 8) { "$($SubDir.Name.Substring(0,8))..." } else { $SubDir.Name }
+            $Rules.Add(@{
+                Name     = "Framework (子目錄: $ShortName)"
+                Path     = $SubDir.FullName
+                KeepDays = 3
+                Filter   = "*.log"
+                Recurse  = $false
+            })
+        }
+    } else {
+        $Rules.Add(@{ Name = "Framework"; Path = $FrameworkBase; KeepDays = 3; Filter = "*.log"; Recurse = $false })
+    }
+} else {
+    $Rules.Add(@{ Name = "Framework"; Path = $FrameworkBase; KeepDays = 3; Filter = "*.log"; Recurse = $false })
+}
+
+# --- 4. 使用者個人資料夾區 (自動偵測電腦內所有使用者帳號的 AppData\Local) ---
 $UserFolders = Get-ChildItem -Path "C:\Users" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -notin @("Public", "Default", "Default User", "All Users") }
 $AddedUserPaths = @()
 
@@ -95,6 +118,14 @@ function Get-FileLogDate ($File) {
         return $matches[1]
     }
     return $File.LastWriteTime.ToString('yyyy-MM-dd')
+}
+
+# 輔助函式：自動轉換檔案大小顯示單位 (KB / MB)
+function Format-FileSize ($Bytes) {
+    if ($Bytes -ge 1MB) {
+        return "{0:N2} MB" -f ($Bytes / 1MB)
+    }
+    return "{0:N1} KB" -f ($Bytes / 1KB)
 }
 
 foreach ($Rule in $Rules) {
@@ -149,8 +180,8 @@ foreach ($Rule in $Rules) {
     foreach ($Entry in $TargetEntries) {
         $FilesToDelete.Add($Entry.File)
         $MatchedCount++
-        $SizeKB = "{0:N1} KB" -f ($Entry.File.Length / 1KB)
-        Write-Host "  -> 待刪舊檔: $($Entry.File.Name) ($SizeKB | 日期: $($Entry.DateStr))" -ForegroundColor Gray
+        $SizeStr = Format-FileSize $Entry.File.Length
+        Write-Host "  -> 待刪舊檔: $($Entry.File.Name) ($SizeStr | 日期: $($Entry.DateStr))" -ForegroundColor Gray
     }
 
     if ($MatchedCount -eq 0) {
@@ -169,9 +200,7 @@ if ($FilesToDelete.Count -eq 0) {
 }
 
 $TotalBytes = ($FilesToDelete | Measure-Object -Property Length -Sum).Sum
-$TotalMB = "{0:N2} MB" -f ($TotalBytes / 1MB)
-$TotalKB = "{0:N1} KB" -f ($TotalBytes / 1KB)
-$SizeDisplay = if ($TotalBytes -ge 1MB) { $TotalMB } else { $TotalKB }
+$SizeDisplay = Format-FileSize $TotalBytes
 
 Write-Host "掃描完成！共找到 $($FilesToDelete.Count) 個舊日誌檔案，預計可釋放 $SizeDisplay 空間。" -ForegroundColor White
 Write-Host "----------------------------------------------------------" -ForegroundColor Cyan
@@ -205,9 +234,7 @@ foreach ($File in $FilesToDelete) {
     }
 }
 
-$FreedMB = "{0:N2} MB" -f ($FreedBytes / 1MB)
-$FreedKB = "{0:N1} KB" -f ($FreedBytes / 1KB)
-$FreedDisplay = if ($FreedBytes -ge 1MB) { $FreedMB } else { $FreedKB }
+$FreedDisplay = Format-FileSize $FreedBytes
 
 Write-Host ""
 Write-Host "==========================================================" -ForegroundColor Cyan

@@ -70,6 +70,17 @@ $pinvoke3 = $typeBuilder.DefinePInvokeMethod(
 )
 $pinvoke3.SetImplementationFlags([System.Reflection.MethodImplAttributes]::PreserveSig)
 
+$longRef = [long].MakeByRefType()
+$pinvoke4 = $typeBuilder.DefinePInvokeMethod(
+    'GetSystemTimes', 'kernel32.dll',
+    ([System.Reflection.MethodAttributes]::Public -bor [System.Reflection.MethodAttributes]::Static -bor [System.Reflection.MethodAttributes]::PinvokeImpl),
+    [System.Reflection.CallingConventions]::Standard,
+    [bool], [Type[]]@($longRef, $longRef, $longRef),
+    [System.Runtime.InteropServices.CallingConvention]::Winapi,
+    [System.Runtime.InteropServices.CharSet]::Auto
+)
+$pinvoke4.SetImplementationFlags([System.Reflection.MethodImplAttributes]::PreserveSig)
+
 $Win32Api = $typeBuilder.CreateType()
 
 function Get-UserIdleSeconds {
@@ -78,12 +89,13 @@ function Get-UserIdleSeconds {
         [System.Runtime.InteropServices.Marshal]::WriteInt32($ptr, 0, 8)
         [System.Runtime.InteropServices.Marshal]::WriteInt32($ptr, 4, 0)
         if ($Win32Api::GetLastInputInfo($ptr)) {
-            $lastInput = [uint32][System.Runtime.InteropServices.Marshal]::ReadInt32($ptr, 4)
+            $rawInt = [System.Runtime.InteropServices.Marshal]::ReadInt32($ptr, 4)
+            $lastInput = [System.BitConverter]::ToUInt32([System.BitConverter]::GetBytes($rawInt), 0)
             $tickCount = [uint32]$Win32Api::GetTickCount()
             if ($tickCount -ge $lastInput) {
                 $diff = $tickCount - $lastInput
             } else {
-                $diff = ([uint32]::MaxValue - $lastInput) + $tickCount
+                $diff = ([uint32]::MaxValue - $lastInput) + $tickCount + 1
             }
             return [int][Math]::Floor($diff / 1000.0)
         }
@@ -93,20 +105,35 @@ function Get-UserIdleSeconds {
     return 0
 }
 
-# --- 2. 效能計數器初始化 (CPU 與 網路流量) ---
-$script:cpuCounter = $null
-try {
-    $script:cpuCounter = New-Object System.Diagnostics.PerformanceCounter("Processor", "% Processor Time", "_Total")
-    $null = $script:cpuCounter.NextValue()
-} catch {}
+# --- 2. 硬體監測初始化 (100% 純記憶體 GetSystemTimes 與 網路流量) ---
+$script:prevIdleTime   = [long]0
+$script:prevKernelTime = [long]0
+$script:prevUserTime   = [long]0
+[void]$Win32Api::GetSystemTimes([ref]$script:prevIdleTime, [ref]$script:prevKernelTime, [ref]$script:prevUserTime)
 
-$script:lastNetBytes = -1
+$script:lastNetBytes = [long]-1
 $script:lastNetTime = [DateTime]::Now
 
 function Get-HardwareMetrics {
     $cpuVal = 0
-    if ($null -ne $script:cpuCounter) {
-        try { $cpuVal = [int][Math]::Round($script:cpuCounter.NextValue()) } catch { $cpuVal = 0 }
+    [long]$idle   = 0
+    [long]$kernel = 0
+    [long]$user   = 0
+    if ($Win32Api::GetSystemTimes([ref]$idle, [ref]$kernel, [ref]$user)) {
+        $idleDiff   = $idle   - $script:prevIdleTime
+        $kernelDiff = $kernel - $script:prevKernelTime
+        $userDiff   = $user   - $script:prevUserTime
+
+        $script:prevIdleTime   = $idle
+        $script:prevKernelTime = $kernel
+        $script:prevUserTime   = $user
+
+        $totalSys = $kernelDiff + $userDiff
+        if ($totalSys -gt 0) {
+            $busy = $totalSys - $idleDiff
+            $pct = [int][Math]::Round(($busy * 100.0) / $totalSys)
+            $cpuVal = [Math]::Max(0, [Math]::Min(100, $pct))
+        }
     }
 
     $netKBps = 0
@@ -116,8 +143,10 @@ function Get-HardwareMetrics {
         }
         [long]$totalBytes = 0
         foreach ($nic in $ifaces) {
-            $stats = $nic.GetIPv4Statistics()
-            $totalBytes += ($stats.BytesReceived + $stats.BytesSent)
+            try {
+                $stats = $nic.GetIPStatistics()
+                $totalBytes += ($stats.BytesReceived + $stats.BytesSent)
+            } catch {}
         }
         $now = [DateTime]::Now
         if ($script:lastNetBytes -ge 0) {
@@ -233,6 +262,8 @@ function Sync-StartupShortcut([bool]$enable) {
             $sc.WindowStyle = 7
             $sc.Description = "智慧自動關機助手背景待命"
             $sc.Save()
+            [void][System.Runtime.InteropServices.Marshal]::FinalReleaseComObject($sc)
+            [void][System.Runtime.InteropServices.Marshal]::FinalReleaseComObject($wsh)
         } catch {}
     } else {
         if (Test-Path $shortcutPath) {
@@ -246,13 +277,17 @@ $script:cfg = Load-IniConfig
 # --- 4. 執行階段狀態變數 ---
 $script:isTaskRunning = $false
 $script:targetTime = [DateTime]::MaxValue
+$script:idleConditionMetSince = $null
 $script:qualifiedIdleSeconds = 0
+$script:idleCooldownUntil = [DateTime]::MinValue
 $script:isInDelayProtect = $false
 $script:isInAlertBuffer = $false
 $script:alertTriggerReason = "" # "Time" or "Idle"
+$script:alertEndTime = [DateTime]::MaxValue
 $script:alertRemainingSeconds = 0
 $script:alertSnoozed = $false
 $script:allowExit = $false
+$script:lastTickTime = [DateTime]::Now
 
 # --- 5. 建立 GUI 視窗與控制項 ---
 $fontMain  = New-Object System.Drawing.Font("Microsoft JhengHei UI", 9.5)
@@ -888,6 +923,14 @@ function Format-TimeSpan([TimeSpan]$ts) {
     return ("{0:D2}:{1:D2}:{2:D2}" -f $totalHours, $ts.Minutes, $ts.Seconds)
 }
 
+function Start-AlertBuffer([string]$reason, [int]$seconds) {
+    $script:isInAlertBuffer = $true
+    $script:alertTriggerReason = $reason
+    $script:alertRemainingSeconds = [Math]::Max(1, $seconds)
+    $script:alertEndTime = ([DateTime]::Now).AddSeconds($script:alertRemainingSeconds)
+    $script:alertSnoozed = $false
+}
+
 function Start-ShutdownTask([bool]$isResuming = $false) {
     Get-UIValuesToConfig
 
@@ -912,7 +955,9 @@ function Start-ShutdownTask([bool]$isResuming = $false) {
 
     $script:isTaskRunning = $true
     $script:cfg.IsRunning = $true
+    $script:idleConditionMetSince = $null
     $script:qualifiedIdleSeconds = 0
+    $script:idleCooldownUntil = [DateTime]::MinValue
     $script:isInDelayProtect = $false
     $script:isInAlertBuffer = $false
     $script:alertSnoozed = $false
@@ -927,7 +972,9 @@ function Stop-ShutdownTask {
     $script:isTaskRunning = $false
     $script:cfg.IsRunning = $false
     $script:cfg.TargetTimestamp = ""
+    $script:idleConditionMetSince = $null
     $script:qualifiedIdleSeconds = 0
+    $script:idleCooldownUntil = [DateTime]::MinValue
     $script:isInDelayProtect = $false
     $script:isInAlertBuffer = $false
     $script:alertSnoozed = $false
@@ -944,21 +991,37 @@ function Stop-ShutdownTask {
 }
 
 function Execute-FinalSystemAction {
-    $todayStr = ([DateTime]::Now).ToString("yyyy-MM-dd")
-    $script:cfg.LastTriggeredDate = $todayStr
+    $now = [DateTime]::Now
+    # 完整重置所有預警與閒置狀態，防止睡眠/休眠喚醒後瞬間重複觸發
+    $script:isInAlertBuffer = $false
+    $script:alertSnoozed = $false
+    $script:isInDelayProtect = $false
+    $script:idleConditionMetSince = $null
+    $script:qualifiedIdleSeconds = 0
+    $script:idleCooldownUntil = [DateTime]::MinValue
+    $alertForm.Hide()
 
     if ($script:cfg.Mode -eq "C") {
-        $nextDay = ([DateTime]::Now.Date).AddDays(1).AddHours($script:cfg.DailyHour).AddMinutes($script:cfg.DailyMin)
-        $script:targetTime = $nextDay
-        $script:cfg.TargetTimestamp = $nextDay.ToString("yyyy-MM-dd HH:mm:ss")
+        # 依據原本排定的目標日期記錄觸發日，避免跨午夜延後導致隔天排程被吃掉
+        $triggeredDateStr = if ($script:targetTime -ne [DateTime]::MaxValue) { $script:targetTime.ToString("yyyy-MM-dd") } else { $now.ToString("yyyy-MM-dd") }
+        $script:cfg.LastTriggeredDate = $triggeredDateStr
+
+        $todayTarget = $now.Date.AddHours($script:cfg.DailyHour).AddMinutes($script:cfg.DailyMin)
+        if ($now -lt $todayTarget -and $script:cfg.LastTriggeredDate -ne $now.ToString("yyyy-MM-dd")) {
+            $nextTarget = $todayTarget
+        } else {
+            $nextTarget = $todayTarget.AddDays(1)
+        }
+        $script:targetTime = $nextTarget
+        $script:cfg.TargetTimestamp = $nextTarget.ToString("yyyy-MM-dd HH:mm:ss")
         $script:cfg.IsRunning = $true
     } else {
+        $script:cfg.LastTriggeredDate = $now.ToString("yyyy-MM-dd")
         $script:isTaskRunning = $false
         $script:cfg.IsRunning = $false
         $script:cfg.TargetTimestamp = ""
     }
     Save-IniConfig $script:cfg
-    $alertForm.Hide()
 
     switch ($script:cfg.ActionType) {
         0 { Start-Process "shutdown.exe" -ArgumentList "/s /t 0" -WindowStyle Hidden }
@@ -1016,16 +1079,20 @@ $btnAlertDelay.Add_Click({
     $script:isInAlertBuffer = $false
     $script:alertSnoozed = $false
     $script:isInDelayProtect = $false
+    $script:idleConditionMetSince = $null
     $script:qualifiedIdleSeconds = 0
+
+    $now = [DateTime]::Now
     if ($script:cfg.Mode -eq "D") {
-        $script:targetTime = ([DateTime]::Now).AddMinutes(30)
-        $script:cfg.Mode = "B"
-        $rbModeB.Checked = $true
+        # 純閒置模式下按延後 30 分鐘：保持 Mode D 設定不變，進入 30 分鐘休息暫緩期
+        $script:idleCooldownUntil = $now.AddMinutes(30)
     } else {
-        $script:targetTime = ([DateTime]::Now).AddMinutes(30)
+        # A / B / C 模式：若原本目標時間還在未來則從原目標往後推，否則從現在起算 +30 分鐘
+        $baseTime = if ($script:targetTime -gt $now -and $script:targetTime -ne [DateTime]::MaxValue) { $script:targetTime } else { $now }
+        $script:targetTime = $baseTime.AddMinutes(30)
+        $script:cfg.TargetTimestamp = $script:targetTime.ToString("yyyy-MM-dd HH:mm:ss")
+        Save-IniConfig $script:cfg
     }
-    $script:cfg.TargetTimestamp = $script:targetTime.ToString("yyyy-MM-dd HH:mm:ss")
-    Save-IniConfig $script:cfg
 })
 
 $btnAlertCancel.Add_Click({ Stop-ShutdownTask })
@@ -1050,10 +1117,18 @@ $miExit.Add_Click({
 
 $form.Add_FormClosing({
     param($s, $e)
+    # 放行 Windows 系統關機或工作管理員強制結束，避免程式自己阻擋 Windows 關機
+    if ($e.CloseReason -eq [System.Windows.Forms.CloseReason]::WindowsShutDown -or
+        $e.CloseReason -eq [System.Windows.Forms.CloseReason]::TaskManagerClosing) {
+        $script:allowExit = $true
+    }
     if (-not $script:allowExit) {
         $e.Cancel = $true
         $form.Hide()
     } else {
+        $timer.Stop()
+        $notifyIcon.Visible = $false
+        $notifyIcon.Dispose()
         if ($null -ne $script:wakeEvent) {
             try { $script:wakeEvent.Close() } catch {}
         }
@@ -1070,6 +1145,23 @@ $timer.Add_Tick({
     }
 
     $now = [DateTime]::Now
+    # 偵測系統是否剛從睡眠或休眠喚醒 (兩次 Tick 間隔超過 15 秒)
+    $tickGap = ($now - $script:lastTickTime).TotalSeconds
+    $script:lastTickTime = $now
+    if ($tickGap -gt 15) {
+        # 系統剛喚醒，重置閒置計時，若為每日模式且剛喚醒時舊目標已過，重新對齊下一次目標
+        $script:idleConditionMetSince = $null
+        $script:qualifiedIdleSeconds = 0
+        if ($script:isTaskRunning -and $script:cfg.Mode -eq "C" -and $now -gt $script:targetTime.AddMinutes(5)) {
+            $script:isInAlertBuffer = $false
+            $script:isInDelayProtect = $false
+            $alertForm.Hide()
+            $script:targetTime = Calculate-PreviewTargetTime
+            $script:cfg.TargetTimestamp = $script:targetTime.ToString("yyyy-MM-dd HH:mm:ss")
+            Save-IniConfig $script:cfg
+        }
+    }
+
     $lblSysTime.Text = "現在系統時間： " + $now.ToString("yyyy-MM-dd  HH:mm:ss")
 
     $userIdleSec = Get-UserIdleSeconds
@@ -1081,14 +1173,19 @@ $timer.Add_Tick({
     $lblLiveCPU.Text  = ("%        (目前即時 CPU：{0}%)" -f $hw.CPU)
     $lblLiveNet.Text  = ("KB/s   (目前即時流量：{0} KB/s)" -f $hw.NetKB)
 
-    # 判定當下這一秒是否符合「硬體+鍵鼠」瞬間閒置條件
+    # 判定當下這一秒是否符合「硬體+鍵鼠」瞬間閒置條件 (採用時間戳差值計算，徹底消除 Timer 漂移)
     $cpuOk = (-not $chkCPU.Checked) -or ($hw.CPU -le [int]$numCPU.Value)
     $netOk = (-not $chkNet.Checked) -or ($hw.NetKB -le [int]$numNet.Value)
     $inputIdle = ($userIdleSec -ge 2)
+    $inCooldown = ($now -lt $script:idleCooldownUntil)
 
-    if ($inputIdle -and $cpuOk -and $netOk) {
-        $script:qualifiedIdleSeconds++
+    if ((-not $inCooldown) -and $inputIdle -and $cpuOk -and $netOk) {
+        if ($null -eq $script:idleConditionMetSince) {
+            $script:idleConditionMetSince = $now.AddSeconds(-1)
+        }
+        $script:qualifiedIdleSeconds = [int][Math]::Floor(($now - $script:idleConditionMetSince).TotalSeconds)
     } else {
+        $script:idleConditionMetSince = $null
         $script:qualifiedIdleSeconds = 0
     }
 
@@ -1115,13 +1212,15 @@ $timer.Add_Tick({
         if ($script:alertTriggerReason -eq "Idle" -and $userIdleSec -lt 2) {
             $script:isInAlertBuffer = $false
             $script:alertSnoozed = $false
+            $script:idleConditionMetSince = $null
             $script:qualifiedIdleSeconds = 0
             $alertForm.Hide()
             return
         }
 
-        $script:alertRemainingSeconds--
-        $remStr = Format-TimeSpan ([TimeSpan]::FromSeconds($script:alertRemainingSeconds))
+        $remAlertSpan = $script:alertEndTime - $now
+        $script:alertRemainingSeconds = [int][Math]::Ceiling($remAlertSpan.TotalSeconds)
+        $remStr = Format-TimeSpan ([TimeSpan]::FromSeconds([Math]::Max(0, $script:alertRemainingSeconds)))
         $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(255, 110, 110)
         $lblStatus.Text = "目前執行狀態： ● 執行前預警緩衝中！將於 $remStr 後執行【$actName】"
         $notifyIcon.Text = "預警：$remStr 後$actName"
@@ -1145,6 +1244,16 @@ $timer.Add_Tick({
 
     # 【階段 B：一般監測期 (判斷 D 純閒置 vs A/B/C 定時)】
     if ($script:cfg.Mode -eq "D") {
+        if ($inCooldown) {
+            $cdSpan = $script:idleCooldownUntil - $now
+            $cdStr = Format-TimeSpan $cdSpan
+            $lblTargetTime.Text = ("目標執行時間： 延後暫緩中 (將於 {0} 後恢復閒置監測)" -f $cdStr)
+            $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(255, 200, 70)
+            $lblStatus.Text = "目前執行狀態： ◆ 延後 30 分鐘暫緩期 (倒數 $cdStr)"
+            $notifyIcon.Text = "延後暫緩中 ($cdStr)"
+            return
+        }
+
         $remIdle = [Math]::Max(0, $idleThresholdSec - $script:qualifiedIdleSeconds)
         $remSpan = [TimeSpan]::FromSeconds($remIdle)
         $lblTargetTime.Text = ("目標執行時間： 符合閒置標準滿 {0} 分鐘 (還需 {1})" -f $script:cfg.IdleMins, (Format-TimeSpan $remSpan))
@@ -1154,10 +1263,7 @@ $timer.Add_Tick({
 
         if ($script:qualifiedIdleSeconds -ge $idleThresholdSec) {
             if ($script:cfg.PreNotify) {
-                $script:isInAlertBuffer = $true
-                $script:alertTriggerReason = "Idle"
-                $script:alertRemainingSeconds = $notifyBufferSec
-                $script:alertSnoozed = $false
+                Start-AlertBuffer "Idle" $notifyBufferSec
             } else {
                 Execute-FinalSystemAction
             }
@@ -1172,10 +1278,7 @@ $timer.Add_Tick({
     if (($script:cfg.Mode -eq "A" -or $script:cfg.Mode -eq "B") -and $script:cfg.EarlyIfIdle) {
         if ($script:qualifiedIdleSeconds -ge $idleThresholdSec) {
             if ($script:cfg.PreNotify) {
-                $script:isInAlertBuffer = $true
-                $script:alertTriggerReason = "Idle"
-                $script:alertRemainingSeconds = $notifyBufferSec
-                $script:alertSnoozed = $false
+                Start-AlertBuffer "Idle" $notifyBufferSec
             } else {
                 Execute-FinalSystemAction
             }
@@ -1186,13 +1289,10 @@ $timer.Add_Tick({
     # 2. 若目標時間已經到達 ($remTime <= 0)
     if ($remTime.TotalSeconds -le 0) {
         if ($script:cfg.DelayIfBusy) {
-            # 忙碌延後保護：跟隨下方設定的閒置時間 ($idleThresholdSec)
+            # 忙碌延後保護：時間到達且確認閒置達標後，再給予 N 分鐘預警緩衝
             if ($script:qualifiedIdleSeconds -ge $idleThresholdSec) {
                 if ($script:cfg.PreNotify) {
-                    $script:isInAlertBuffer = $true
-                    $script:alertTriggerReason = "Idle"
-                    $script:alertRemainingSeconds = $notifyBufferSec
-                    $script:alertSnoozed = $false
+                    Start-AlertBuffer "Idle" $notifyBufferSec
                 } else {
                     Execute-FinalSystemAction
                 }
@@ -1208,10 +1308,7 @@ $timer.Add_Tick({
         } else {
             # 未勾選忙碌延後 -> 強制準時執行
             if ($script:cfg.PreNotify) {
-                $script:isInAlertBuffer = $true
-                $script:alertTriggerReason = "Time"
-                $script:alertRemainingSeconds = $notifyBufferSec
-                $script:alertSnoozed = $false
+                Start-AlertBuffer "Time" $notifyBufferSec
             } else {
                 Execute-FinalSystemAction
             }
@@ -1219,12 +1316,9 @@ $timer.Add_Tick({
         return
     }
 
-    # 3. 目標時間尚未到達：檢查是否進入「固定時間執行前通知」區間
+    # 3. 目標時間尚未到達：檢查是否進入「固定時間執行前通知」區間 (僅限未勾選忙碌延後保護時)
     if ($script:cfg.PreNotify -and (-not $script:cfg.DelayIfBusy) -and ($remTime.TotalSeconds -le $notifyBufferSec)) {
-        $script:isInAlertBuffer = $true
-        $script:alertTriggerReason = "Time"
-        $script:alertRemainingSeconds = [int][Math]::Ceiling($remTime.TotalSeconds)
-        $script:alertSnoozed = $false
+        Start-AlertBuffer "Time" ([int][Math]::Ceiling($remTime.TotalSeconds))
         return
     }
 

@@ -19,6 +19,9 @@ brick-breaker / 打磚塊小遊戲
 tetris / 俄羅斯方塊小遊戲
 
 
+Autoshutdown / 智慧自動關機助手 bat執行
+ACLOG_Cleaner / 華碩ARMOURY CRATE日誌清除工具 bat執行
+
 展示首頁於2026/1020進行優化更新
 主要針對上方的歡迎解碼特效進行更像是終極戰士的樣式來顯示
 (這靈感我自己想了好一陣子，之前呈現的都不太好，這次叫Argon和我一起想)

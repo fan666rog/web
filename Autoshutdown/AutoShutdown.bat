@@ -13,6 +13,21 @@ exit /b
 #    Designed by fan666rog | https://github.com/fan666rog/web
 # ==============================================================================
 
+# --- 0. 單一實例檢查與自動喚醒本尊 (方案 C - 100% 純記憶體訊號) ---
+$createdNew = $false
+$script:wakeEvent = New-Object System.Threading.EventWaitHandle(
+    $false,
+    [System.Threading.EventResetMode]::AutoReset,
+    "Local\AutoShutdown_fan666rog_WakeEvent",
+    [ref]$createdNew
+)
+if (-not $createdNew) {
+    # 發現已有實例在背景或系統匣運作 -> 發送喚醒訊號並立即退出分身
+    [void]$script:wakeEvent.Set()
+    $script:wakeEvent.Close()
+    exit
+}
+
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
@@ -491,7 +506,7 @@ $grpIdle.Controls.Add($chkCPU)
 
 $numCPU = New-Object System.Windows.Forms.NumericUpDown
 $numCPU.Location = New-Object System.Drawing.Point(172, 58)
-$numCPU.Size = New-Object System.Drawing.Point(55, 24)
+$numCPU.Size = New-Object System.Drawing.Size(55, 24)
 $numCPU.Font = $fontMain
 $numCPU.Minimum = 1
 $numCPU.Maximum = 100
@@ -623,7 +638,7 @@ $btnClean.Cursor = [System.Windows.Forms.Cursors]::Hand
 $btnClean.Text = "✖ 清除設定退出"
 $form.Controls.Add($btnClean)
 
-# 【底部優雅版權列 (先 Clear 預設連結，避免重疊閃退)】
+# 【底部優雅版權列】
 $lnkAuthor = New-Object System.Windows.Forms.LinkLabel
 $lnkAuthor.Location = New-Object System.Drawing.Point(12, 650)
 $lnkAuthor.Size = New-Object System.Drawing.Size(550, 20)
@@ -722,6 +737,14 @@ $alertForm.Add_FormClosing({
 })
 
 # --- 8. 輔助邏輯函數 ---
+function Show-MainWindowToFront {
+    $form.Show()
+    $form.WindowState = [System.Windows.Forms.FormWindowState]::Normal
+    $form.TopMost = $true
+    $form.Activate()
+    $form.TopMost = $false
+}
+
 function Update-DelayCheckText {
     $m = [int]$numIdleMins.Value
     $chkDelayIfBusy.Text = "◆ 忙碌延後保護：時間到時若電腦非閒置，暫緩並等閒置穩定滿 $m 分鐘才執行"
@@ -837,7 +860,6 @@ function Set-ControlsLocked([bool]$locked) {
     $btnStart.Enabled = (-not $locked)
     $btnStop.Enabled  = $locked
 
-    # 動態切換主按鈕視覺色彩與滑鼠游標
     if ($locked) {
         $btnStart.BackColor = $colorBtnDisabled
         $btnStart.ForeColor = $colorTextDisabled
@@ -856,7 +878,6 @@ function Set-ControlsLocked([bool]$locked) {
         $btnStop.Cursor     = [System.Windows.Forms.Cursors]::Default
     }
 
-    # 同步控制右下角右鍵選單項目是否可按
     $miDelay30.Enabled = $locked
     $miCancel.Enabled  = $locked
 }
@@ -1009,17 +1030,8 @@ $btnAlertDelay.Add_Click({
 
 $btnAlertCancel.Add_Click({ Stop-ShutdownTask })
 
-$notifyIcon.Add_DoubleClick({
-    $form.Show()
-    $form.WindowState = [System.Windows.Forms.FormWindowState]::Normal
-    $form.Activate()
-})
-
-$miShow.Add_Click({
-    $form.Show()
-    $form.WindowState = [System.Windows.Forms.FormWindowState]::Normal
-    $form.Activate()
-})
+$notifyIcon.Add_DoubleClick({ Show-MainWindowToFront })
+$miShow.Add_Click({ Show-MainWindowToFront })
 
 $miDelay30.Add_Click({
     if ($script:isTaskRunning) { $btnAlertDelay.PerformClick() }
@@ -1041,6 +1053,10 @@ $form.Add_FormClosing({
     if (-not $script:allowExit) {
         $e.Cancel = $true
         $form.Hide()
+    } else {
+        if ($null -ne $script:wakeEvent) {
+            try { $script:wakeEvent.Close() } catch {}
+        }
     }
 })
 
@@ -1048,6 +1064,11 @@ $form.Add_FormClosing({
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 1000
 $timer.Add_Tick({
+    # 檢查是否有重複點擊 .bat 傳來的喚醒訊號 (方案 C)
+    if ($null -ne $script:wakeEvent -and $script:wakeEvent.WaitOne(0)) {
+        Show-MainWindowToFront
+    }
+
     $now = [DateTime]::Now
     $lblSysTime.Text = "現在系統時間： " + $now.ToString("yyyy-MM-dd  HH:mm:ss")
 

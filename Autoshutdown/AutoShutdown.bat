@@ -9,7 +9,7 @@ exit /b
 #>
 
 # ==============================================================================
-# ⚡ 智慧自動關機助手 v1.0 (純綠色無痕版 - 零機碼 / 零 Temp 暫存檔)
+# ⚡ 智慧自動關機助手 v1.2 (純綠色無痕版 - 零機碼 / 零 Temp 暫存檔)
 #    Designed by fan666rog | https://github.com/fan666rog/web
 # ==============================================================================
 
@@ -80,6 +80,26 @@ $pinvoke4 = $typeBuilder.DefinePInvokeMethod(
     [System.Runtime.InteropServices.CharSet]::Auto
 )
 $pinvoke4.SetImplementationFlags([System.Reflection.MethodImplAttributes]::PreserveSig)
+
+$pinvoke5 = $typeBuilder.DefinePInvokeMethod(
+    'IsPwrSuspendAllowed', 'powrprof.dll',
+    ([System.Reflection.MethodAttributes]::Public -bor [System.Reflection.MethodAttributes]::Static -bor [System.Reflection.MethodAttributes]::PinvokeImpl),
+    [System.Reflection.CallingConventions]::Standard,
+    [bool], [Type[]]@(),
+    [System.Runtime.InteropServices.CallingConvention]::Winapi,
+    [System.Runtime.InteropServices.CharSet]::Auto
+)
+$pinvoke5.SetImplementationFlags([System.Reflection.MethodImplAttributes]::PreserveSig)
+
+$pinvoke6 = $typeBuilder.DefinePInvokeMethod(
+    'IsPwrHibernateAllowed', 'powrprof.dll',
+    ([System.Reflection.MethodAttributes]::Public -bor [System.Reflection.MethodAttributes]::Static -bor [System.Reflection.MethodAttributes]::PinvokeImpl),
+    [System.Reflection.CallingConventions]::Standard,
+    [bool], [Type[]]@(),
+    [System.Runtime.InteropServices.CallingConvention]::Winapi,
+    [System.Runtime.InteropServices.CharSet]::Auto
+)
+$pinvoke6.SetImplementationFlags([System.Reflection.MethodImplAttributes]::PreserveSig)
 
 $Win32Api = $typeBuilder.CreateType()
 
@@ -287,6 +307,7 @@ $script:alertEndTime = [DateTime]::MaxValue
 $script:alertRemainingSeconds = 0
 $script:alertSnoozed = $false
 $script:allowExit = $false
+$script:forceShowOnStartup = $false
 $script:lastTickTime = [DateTime]::Now
 
 # --- 5. 建立 GUI 視窗與控制項 ---
@@ -304,7 +325,7 @@ $colorTextActive   = [System.Drawing.Color]::White
 $colorTextDisabled = [System.Drawing.Color]::FromArgb(140, 145, 150)
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "⚡ 智慧自動關機助手 v1.0 (純綠色免安裝版)"
+$form.Text = "⚡ 智慧自動關機助手 v1.2 (純綠色免安裝版)"
 $form.Size = New-Object System.Drawing.Size(590, 715)
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
 $form.MaximizeBox = $false
@@ -595,7 +616,7 @@ $grpSys.Controls.Add($lblAct)
 
 $cmbAction = New-Object System.Windows.Forms.ComboBox
 $cmbAction.Location = New-Object System.Drawing.Point(105, 24)
-$cmbAction.Size = New-Object System.Drawing.Size(180, 24)
+$cmbAction.Size = New-Object System.Drawing.Size(245, 24)
 $cmbAction.Font = $fontMain
 $cmbAction.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
 [void]$cmbAction.Items.Add("關機 (Shutdown)")
@@ -679,7 +700,7 @@ $lnkAuthor.Location = New-Object System.Drawing.Point(12, 650)
 $lnkAuthor.Size = New-Object System.Drawing.Size(550, 20)
 $lnkAuthor.Font = $fontSmall
 $lnkAuthor.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
-$authorText = "⚡ Designed by fan666rog   |   GitHub 專案主頁   |   v1.0"
+$authorText = "⚡ Designed by fan666rog   |   GitHub 專案主頁   |   v1.2"
 $lnkAuthor.Text = $authorText
 $lnkAuthor.ForeColor = [System.Drawing.Color]::DimGray
 $lnkAuthor.LinkColor = [System.Drawing.Color]::FromArgb(0, 102, 204)
@@ -771,7 +792,38 @@ $alertForm.Add_FormClosing({
     }
 })
 
-# --- 8. 輔助邏輯函數 ---
+# --- 8. 輔助邏輯函數與系統電源狀態檢查 ---
+function Update-ActionComboBoxItems {
+    $sleepOk = $Win32Api::IsPwrSuspendAllowed()
+    $hiberOk = $Win32Api::IsPwrHibernateAllowed()
+
+    $sleepText = if ($sleepOk) { "睡眠 (Sleep)" } else { "睡眠 (Sleep) [系統未支援]" }
+    $hiberText = if ($hiberOk) { "休眠 (Hibernate)" } else { "休眠 (Hibernate) [系統已禁用]" }
+
+    if ($cmbAction.Items[2] -ne $sleepText) { $cmbAction.Items[2] = $sleepText }
+    if ($cmbAction.Items[3] -ne $hiberText) { $cmbAction.Items[3] = $hiberText }
+}
+
+function Test-PowerActionAllowed([int]$actionType, [ref]$actNameOut, [ref]$detailReasonOut) {
+    Update-ActionComboBoxItems
+    if ($actionType -eq 2) {
+        $actNameOut.Value = "睡眠"
+        if (-not $Win32Api::IsPwrSuspendAllowed()) {
+            $detailReasonOut.Value = "系統目前未支援或已禁用【睡眠 (Sleep)】功能！"
+            return $false
+        }
+    } elseif ($actionType -eq 3) {
+        $actNameOut.Value = "休眠"
+        if (-not $Win32Api::IsPwrHibernateAllowed()) {
+            $detailReasonOut.Value = "系統目前已禁用【休眠 (Hibernate)】功能 (例如已透過 powercfg /h off 關閉)！"
+            return $false
+        }
+    }
+    return $true
+}
+
+$cmbAction.Add_DropDown({ Update-ActionComboBoxItems })
+
 function Show-MainWindowToFront {
     $form.Show()
     $form.WindowState = [System.Windows.Forms.FormWindowState]::Normal
@@ -814,6 +866,7 @@ function Get-UIValuesToConfig {
 }
 
 function Apply-ConfigToUI {
+    Update-ActionComboBoxItems
     switch ($script:cfg.Mode) {
         "A" { $rbModeA.Checked = $true }
         "B" { $rbModeB.Checked = $true }
@@ -934,6 +987,35 @@ function Start-AlertBuffer([string]$reason, [int]$seconds) {
 function Start-ShutdownTask([bool]$isResuming = $false) {
     Get-UIValuesToConfig
 
+    # 關卡一 & 關卡二：檢查系統是否支援或已禁用睡眠 / 休眠
+    $actShortName = ""
+    $errReason = ""
+    if (-not (Test-PowerActionAllowed $script:cfg.ActionType ([ref]$actShortName) ([ref]$errReason))) {
+        if ($isResuming) {
+            # 開機自動恢復任務時遇到衝突：取消任務、強制顯示主視窗於桌面，並在狀態列警示
+            $script:isTaskRunning = $false
+            $script:cfg.IsRunning = $false
+            $script:cfg.TargetTimestamp = ""
+            Save-IniConfig $script:cfg
+            Set-ControlsLocked $false
+            Update-ModeUIState
+            $script:forceShowOnStartup = $true
+            $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(255, 110, 110)
+            $lblStatus.Text = "目前執行狀態： ⚠️ 上次排定的【$actShortName】因系統已禁用而無法恢復，請重新設定！"
+            $notifyIcon.Text = "智慧自動關機助手 - 【$actShortName】已禁用請重新設定"
+            return
+        } else {
+            # 手動點擊「▶ 啟動任務」時遇到衝突：直接彈窗攔截
+            [System.Windows.Forms.MessageBox]::Show(
+                "$errReason`n`n請在「3. 執行動作」下拉選單中改選其他可用動作（如關機或重新啟動）。",
+                "系統電源動作無法使用",
+                [System.Windows.Forms.MessageBoxButtons]::OK,
+                [System.Windows.Forms.MessageBoxIcon]::Warning
+            ) | Out-Null
+            return
+        }
+    }
+
     if (-not $isResuming) {
         if ($script:cfg.Mode -eq "D") {
             $script:targetTime = [DateTime]::MaxValue
@@ -985,6 +1067,7 @@ function Stop-ShutdownTask {
     Save-IniConfig $script:cfg
     Set-ControlsLocked $false
     Update-ModeUIState
+    Update-ActionComboBoxItems
     $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(120, 230, 140)
     $lblStatus.Text = "目前執行狀態： ○ 待命中 (任務已取消 / 停止)"
     $notifyIcon.Text = "智慧自動關機助手 - 待命中"
@@ -1000,6 +1083,18 @@ function Execute-FinalSystemAction {
     $script:qualifiedIdleSeconds = 0
     $script:idleCooldownUntil = [DateTime]::MinValue
     $alertForm.Hide()
+
+    # 關卡三：最後執行瞬間再次驗證睡眠或休眠是否仍被系統允許
+    $actShortName = ""
+    $errReason = ""
+    if (-not (Test-PowerActionAllowed $script:cfg.ActionType ([ref]$actShortName) ([ref]$errReason))) {
+        Stop-ShutdownTask
+        $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(255, 110, 110)
+        $lblStatus.Text = "目前執行狀態： ⚠️ 執行失敗：系統目前已禁用【$actShortName】，任務已自動中止！"
+        $notifyIcon.Text = "智慧自動關機助手 - 【$actShortName】已禁用而中止"
+        Show-MainWindowToFront
+        return
+    }
 
     if ($script:cfg.Mode -eq "C") {
         # 依據原本排定的目標日期記錄觸發日，避免跨午夜延後導致隔天排程被吃掉
@@ -1141,6 +1236,7 @@ $timer.Interval = 1000
 $timer.Add_Tick({
     # 檢查是否有重複點擊 .bat 傳來的喚醒訊號 (方案 C)
     if ($null -ne $script:wakeEvent -and $script:wakeEvent.WaitOne(0)) {
+        Update-ActionComboBoxItems
         Show-MainWindowToFront
     }
 
@@ -1362,7 +1458,7 @@ if ($script:cfg.IsRunning) {
 
 $timer.Start()
 
-if ($isSilentLaunch) {
+if ($isSilentLaunch -and (-not $script:forceShowOnStartup)) {
     $form.WindowState = [System.Windows.Forms.FormWindowState]::Minimized
     $form.ShowInTaskbar = $false
     $form.Add_Shown({ $form.Hide(); $form.ShowInTaskbar = $true })

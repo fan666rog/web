@@ -9,7 +9,7 @@ exit /b
 #>
 
 # ==============================================================================
-# ⚡ 智慧自動關機助手 v1.2 (純綠色無痕版 - 零機碼 / 零 Temp 暫存檔)
+# ⚡ 智慧自動關機助手 v1.2.6 (純綠色無痕版 - 零機碼 / 零 Temp 暫存檔)
 #    Designed by fan666rog | https://github.com/fan666rog/web
 # ==============================================================================
 
@@ -182,8 +182,9 @@ function Get-HardwareMetrics {
     return @{ CPU = $cpuVal; NetKB = $netKBps }
 }
 
-# --- 3. 路徑與 INI 設定檔讀寫系統 ---
-$iniPath = Join-Path $batDir "config.ini"
+# --- 3. 路徑與 INI 設定檔讀寫系統 (統一存放於 %LocalAppData%\AutoShutdown_Helper) ---
+$appDataDir = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) "AutoShutdown_Helper"
+$iniPath = Join-Path $appDataDir "config.ini"
 $startupFolder = [Environment]::GetFolderPath('Startup')
 $shortcutPath = Join-Path $startupFolder "AutoShutdown_Helper.lnk"
 $isSilentLaunch = ($batArgs -match "-silent")
@@ -241,6 +242,9 @@ function Save-IniConfig($cfg) {
         "LastTriggeredDate=$($cfg.LastTriggeredDate)"
     )
     try {
+        if (-not (Test-Path $appDataDir)) {
+            [void](New-Item -Path $appDataDir -ItemType Directory -Force)
+        }
         [System.IO.File]::WriteAllLines($iniPath, $lines, [System.Text.Encoding]::UTF8)
     } catch {}
 }
@@ -325,7 +329,7 @@ $colorTextActive   = [System.Drawing.Color]::White
 $colorTextDisabled = [System.Drawing.Color]::FromArgb(140, 145, 150)
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "⚡ 智慧自動關機助手 v1.2 (純綠色免安裝版)"
+$form.Text = "⚡ 智慧自動關機助手 v1.2.6 (純綠色免安裝版)"
 $form.Size = New-Object System.Drawing.Size(590, 715)
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
 $form.MaximizeBox = $false
@@ -700,7 +704,7 @@ $lnkAuthor.Location = New-Object System.Drawing.Point(12, 650)
 $lnkAuthor.Size = New-Object System.Drawing.Size(550, 20)
 $lnkAuthor.Font = $fontSmall
 $lnkAuthor.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
-$authorText = "⚡ Designed by fan666rog   |   GitHub 專案主頁   |   v1.2"
+$authorText = "⚡ Designed by fan666rog   |   GitHub 專案主頁   |   v1.2.6"
 $lnkAuthor.Text = $authorText
 $lnkAuthor.ForeColor = [System.Drawing.Color]::DimGray
 $lnkAuthor.LinkColor = [System.Drawing.Color]::FromArgb(0, 102, 204)
@@ -1157,7 +1161,7 @@ $btnClean.Add_Click({
     if ($ans -eq [System.Windows.Forms.DialogResult]::Yes) {
         Stop-ShutdownTask
         Sync-StartupShortcut $false
-        if (Test-Path $iniPath) { try { Remove-Item $iniPath -Force } catch {} }
+        if (Test-Path $appDataDir) { try { Remove-Item $appDataDir -Recurse -Force } catch {} }
         $script:allowExit = $true
         $notifyIcon.Visible = $false
         $form.Close()

@@ -4,12 +4,12 @@ chcp 65001 >nul
 set "BAT_PATH=%~f0"
 set "BAT_DIR=%~dp0"
 set "BAT_ARGS=%*"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command "$batPath = $env:BAT_PATH; $batDir = $env:BAT_DIR; $batArgs = $env:BAT_ARGS; Invoke-Expression ([System.IO.File]::ReadAllText($batPath, [System.Text.Encoding]::UTF8))"
+powershell.exe -Sta -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command "$batPath = $env:BAT_PATH; $batDir = $env:BAT_DIR; $batArgs = $env:BAT_ARGS; Invoke-Expression ([System.IO.File]::ReadAllText($batPath, [System.Text.Encoding]::UTF8))"
 exit /b
 #>
 
 # ==============================================================================
-# ⚡ 智慧自動關機助手 v1.5 (純綠色無痕版 - 雙綠燈漏斗積分引擎 + 系統禁用防呆)
+# ⚡ 智慧自動關機助手 v1.5.1 (純綠色無痕版 - 雙綠燈漏斗積分引擎 + 系統禁用防呆)
 #    Designed by fan666rog | https://github.com/fan666rog/web
 # ==============================================================================
 
@@ -375,7 +375,6 @@ $script:allowExit = $false
 $script:forceShowOnStartup = $false
 $script:lastTickTime = [DateTime]::Now
 $script:isUpdatingUI = $false
-$script:lastNetUnit = "KB/s"
 
 # 關機卡死降級追蹤
 $script:escalationActive = $false
@@ -400,7 +399,7 @@ $colorLightAmber   = [System.Drawing.Color]::FromArgb(255, 210, 75)
 $colorLightRed     = [System.Drawing.Color]::FromArgb(255, 110, 110)
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "⚡ 智慧自動關機助手 v1.5 (雙綠燈漏斗積分版)"
+$form.Text = "⚡ 智慧自動關機助手 v1.5.1 (雙綠燈漏斗積分版)"
 $form.ClientSize = New-Object System.Drawing.Size(656, 796)
 $form.AutoScaleMode = [System.Windows.Forms.AutoScaleMode]::Dpi
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
@@ -433,7 +432,7 @@ $lblTargetTime.ForeColor = [System.Drawing.Color]::FromArgb(255, 215, 80)
 $lblTargetTime.Text = "目標執行時間： --"
 $pnlDash.Controls.Add($lblTargetTime)
 
-# 雙綠燈動態彩色狀態列 (使用原生幾何實心圓 ● 與分段變色 Label，杜絕 Emoji 缺字方框)
+# 雙綠燈動態彩色狀態列
 $lblStatusPrefix = New-Object System.Windows.Forms.Label
 $lblStatusPrefix.Location = New-Object System.Drawing.Point(14, 70)
 $lblStatusPrefix.AutoSize = $true
@@ -870,7 +869,7 @@ $lnkAuthor.Location = New-Object System.Drawing.Point(12, 762)
 $lnkAuthor.Size = New-Object System.Drawing.Size(632, 22)
 $lnkAuthor.Font = $fontSmall
 $lnkAuthor.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
-$authorText = "⚡ Designed by fan666rog   |   GitHub 專案主頁   |   v1.5 雙綠燈漏斗積分引擎"
+$authorText = "⚡ Designed by fan666rog   |   GitHub 專案主頁   |   v1.5.1 雙綠燈漏斗積分引擎"
 $lnkAuthor.Text = $authorText
 $lnkAuthor.ForeColor = [System.Drawing.Color]::DimGray
 $lnkAuthor.LinkColor = [System.Drawing.Color]::FromArgb(0, 102, 204)
@@ -889,11 +888,20 @@ $lnkAuthor.Add_LinkClicked({
 })
 $form.Controls.Add($lnkAuthor)
 
-# --- 6. 右下角系統匣 (NotifyIcon) 與右鍵選單 ---
+# --- 6. 右下角系統匣 (NotifyIcon) 與右鍵選單 (含 60 字元防溢位保護) ---
 $notifyIcon = New-Object System.Windows.Forms.NotifyIcon
 $notifyIcon.Icon = [System.Drawing.SystemIcons]::Shield
-$notifyIcon.Text = "智慧自動關機助手 v1.5 - 待命中"
 $notifyIcon.Visible = $true
+
+function Set-TrayText([string]$txt) {
+    if ([string]::IsNullOrEmpty($txt)) { return }
+    if ($txt.Length -gt 60) {
+        $txt = $txt.Substring(0, 60)
+    }
+    try { $notifyIcon.Text = $txt } catch {}
+}
+
+Set-TrayText "智慧自動關機助手 v1.5.1 - 待命中"
 
 $ctxMenu = New-Object System.Windows.Forms.ContextMenuStrip
 $miShow = $ctxMenu.Items.Add("顯示主視窗")
@@ -1096,7 +1104,6 @@ function Apply-ConfigToUI {
         $numCPU.Value                = [Math]::Max(1, [Math]::Min(100, $script:cfg.CPULimit))
         $chkNet.Checked              = $script:cfg.CheckNet
         $cmbNetUnit.SelectedIndex    = if ($script:cfg.NetUnit -eq "MB/s") { 1 } else { 0 }
-        $script:lastNetUnit          = $cmbNetUnit.SelectedItem.ToString()
         $numNet.Value                = [Math]::Max(1, [Math]::Min(9999, $script:cfg.NetLimitVal))
         $chkPowerReq.Checked         = $script:cfg.CheckPowerReq
         $cmbAction.SelectedIndex     = [Math]::Max(0, [Math]::Min(3, $script:cfg.ActionType))
@@ -1193,7 +1200,7 @@ function Set-ControlsLocked([bool]$locked) {
         $btnStop.Cursor     = [System.Windows.Forms.Cursors]::Default
     }
 
-    $miDelay30.Enabled = $locked
+    $miDelay30.Enabled = $locked -and (-not $script:escalationActive)
     $miCancel.Enabled  = $locked
 }
 
@@ -1229,7 +1236,7 @@ function Start-ShutdownTask([bool]$isResuming = $false) {
             Update-ModeUIState
             $script:forceShowOnStartup = $true
             Set-SingleStatus "● 上次排定的【$actShortName】因系統已禁用而無法恢復，請重新設定！" $colorLightRed
-            $notifyIcon.Text = "智慧自動關機助手 - 【$actShortName】已禁用請重新設定"
+            Set-TrayText "智慧自動關機助手 - 【$actShortName】已禁用請重新設定"
             return
         } else {
             [System.Windows.Forms.MessageBox]::Show(
@@ -1279,6 +1286,10 @@ function Start-ShutdownTask([bool]$isResuming = $false) {
 }
 
 function Stop-ShutdownTask {
+    if ($script:escalationActive) {
+        try { Start-Process "shutdown.exe" -ArgumentList "/a" -WindowStyle Hidden } catch {}
+    }
+
     $script:isTaskRunning = $false
     $script:cfg.IsRunning = $false
     $script:cfg.TargetTimestamp = ""
@@ -1297,7 +1308,7 @@ function Stop-ShutdownTask {
     Update-ModeUIState
     Update-ActionComboBoxItems
     Set-SingleStatus "○ 待命中 (任務已取消 / 停止)" $colorLightGreen
-    $notifyIcon.Text = "智慧自動關機助手 v1.5 - 待命中"
+    Set-TrayText "智慧自動關機助手 v1.5.1 - 待命中"
 }
 
 function Execute-FinalSystemAction {
@@ -1316,7 +1327,7 @@ function Execute-FinalSystemAction {
     if (-not (Resolve-EffectivePowerAction $script:cfg.ActionType $script:cfg.FallbackToShutdown ([ref]$effectiveType) ([ref]$actShortName) ([ref]$fallbackNote) ([ref]$errReason))) {
         Stop-ShutdownTask
         Set-SingleStatus "● 執行中止：系統已禁用【$actShortName】且未開啟自動降級！" $colorLightRed
-        $notifyIcon.Text = "智慧自動關機助手 - 【$actShortName】已禁用而中止"
+        Set-TrayText "智慧自動關機助手 - 【$actShortName】已禁用而中止"
         Show-MainWindowToFront
         return
     }
@@ -1372,16 +1383,19 @@ function Execute-FinalSystemAction {
         } else {
             Stop-ShutdownTask
             Set-SingleStatus "● 系統拒絕進入【$failActName】（可能受驅動程式或電源原則阻擋）" $colorLightRed
-            $notifyIcon.Text = "智慧自動關機助手 - 【$failActName】執行失敗"
+            Set-TrayText "智慧自動關機助手 - 【$failActName】執行失敗"
             Show-MainWindowToFront
             return
         }
     }
 
-    if ($script:cfg.Mode -ne "C" -and (-not $script:escalationActive)) {
-        Stop-ShutdownTask
-    } elseif ($script:cfg.Mode -ne "C" -and $script:escalationActive) {
+    if ($script:escalationActive) {
+        $miDelay30.Enabled = $false
+        $miCancel.Enabled  = $true
         Set-SingleStatus "● 已發送關機指令，正在結束背景程式..." $colorLightAmber
+        Set-TrayText "正在結束背景程式並準備關機..."
+    } elseif ($script:cfg.Mode -ne "C") {
+        Stop-ShutdownTask
     }
 }
 
@@ -1390,21 +1404,6 @@ $rbModeA.Add_CheckedChanged({ if ($rbModeA.Checked) { Update-ModeUIState } })
 $rbModeB.Add_CheckedChanged({ if ($rbModeB.Checked) { Update-ModeUIState } })
 $rbModeC.Add_CheckedChanged({ if ($rbModeC.Checked) { Update-ModeUIState } })
 $rbModeD.Add_CheckedChanged({ if ($rbModeD.Checked) { Update-ModeUIState } })
-
-$cmbNetUnit.Add_SelectedIndexChanged({
-    $newUnit = $cmbNetUnit.SelectedItem.ToString()
-    if (-not $script:isUpdatingUI -and $newUnit -ne $script:lastNetUnit) {
-        $curVal = [int]$numNet.Value
-        if ($newUnit -eq "MB/s") {
-            $converted = [Math]::Max(1, [int][Math]::Round($curVal / 1024.0))
-            $numNet.Value = [Math]::Min([int]$numNet.Maximum, $converted)
-        } else {
-            $converted = [Math]::Max(1, $curVal * 1024)
-            $numNet.Value = [Math]::Min([int]$numNet.Maximum, $converted)
-        }
-    }
-    $script:lastNetUnit = $newUnit
-})
 
 $chkAutoStartup.Add_CheckedChanged({
     if (-not $script:isUpdatingUI -and -not $script:isTaskRunning -and (-not $rbModeC.Checked)) {
@@ -1462,11 +1461,11 @@ $notifyIcon.Add_DoubleClick({ Show-MainWindowToFront })
 $miShow.Add_Click({ Show-MainWindowToFront })
 
 $miDelay30.Add_Click({
-    if ($script:isTaskRunning) { $btnAlertDelay.PerformClick() }
+    if ($script:isTaskRunning -and (-not $script:escalationActive)) { $btnAlertDelay.PerformClick() }
 })
 
 $miCancel.Add_Click({
-    if ($script:isTaskRunning) { Stop-ShutdownTask }
+    if ($script:isTaskRunning -or $script:escalationActive) { Stop-ShutdownTask }
 })
 
 $miExit.Add_Click({
@@ -1514,7 +1513,7 @@ $timer.Add_Tick({
     if ($tickGap -gt 15) {
         $script:idleBucketScore = 0
         $script:escalationActive = $false
-        if ($script:isTaskRunning -and $script:cfg.Mode -eq "C" -and $now -gt $script:targetTime.AddMinutes(5)) {
+        if ($script:isTaskRunning -and $script:cfg.Mode -eq "C" -and $now -gt $script:targetTime) {
             $script:isInAlertBuffer = $false
             $alertForm.Hide()
             $script:targetTime = Calculate-PreviewTargetTime
@@ -1529,16 +1528,22 @@ $timer.Add_Tick({
         if ($stuckSec -ge 25 -and $script:escalationStage -eq 1) {
             $script:escalationStage = 2
             if ($Win32Api::IsPwrHibernateAllowed()) {
-                Set-SingleStatus "● 關機遭程式阻擋，降級執行【休眠】保護未存檔資料..." $colorLightAmber
+                Set-SingleStatus "● 關機遭程式阻擋，解除關機鎖定並降級【休眠】..." $colorLightAmber
+                Set-TrayText "關機遭阻擋，降級執行休眠..."
+                Start-Process "shutdown.exe" -ArgumentList "/a" -WindowStyle Hidden
+                Start-Sleep -Milliseconds 500
                 [void]$Win32Api::SetSuspendState($true, $false, $false)
                 $script:escalationActive = $false
-                if ($script:cfg.Mode -ne "C") { Stop-ShutdownTask }
+                if ($script:cfg.Mode -ne "C") { Stop-ShutdownTask } else { $miDelay30.Enabled = $true }
                 return
             } elseif ($Win32Api::IsPwrSuspendAllowed()) {
-                Set-SingleStatus "● 休眠已禁用且關機遭阻擋，降級執行【睡眠】..." $colorLightAmber
+                Set-SingleStatus "● 休眠已禁用且關機遭阻擋，解除鎖定並降級【睡眠】..." $colorLightAmber
+                Set-TrayText "關機遭阻擋，降級執行睡眠..."
+                Start-Process "shutdown.exe" -ArgumentList "/a" -WindowStyle Hidden
+                Start-Sleep -Milliseconds 500
                 [void]$Win32Api::SetSuspendState($false, $false, $false)
                 $script:escalationActive = $false
-                if ($script:cfg.Mode -ne "C") { Stop-ShutdownTask }
+                if ($script:cfg.Mode -ne "C") { Stop-ShutdownTask } else { $miDelay30.Enabled = $true }
                 return
             }
         }
@@ -1547,12 +1552,14 @@ $timer.Add_Tick({
             $script:escalationActive = $false
             if ($script:cfg.ForceBlockedAct) {
                 Set-SingleStatus "● 休眠/睡眠皆禁用且關機超時，執行強制關機 (/f)..." $colorLightAmber
+                Set-TrayText "超時執行強制關機 (/f)..."
                 Start-Process "shutdown.exe" -ArgumentList "/s /f /t 0" -WindowStyle Hidden
-                if ($script:cfg.Mode -ne "C") { Stop-ShutdownTask }
+                if ($script:cfg.Mode -ne "C") { Stop-ShutdownTask } else { $miDelay30.Enabled = $true }
             } else {
                 Set-SingleStatus "● 關機被未存檔視窗卡住 (休眠/睡眠皆已禁用，請手動處理)" $colorLightRed
+                Set-TrayText "關機遭未存檔視窗卡住，請手動處理"
                 Show-MainWindowToFront
-                if ($script:cfg.Mode -ne "C") { Stop-ShutdownTask }
+                if ($script:cfg.Mode -ne "C") { Stop-ShutdownTask } else { $miDelay30.Enabled = $true }
             }
         }
         return
@@ -1641,7 +1648,7 @@ $timer.Add_Tick({
         $remSecDisplay = [Math]::Max(0, $script:alertRemainingSeconds)
 
         Set-SingleStatus "●● 雙燈全亮！最後防誤殺倒數 ${remSecDisplay} 秒後執行【${actName}】" $colorLightRed
-        $notifyIcon.Text = "防誤殺確認：${remSecDisplay}秒後${actName}"
+        Set-TrayText "防誤殺確認：${remSecDisplay}秒後${actName}"
 
         $fbLine = if ($fallbackNote -ne "") { "`n※ $fallbackNote" } else { "" }
         if ($script:alertTriggerReason -eq "Smart") {
@@ -1669,7 +1676,7 @@ $timer.Add_Tick({
         $cdStr = Format-TimeSpan $cdSpan
         $lblTargetTime.Text = ("目標執行時間： 延後暫緩中 (將於 {0} 後恢復雙綠燈監測)" -f $cdStr)
         Set-SingleStatus "● 延後 30 分鐘冷卻中 (倒數 $cdStr)" $colorLightAmber
-        $notifyIcon.Text = "延後冷卻中 ($cdStr)"
+        Set-TrayText "延後冷卻中 ($cdStr)"
         return
     }
 
@@ -1689,7 +1696,7 @@ $timer.Add_Tick({
         $remStr = Format-TimeSpan $remTime
         $lblTargetTime.Text = ("目標執行時間： {0}  (倒數剩餘 {1})" -f $script:targetTime.ToString("yyyy-MM-dd HH:mm:ss"), $remStr)
         Set-SingleStatus "● 嚴格準時倒數中 (已關閉忙碌延後保護)" $colorLightGreen
-        $notifyIcon.Text = "倒數剩餘：$remStr ($actName)"
+        Set-TrayText "倒數剩餘：$remStr ($actName)"
         return
     }
 
@@ -1751,7 +1758,7 @@ $timer.Add_Tick({
     $g2Color = if ($systemReady) { $colorLightGreen } else { $colorLightAmber }
 
     Set-DualLightStatus $g1Text $g1Color $g2Text $g2Color
-    $notifyIcon.Text = "雙綠燈監測：積分 $script:idleBucketScore/$targetScore ($actName)"
+    Set-TrayText "雙綠燈監測：積分 $script:idleBucketScore/$targetScore ($actName)"
 })
 
 # --- 11. 啟動初始化與狀態恢復檢查 ---
@@ -1778,7 +1785,7 @@ if ($script:cfg.IsRunning) {
                 $script:cfg.TargetTimestamp = ""
                 Save-IniConfig $script:cfg
                 Set-SingleStatus "○ 待命中 (上次排程時間已過，已自動取消任務)" $colorLightAmber
-                $notifyIcon.Text = "智慧自動關機助手 v1.5 - 待命中 (上次排程已過期)"
+                Set-TrayText "智慧自動關機助手 v1.5.1 - 待命中 (上次排程已過期)"
             }
         } else {
             $script:cfg.IsRunning = $false

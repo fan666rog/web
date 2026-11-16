@@ -1,4 +1,4 @@
-# ⚡ 智慧自動關機助手 (AutoShutdown Helper) v1.5
+# ⚡ 智慧自動關機助手 (AutoShutdown Helper) v1.6
 
 Windows **純綠色、免安裝、單一腳本圖形化自動關機工具**。  
 結合「雙綠燈解耦排程」與「漏斗積分制硬體閒置監測（鍵鼠動作 / CPU 負載 / 網路流量 / 系統電源鎖定）」。
@@ -65,10 +65,10 @@ Windows **純綠色、免安裝、單一腳本圖形化自動關機工具**。
 ## 👤 作者與專案資訊
 
 - **Designed & Shared by:** [fan666rog](https://github.com/fan666rog/web)
-- **Version:** v1.5
+- **Version:** v1.6
 
 更新：
-V1.5 2026/1117 對於系統排程和判斷邏輯交由 Gemini4 hydrogen HIGH模式自主思考重寫，他想了雙綠燈和積分制。
+V1.6 2026/1117 對於系統排程和判斷邏輯交由 Gemini4 hydrogen HIGH模式自主思考重寫，他想了雙綠燈和積分制。
 
 V1.2.6 2026/1114更新 08:00 把ini暫存檔統一存放到%LocalAppData%\AutoShutdown_Helper專屬目錄，避免bat放在C系統目錄時無法寫入ini設定檔問題。清除設定退出，會把ini和專屬ini存放目錄一併刪除，達到無痕。
 

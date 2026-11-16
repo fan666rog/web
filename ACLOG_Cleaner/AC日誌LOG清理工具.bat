@@ -2,16 +2,17 @@
 @echo off
 chcp 65001 >nul
 title AC日誌LOG清理工具
+set "SCRIPT_PATH=%~f0"
 
-:: 檢查是否具備系統管理員權限，若無則自動申請提權
-net session >nul 2>&1
+:: 檢查是否具備系統管理員權限，若無則自動申請提權 (使用 fltmc 避免 Server 服務停用時誤判)
+fltmc >nul 2>&1
 if %errorLevel% neq 0 (
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath $env:SCRIPT_PATH -Verb RunAs"
     exit /b
 )
 
-:: 啟動內嵌的 PowerShell 清理引擎
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression ([System.IO.File]::ReadAllText('%~f0', [System.Text.Encoding]::UTF8))"
+:: 啟動內嵌的 PowerShell 清理引擎 (改用 ScriptBlock 執行，報錯行號精準且免疫路徑特殊字元)
+powershell -NoProfile -ExecutionPolicy Bypass -Command "& ([ScriptBlock]::Create([System.IO.File]::ReadAllText($env:SCRIPT_PATH, [System.Text.Encoding]::UTF8)))"
 exit /b
 #>
 
@@ -24,6 +25,7 @@ exit /b
 #   KeepDays   : 保留最新的幾個「有紀錄的日期(開機日)」(0 = 全部清空；3 = 保留最新 3 個日期的檔案)
 #   Filter     : 檔名過濾規則 (預設 "*.log" 代表所有 log 檔；也可指定特定檔名、前綴或萬用字元)
 #   Recurse    : 是否連同內部的子資料夾一起掃描 ($true = 是, $false = 否)
+#   PerSubDir  : (選填) 是否將該路徑下的每個第一層子目錄視為獨立單位各自計算保留天數 ($true / $false)
 # ==============================================================================
 
 $BasePath = "C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis"
@@ -47,30 +49,11 @@ $Rules.Add(@{ Name = "MouseSDK";                  Path = "$BasePath\MouseSDK";  
 $Rules.Add(@{ Name = "ROG Live Service";          Path = "$BasePath\ROG Live Service";  KeepDays = 3; Filter = "ROGLiveService_*.log"; Recurse = $false })
 $Rules.Add(@{ Name = "UnifyScanner";              Path = "$BasePath\UnifyScanner";      KeepDays = 3; Filter = "*.log"; Recurse = $false })
 
-# --- 3. Framework 隨機碼子資料夾區 (自動偵測各子目錄並各自獨立保留最新 3 個開機日) ---
-$FrameworkBase = "$BasePath\Framework"
-if (Test-Path -LiteralPath $FrameworkBase) {
-    $FrameworkSubDirs = Get-ChildItem -LiteralPath $FrameworkBase -Directory -ErrorAction SilentlyContinue
-    if ($FrameworkSubDirs -and $FrameworkSubDirs.Count -gt 0) {
-        foreach ($SubDir in $FrameworkSubDirs) {
-            $ShortName = if ($SubDir.Name.Length -gt 8) { "$($SubDir.Name.Substring(0,8))..." } else { $SubDir.Name }
-            $Rules.Add(@{
-                Name     = "Framework (子目錄: $ShortName)"
-                Path     = $SubDir.FullName
-                KeepDays = 3
-                Filter   = "*.log"
-                Recurse  = $false
-            })
-        }
-    } else {
-        $Rules.Add(@{ Name = "Framework"; Path = $FrameworkBase; KeepDays = 3; Filter = "*.log"; Recurse = $false })
-    }
-} else {
-    $Rules.Add(@{ Name = "Framework"; Path = $FrameworkBase; KeepDays = 3; Filter = "*.log"; Recurse = $false })
-}
+# --- 3. Framework 隨機碼子資料夾區 (引擎自動偵測各子目錄並各自獨立保留最新 3 個開機日) ---
+$Rules.Add(@{ Name = "Framework";                 Path = "$BasePath\Framework";         KeepDays = 3; Filter = "*.log"; Recurse = $false; PerSubDir = $true })
 
 # --- 4. 使用者個人資料夾區 (自動偵測電腦內所有使用者帳號的 AppData\Local) ---
-$UserFolders = Get-ChildItem -Path "C:\Users" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -notin @("Public", "Default", "Default User", "All Users") }
+$UserFolders = @(Get-ChildItem -LiteralPath "C:\Users" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -notin @("Public", "Default", "Default User", "All Users") })
 $AddedUserPaths = @()
 
 foreach ($User in $UserFolders) {
@@ -109,13 +92,10 @@ Write-Host "                     AC日誌LOG清理工具                    " -F
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host ""
 
-$FilesToDelete = New-Object System.Collections.Generic.List[System.IO.FileInfo]
-$RuleIndex = 0
-
-# 輔助函式：取得檔案對應的日期字串 (優先解析檔名中的 YYYY-MM-DD，若無則取檔案修改日期)
+# 輔助函式：取得檔案對應的日期字串 (支援 YYYY-MM-DD、YYYY_MM_DD、YYYYMMDD，若無則取檔案修改日期)
 function Get-FileLogDate ($File) {
-    if ($File.BaseName -match '(\d{4}-\d{2}-\d{2})') {
-        return $matches[1]
+    if ($File.BaseName -match '(?<!\d)(20[0-3]\d)[-_]?(0[1-9]|1[0-2])[-_]?(0[1-9]|[12]\d|3[01])(?!\d)') {
+        return "$($matches[1])-$($matches[2])-$($matches[3])"
     }
     return $File.LastWriteTime.ToString('yyyy-MM-dd')
 }
@@ -128,7 +108,37 @@ function Format-FileSize ($Bytes) {
     return "{0:N1} KB" -f ($Bytes / 1KB)
 }
 
+# 展開啟用 PerSubDir 的規則，使每個第一層子目錄皆成為獨立計算的規則項目
+$ExpandedRules = [System.Collections.Generic.List[hashtable]]::new()
 foreach ($Rule in $Rules) {
+    if ($Rule.PerSubDir -and (Test-Path -LiteralPath $Rule.Path)) {
+        $SubDirs = @(Get-ChildItem -LiteralPath $Rule.Path -Directory -ErrorAction SilentlyContinue)
+        if ($SubDirs.Count -gt 0) {
+            # 若母目錄本身也直接散落符合條件的日誌檔，一併納入獨立規則避免遺漏
+            $RootFiles = @(Get-ChildItem -LiteralPath $Rule.Path -Filter $Rule.Filter -File -ErrorAction SilentlyContinue)
+            if ($RootFiles.Count -gt 0) {
+                $RootRule = $Rule.Clone()
+                $RootRule.PerSubDir = $false
+                $ExpandedRules.Add($RootRule)
+            }
+            foreach ($SubDir in $SubDirs) {
+                $ShortName = if ($SubDir.Name.Length -gt 8) { "$($SubDir.Name.Substring(0,8))..." } else { $SubDir.Name }
+                $SubRule = $Rule.Clone()
+                $SubRule.Name = "$($Rule.Name) (子目錄: $ShortName)"
+                $SubRule.Path = $SubDir.FullName
+                $SubRule.PerSubDir = $false
+                $ExpandedRules.Add($SubRule)
+            }
+            continue
+        }
+    }
+    $ExpandedRules.Add($Rule)
+}
+
+$FilesToDelete = New-Object System.Collections.Generic.List[System.IO.FileInfo]
+$RuleIndex = 0
+
+foreach ($Rule in $ExpandedRules) {
     $RuleIndex++
     $KeepText = if ($Rule.KeepDays -le 0) { "全部清空" } else { "保留最新 $($Rule.KeepDays) 個紀錄日" }
     Write-Host "[規則 $RuleIndex] $($Rule.Name) ($KeepText | 目標: $($Rule.Filter))" -ForegroundColor Yellow
@@ -140,14 +150,14 @@ foreach ($Rule in $Rules) {
         continue
     }
 
-    # 取得符合條件之檔案
+    # 取得符合條件之檔案 (統一使用 -LiteralPath 並以 @() 強制轉為陣列)
     if ($Rule.Recurse) {
-        $Files = Get-ChildItem -Path $Rule.Path -Filter $Rule.Filter -File -Recurse -ErrorAction SilentlyContinue
+        $Files = @(Get-ChildItem -LiteralPath $Rule.Path -Filter $Rule.Filter -File -Recurse -ErrorAction SilentlyContinue)
     } else {
-        $Files = Get-ChildItem -Path $Rule.Path -Filter $Rule.Filter -File -ErrorAction SilentlyContinue
+        $Files = @(Get-ChildItem -LiteralPath $Rule.Path -Filter $Rule.Filter -File -ErrorAction SilentlyContinue)
     }
 
-    if (-not $Files -or $Files.Count -eq 0) {
+    if ($Files.Count -eq 0) {
         Write-Host "  -> 資料夾內無符合條件之日誌檔。" -ForegroundColor Green
         Write-Host ""
         continue
@@ -166,8 +176,8 @@ foreach ($Rule in $Rules) {
         $TargetEntries = $FileEntries
     } else {
         # 取出所有不重複的日期，由新到舊排序，挑出要保留的前 N 個最新日期
-        $UniqueDates = $FileEntries | Select-Object -ExpandProperty DateStr -Unique | Sort-Object -Descending
-        $KeepDates = $UniqueDates | Select-Object -First $Rule.KeepDays
+        $UniqueDates = @($FileEntries | Select-Object -ExpandProperty DateStr -Unique | Sort-Object -Descending)
+        $KeepDates = @($UniqueDates | Select-Object -First $Rule.KeepDays)
 
         if ($KeepDates.Count -gt 0) {
             Write-Host "  -> 系統保留日期: $($KeepDates -join ', ')" -ForegroundColor DarkCyan

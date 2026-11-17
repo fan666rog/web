@@ -9,7 +9,7 @@ exit /b
 #>
 
 # ==============================================================================
-# ⚡ 智慧自動關機助手 v1.6.0 (純綠色無痕版 - 嚴謹狀態機重構 + 雙綠燈漏斗積分引擎)
+# ⚡ 智慧自動關機助手 v1.6.1 (純綠色無痕版 - 精簡四狀態機 + 雙綠燈漏斗積分引擎)
 #    Designed by fan666rog | https://github.com/fan666rog/web
 # ==============================================================================
 
@@ -33,9 +33,9 @@ Add-Type -AssemblyName System.Drawing
 
 # --- 1. 純記憶體反射載入 Windows 底層 API (零 Temp 編譯垃圾 + 精準 U1 布林封送) ---
 $domain = [AppDomain]::CurrentDomain
-$dynAsm = New-Object System.Reflection.AssemblyName('Win32IdleMemAsmV160')
+$dynAsm = New-Object System.Reflection.AssemblyName('Win32IdleMemAsmV161')
 $asmBuilder = $domain.DefineDynamicAssembly($dynAsm, [System.Reflection.Emit.AssemblyBuilderAccess]::Run)
-$modBuilder = $asmBuilder.DefineDynamicModule('Win32IdleMemModV160')
+$modBuilder = $asmBuilder.DefineDynamicModule('Win32IdleMemModV161')
 $typeBuilder = $modBuilder.DefineType('Win32Api', [System.Reflection.TypeAttributes]::Public -bor [System.Reflection.TypeAttributes]::Class)
 
 $marshalAttrCtor = [System.Runtime.InteropServices.MarshalAsAttribute].GetConstructor([Type[]]@([System.Runtime.InteropServices.UnmanagedType]))
@@ -227,6 +227,11 @@ $startupFolder  = [Environment]::GetFolderPath('Startup')
 $shortcutPath   = Join-Path $startupFolder "AutoShutdown_Helper.lnk"
 $isSilentLaunch = ($batArgs -match "-silent")
 
+if ([string]::IsNullOrWhiteSpace($batPath) -and (-not [string]::IsNullOrWhiteSpace($PSCommandPath))) {
+    $batPath = $PSCommandPath
+    $batDir  = Split-Path -Parent $batPath
+}
+
 $defaultConfig = @{
     Mode               = "B"          # A:指定時間, B:倒數, C:每日, D:純閒置
     SpecDate           = ([DateTime]::Now.AddHours(1).ToString("yyyy-MM-dd"))
@@ -250,7 +255,7 @@ $defaultConfig = @{
     PreNotify          = $true
     PreNotifySecs      = 60           # 最後防誤殺確認秒數 (預設 60 秒)
     FallbackToShutdown = $true        # 禁用防呆：睡眠/休眠被系統禁用時自動降級為關機
-    ForceBlockedAct    = $false       # 關機遭未存檔程式阻擋超時強制關閉
+    ForceBlockedAct    = $false       # 執行關機/重啟時直接強制結束未存檔程式
     AutoStartup        = $false
     IsRunning          = $false
     TargetTimestamp    = ""
@@ -344,6 +349,7 @@ function Load-IniConfig {
 
 function Sync-StartupShortcut([bool]$enable) {
     if ($enable) {
+        if ([string]::IsNullOrWhiteSpace($batPath) -or $batPath -notlike "*.bat") { return }
         try {
             $wsh = New-Object -ComObject WScript.Shell
             $sc = $wsh.CreateShortcut($shortcutPath)
@@ -365,13 +371,12 @@ function Sync-StartupShortcut([bool]$enable) {
 
 $script:cfg = Load-IniConfig
 
-# --- 4. 集中化狀態機定義 (Single Source of Truth) ---
+# --- 4. 集中化狀態機定義 (Single Source of Truth - 精簡四狀態機) ---
 # EngineState 枚舉值:
 #   "Idle"       : 待命中（未啟動任務）
 #   "Monitoring" : 任務執行中（雙綠燈監測或嚴格倒數中）
 #   "WakeGuard"  : 系統剛從睡眠/休眠喚醒後的短暫冷卻緩衝（60秒防連續誤觸）
 #   "Alerting"   : 已進入最後防誤殺確認視窗倒數
-#   "Escalating" : 已發送關機指令，監控是否遭未存檔程式卡住並執行智慧降級
 $script:state = @{
     EngineState           = "Idle"
     TargetTime            = [DateTime]::MaxValue
@@ -381,8 +386,6 @@ $script:state = @{
     AlertEndTime          = [DateTime]::MaxValue
     AlertRemainingSeconds = 0
     AlertSnoozed          = $false
-    EscalationStartTime   = [DateTime]::MaxValue
-    EscalationStage       = 0
     LastTickTime          = [DateTime]::Now
     AllowExit             = $false
     ForceShowOnStartup    = $false
@@ -396,8 +399,6 @@ function Reset-TransientRuntimeState {
     $script:state.AlertEndTime          = [DateTime]::MaxValue
     $script:state.AlertRemainingSeconds = 0
     $script:state.AlertSnoozed          = $false
-    $script:state.EscalationStartTime   = [DateTime]::MaxValue
-    $script:state.EscalationStage       = 0
 }
 
 # --- 5. 建立 GUI 視窗與控制項 ---
@@ -418,7 +419,7 @@ $colorLightAmber   = [System.Drawing.Color]::FromArgb(255, 210, 75)
 $colorLightRed     = [System.Drawing.Color]::FromArgb(255, 110, 110)
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "⚡ 智慧自動關機助手 v1.6.0 (雙綠燈漏斗積分版)"
+$form.Text = "⚡ 智慧自動關機助手 v1.6.1 (雙綠燈漏斗積分版)"
 $form.ClientSize = New-Object System.Drawing.Size(656, 826)
 $form.AutoScaleMode = [System.Windows.Forms.AutoScaleMode]::Dpi
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
@@ -864,7 +865,7 @@ $chkForceBlocked = New-Object System.Windows.Forms.CheckBox
 $chkForceBlocked.Location = New-Object System.Drawing.Point(18, 117)
 $chkForceBlocked.Size = New-Object System.Drawing.Size(600, 22)
 $chkForceBlocked.Font = $fontMain
-$chkForceBlocked.Text = "強制兜底：關機遭未存檔程式阻擋超時，允許強制關閉 (未存檔資料將遺失)"
+$chkForceBlocked.Text = "強制關閉：執行關機/重啟時直接強制結束未存檔程式 (未存檔資料將遺失)"
 $grpSys.Controls.Add($chkForceBlocked)
 
 $chkAutoStartup = New-Object System.Windows.Forms.CheckBox
@@ -918,7 +919,7 @@ $lnkAuthor.Location = New-Object System.Drawing.Point(12, 792)
 $lnkAuthor.Size = New-Object System.Drawing.Size(632, 22)
 $lnkAuthor.Font = $fontSmall
 $lnkAuthor.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
-$authorText = "⚡ Designed by fan666rog   |   GitHub 專案主頁   |   v1.6.0 嚴謹狀態機重構版"
+$authorText = "⚡ Designed by fan666rog   |   GitHub 專案主頁   |   v1.6.1 精簡狀態機穩定版"
 $lnkAuthor.Text = $authorText
 $lnkAuthor.ForeColor = [System.Drawing.Color]::DimGray
 $lnkAuthor.LinkColor = [System.Drawing.Color]::FromArgb(0, 102, 204)
@@ -950,7 +951,7 @@ function Set-TrayText([string]$txt) {
     try { $notifyIcon.Text = $txt } catch {}
 }
 
-Set-TrayText "智慧自動關機助手 v1.6.0 - 待命中"
+Set-TrayText "智慧自動關機助手 v1.6.1 - 待命中"
 
 $ctxMenu = New-Object System.Windows.Forms.ContextMenuStrip
 $miShow = $ctxMenu.Items.Add("顯示主視窗")
@@ -1196,6 +1197,16 @@ function Update-ModeUIState {
                 $chkEarlyIfIdle.Enabled  = $true
             }
         }
+
+        if ($rbModeD.Checked -or $chkDelayIfBusy.Checked) {
+            $lblNotM.Text = "秒 (動滑鼠即自動取消)"
+        } else {
+            $lblNotM.Text = "秒 (嚴格模式需按按鈕取消)"
+        }
+
+        if (-not $isTaskActive -and (Test-Path $iniPath)) {
+            Sync-StartupShortcut (Get-EffectiveAutoStartup)
+        }
     } finally {
         $script:state.IsUpdatingUI = $wasUpdating
     }
@@ -1266,70 +1277,18 @@ function Enter-AlertState([string]$reason, [int]$seconds) {
     $script:state.AlertEndTime          = ([DateTime]::Now).AddSeconds($script:state.AlertRemainingSeconds)
     $script:state.AlertSnoozed          = $false
 
-    if ($reason -eq "Smart") {
-        $btnAlertHide.Visible = $true
+    if ($reason -ne "Smart") {
+        $btnAlertHide.Visible    = $true
         $btnAlertCancel.Location = New-Object System.Drawing.Point(235, 144)
         $btnAlertCancel.Size     = New-Object System.Drawing.Size(219, 38)
     } else {
-        $btnAlertHide.Visible = $false
+        $btnAlertHide.Visible    = $false
         $btnAlertCancel.Location = New-Object System.Drawing.Point(16, 144)
         $btnAlertCancel.Size     = New-Object System.Drawing.Size(438, 38)
     }
 }
 
-# --- 9. 核心引擎單步更新 (嚴格狀態分派) ---
-function Handle-EscalationTick([DateTime]$now) {
-    $stuckSec = ($now - $script:state.EscalationStartTime).TotalSeconds
-
-    if ($stuckSec -ge 25 -and $script:state.EscalationStage -eq 1) {
-        $script:state.EscalationStage = 2
-        if ($Win32Api::IsPwrHibernateAllowed()) {
-            Set-SingleStatus "● 關機遭程式阻擋，解除關機鎖定並降級【休眠】..." $colorLightAmber
-            Set-TrayText "關機遭阻擋，降級執行休眠..."
-            Start-Process "shutdown.exe" -ArgumentList "/a" -WindowStyle Hidden
-            Start-Sleep -Milliseconds 500
-            [void]$Win32Api::SetSuspendState($true, $false, $false)
-            Finish-PostExecutionState
-            return
-        } elseif ($Win32Api::IsPwrSuspendAllowed()) {
-            Set-SingleStatus "● 休眠已禁用且關機遭阻擋，解除鎖定並降級【睡眠】..." $colorLightAmber
-            Set-TrayText "關機遭阻擋，降級執行睡眠..."
-            Start-Process "shutdown.exe" -ArgumentList "/a" -WindowStyle Hidden
-            Start-Sleep -Milliseconds 500
-            [void]$Win32Api::SetSuspendState($false, $false, $false)
-            Finish-PostExecutionState
-            return
-        }
-    }
-
-    if ($stuckSec -ge 45 -and $script:state.EscalationStage -eq 2) {
-        $script:state.EscalationStage = 3
-        if ($script:cfg.ForceBlockedAct) {
-            Set-SingleStatus "● 休眠/睡眠皆禁用且關機超時，執行強制關機 (/f)..." $colorLightAmber
-            Set-TrayText "超時執行強制關機 (/f)..."
-            Start-Process "shutdown.exe" -ArgumentList "/s /f /t 0" -WindowStyle Hidden
-            Finish-PostExecutionState
-        } else {
-            Set-SingleStatus "● 關機被未存檔視窗卡住 (休眠/睡眠皆已禁用，請手動處理)" $colorLightRed
-            Set-TrayText "關機遭未存檔視窗卡住，請手動處理"
-            Show-MainWindowToFront
-            Finish-PostExecutionState
-        }
-    }
-}
-
-function Finish-PostExecutionState {
-    Reset-TransientRuntimeState
-    if ($script:cfg.Mode -eq "C") {
-        # 模式 C 執行完畢後，自動切回 Monitoring 等待明日下一輪排程，絕不卡死
-        $script:state.EngineState = "Monitoring"
-        Set-SingleStatus "● 每日排程已執行，繼續背景待命明日排程" $colorLightGreen
-        Set-TrayText "智慧自動關機助手 - 每日排程待命中"
-    } else {
-        Stop-ShutdownTask
-    }
-}
-
+# --- 9. 核心引擎單步更新 (嚴格四狀態分派) ---
 function Update-EngineTick([bool]$isInitialSync = $false) {
     $now = [DateTime]::Now
 
@@ -1345,35 +1304,39 @@ function Update-EngineTick([bool]$isInitialSync = $false) {
 
         if ($tickGap -gt 15) {
             $script:state.IdleBucketScore = 0
-            if ($script:state.EngineState -eq "Escalating") {
-                Finish-PostExecutionState
-                return
-            }
             if ($script:state.EngineState -eq "Alerting") {
                 $script:state.EngineState  = "Monitoring"
                 $script:state.AlertSnoozed = $false
                 $alertForm.Hide()
             }
             if ($script:state.EngineState -ne "Idle") {
-                if ($script:cfg.Mode -eq "C" -and $now -gt $script:state.TargetTime) {
-                    $script:state.TargetTime = Calculate-PreviewTargetTime
-                    $script:cfg.TargetTimestamp = $script:state.TargetTime.ToString("yyyy-MM-dd HH:mm:ss")
-                    Save-IniConfig $script:cfg
-                } elseif ($script:cfg.Mode -eq "D" -or $script:cfg.DelayIfBusy) {
+                if ($script:cfg.Mode -eq "C") {
+                    if ($now -gt $script:state.TargetTime) {
+                        $script:state.TargetTime = Calculate-PreviewTargetTime
+                        $script:cfg.TargetTimestamp = $script:state.TargetTime.ToString("yyyy-MM-dd HH:mm:ss")
+                        Save-IniConfig $script:cfg
+                    }
                     $script:state.EngineState    = "WakeGuard"
                     $script:state.WakeGuardUntil = $now.AddSeconds(60)
+                } elseif ($script:cfg.Mode -eq "D") {
+                    $script:state.EngineState    = "WakeGuard"
+                    $script:state.WakeGuardUntil = $now.AddSeconds(60)
+                } else {
+                    # 模式 A 或 B：若睡眠期間已過原定目標時間，直接取消過期任務防連環觸發
+                    if ($now -gt $script:state.TargetTime) {
+                        Stop-ShutdownTask
+                        Set-SingleStatus "○ 待命中 (系統喚醒，原排程時間已過已自動取消)" $colorLightAmber
+                        Set-TrayText "智慧自動關機助手 v1.6.1 - 待命中 (排程已過期)"
+                        return
+                    } else {
+                        $script:state.EngineState    = "WakeGuard"
+                        $script:state.WakeGuardUntil = $now.AddSeconds(60)
+                    }
                 }
             }
         }
     } else {
         $script:state.LastTickTime = $now
-    }
-
-    # 若處於關機卡死降級監控狀態，交由專屬處理器接管
-    if ($script:state.EngineState -eq "Escalating") {
-        $lblSysTime.Text = "現在系統時間： " + $now.ToString("yyyy-MM-dd  HH:mm:ss")
-        Handle-EscalationTick $now
-        return
     }
 
     $lblSysTime.Text = "現在系統時間： " + $now.ToString("yyyy-MM-dd  HH:mm:ss")
@@ -1500,6 +1463,18 @@ function Update-EngineTick([bool]$isInitialSync = $false) {
     # 分支 4-A：嚴格準時模式 (未勾選 DelayIfBusy 且非 Mode D)
     if ($script:cfg.Mode -ne "D" -and (-not $script:cfg.DelayIfBusy)) {
         $remTime = $script:state.TargetTime - $now
+        $canEarlyTrigger = (($script:cfg.Mode -eq "A" -or $script:cfg.Mode -eq "B") -and $script:cfg.EarlyIfIdle)
+
+        if ($canEarlyTrigger -and ($script:state.IdleBucketScore -ge $targetScore)) {
+            if ($script:cfg.PreNotify) {
+                $smartSecs = [Math]::Min($notifyBufferSec, [Math]::Max(1, [int][Math]::Ceiling($remTime.TotalSeconds)))
+                Enter-AlertState "Smart" $smartSecs
+            } else {
+                Execute-FinalSystemAction
+            }
+            return
+        }
+
         if ($script:cfg.PreNotify -and ($remTime.TotalSeconds -le $notifyBufferSec)) {
             $secs = [Math]::Max(1, [int][Math]::Ceiling($remTime.TotalSeconds))
             Enter-AlertState "StrictTime" $secs
@@ -1512,7 +1487,11 @@ function Update-EngineTick([bool]$isInitialSync = $false) {
 
         $remStr = Format-TimeSpan $remTime
         $lblTargetTime.Text = ("目標執行時間： {0}  (倒數剩餘 {1})" -f $script:state.TargetTime.ToString("yyyy-MM-dd HH:mm:ss"), $remStr)
-        Set-SingleStatus "● 嚴格準時倒數中 (已關閉忙碌延後保護)" $colorLightGreen
+        if ($canEarlyTrigger) {
+            Set-DualLightStatus "● 嚴格準時倒數中" $colorLightGreen "● 提早積分($($script:state.IdleBucketScore)/$targetScore)" $colorLightAmber
+        } else {
+            Set-SingleStatus "● 嚴格準時倒數中 (已關閉忙碌延後保護)" $colorLightGreen
+        }
         Set-TrayText "倒數剩餘：$remStr ($actName)"
         return
     }
@@ -1649,10 +1628,6 @@ function Start-ShutdownTask([bool]$isResuming = $false) {
 }
 
 function Stop-ShutdownTask {
-    if ($script:state.EngineState -eq "Escalating") {
-        try { Start-Process "shutdown.exe" -ArgumentList "/a" -WindowStyle Hidden } catch {}
-    }
-
     Reset-TransientRuntimeState
     $script:state.EngineState   = "Idle"
     $script:cfg.IsRunning       = $false
@@ -1666,7 +1641,7 @@ function Stop-ShutdownTask {
     Update-ModeUIState
     Update-ActionComboBoxItems
     Set-SingleStatus "○ 待命中 (任務已取消 / 停止)" $colorLightGreen
-    Set-TrayText "智慧自動關機助手 v1.6.0 - 待命中"
+    Set-TrayText "智慧自動關機助手 v1.6.1 - 待命中"
 }
 
 function Execute-FinalSystemAction {
@@ -1686,6 +1661,7 @@ function Execute-FinalSystemAction {
         return
     }
 
+    # 執行實體電源指令前先完成狀態收尾（避免阻塞式睡眠喚醒時產生狀態競態）
     if ($script:cfg.Mode -eq "C") {
         $triggeredDateStr = if ($script:state.TargetTime -ne [DateTime]::MaxValue) { $script:state.TargetTime.ToString("yyyy-MM-dd") } else { $now.ToString("yyyy-MM-dd") }
         $script:cfg.LastTriggeredDate = $triggeredDateStr
@@ -1699,54 +1675,78 @@ function Execute-FinalSystemAction {
         $script:state.TargetTime    = $nextTarget
         $script:cfg.TargetTimestamp = $nextTarget.ToString("yyyy-MM-dd HH:mm:ss")
         $script:cfg.IsRunning       = $true
+        Save-IniConfig $script:cfg
+
+        if ($effectiveType -eq 2 -or $effectiveType -eq 3) {
+            $script:state.EngineState    = "WakeGuard"
+            $script:state.WakeGuardUntil = $now.AddSeconds(60)
+        } else {
+            $script:state.EngineState = "Monitoring"
+        }
+        Set-SingleStatus "● 每日排程已執行，繼續背景待命明日排程" $colorLightGreen
+        Set-TrayText "智慧自動關機助手 - 每日排程待命中"
     } else {
         $script:cfg.LastTriggeredDate = $now.ToString("yyyy-MM-dd")
-        $script:cfg.IsRunning         = $false
-        $script:cfg.TargetTimestamp   = ""
+        Stop-ShutdownTask
     }
-    Save-IniConfig $script:cfg
 
+    $forceFlag = if ($script:cfg.ForceBlockedAct) { " /f" } else { "" }
     $pwrOk = $true
     switch ($effectiveType) {
         0 {
-            Start-Process "shutdown.exe" -ArgumentList "/s /t 0" -WindowStyle Hidden
-            $script:state.EngineState         = "Escalating"
-            $script:state.EscalationStartTime = $now
-            $script:state.EscalationStage     = 1
+            try {
+                Start-Process "shutdown.exe" -ArgumentList "/s$forceFlag /t 0" -WindowStyle Hidden -ErrorAction Stop
+            } catch {
+                if ($script:cfg.Mode -eq "C") { Stop-ShutdownTask }
+                Set-SingleStatus "● 執行【關機】指令失敗（可能受系統原則或安全軟體阻擋）" $colorLightRed
+                Set-TrayText "智慧自動關機助手 - 關機指令執行失敗"
+                Show-MainWindowToFront
+                return
+            }
         }
         1 {
-            Start-Process "shutdown.exe" -ArgumentList "/r /t 0" -WindowStyle Hidden
+            try {
+                Start-Process "shutdown.exe" -ArgumentList "/r$forceFlag /t 0" -WindowStyle Hidden -ErrorAction Stop
+            } catch {
+                if ($script:cfg.Mode -eq "C") { Stop-ShutdownTask }
+                Set-SingleStatus "● 執行【重新啟動】指令失敗（可能受系統原則或安全軟體阻擋）" $colorLightRed
+                Set-TrayText "智慧自動關機助手 - 重啟指令執行失敗"
+                Show-MainWindowToFront
+                return
+            }
         }
         2 {
             $pwrOk = $Win32Api::SetSuspendState($false, $false, $false)
+            $wakeNow = [DateTime]::Now
+            $script:state.LastTickTime = $wakeNow
+            if ($pwrOk -and $script:cfg.Mode -eq "C") {
+                $script:state.WakeGuardUntil = $wakeNow.AddSeconds(60)
+            }
         }
         3 {
             $pwrOk = $Win32Api::SetSuspendState($true, $false, $false)
+            $wakeNow = [DateTime]::Now
+            $script:state.LastTickTime = $wakeNow
+            if ($pwrOk -and $script:cfg.Mode -eq "C") {
+                $script:state.WakeGuardUntil = $wakeNow.AddSeconds(60)
+            }
         }
     }
 
     if (-not $pwrOk) {
         $failActName = if ($effectiveType -eq 2) { "睡眠" } else { "休眠" }
         if ($script:cfg.FallbackToShutdown) {
-            Start-Process "shutdown.exe" -ArgumentList "/s /t 0" -WindowStyle Hidden
-            $script:state.EngineState         = "Escalating"
-            $script:state.EscalationStartTime = $now
-            $script:state.EscalationStage     = 1
+            Start-Process "shutdown.exe" -ArgumentList "/s$forceFlag /t 0" -WindowStyle Hidden
             Set-SingleStatus "● 【$failActName】執行遭拒，已自動降級執行【關機】！" $colorLightAmber
+            Set-TrayText "【$failActName】遭拒，已降級執行關機"
         } else {
-            Stop-ShutdownTask
+            if ($script:cfg.Mode -eq "C") {
+                Stop-ShutdownTask
+            }
             Set-SingleStatus "● 系統拒絕進入【$failActName】（可能受驅動程式或電源原則阻擋）" $colorLightRed
             Set-TrayText "智慧自動關機助手 - 【$failActName】執行失敗"
             Show-MainWindowToFront
-            return
         }
-    }
-
-    if ($script:state.EngineState -eq "Escalating") {
-        Set-SingleStatus "● 已發送關機指令，正在結束背景程式..." $colorLightAmber
-        Set-TrayText "正在結束背景程式並準備關機..."
-    } else {
-        Finish-PostExecutionState
     }
 }
 
@@ -1757,8 +1757,8 @@ $rbModeC.Add_CheckedChanged({ if ($rbModeC.Checked) { Update-ModeUIState } })
 $rbModeD.Add_CheckedChanged({ if ($rbModeD.Checked) { Update-ModeUIState } })
 
 $chkDelayIfBusy.Add_CheckedChanged({
-    if (-not $script:state.IsUpdatingUI -and ($script:state.EngineState -eq "Idle") -and (-not $rbModeD.Checked)) {
-        $numMaxDelayMins.Enabled = $chkDelayIfBusy.Checked
+    if (-not $script:state.IsUpdatingUI) {
+        Update-ModeUIState
     }
 })
 
@@ -1863,7 +1863,7 @@ if ($script:cfg.IsRunning) {
                 Save-IniConfig $script:cfg
                 Update-EngineTick $true
                 Set-SingleStatus "○ 待命中 (上次排程時間已過，已自動取消任務)" $colorLightAmber
-                Set-TrayText "智慧自動關機助手 v1.6.0 - 待命中 (上次排程已過期)"
+                Set-TrayText "智慧自動關機助手 v1.6.1 - 待命中 (上次排程已過期)"
             }
         } else {
             $script:cfg.IsRunning       = $false

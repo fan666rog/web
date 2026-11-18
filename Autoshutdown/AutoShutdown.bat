@@ -9,7 +9,7 @@ exit /b
 #>
 
 # ==============================================================================
-# ⚡ 智慧自動關機助手 v1.6.1 (純綠色無痕版 - 精簡四狀態機 + 雙綠燈漏斗積分引擎)
+# ⚡ 智慧自動關機助手 v1.6.4 (純綠色無痕版 - 精簡四狀態機 + 雙綠燈漏斗積分引擎)
 #    Designed by fan666rog | https://github.com/fan666rog/web
 # ==============================================================================
 
@@ -33,9 +33,9 @@ Add-Type -AssemblyName System.Drawing
 
 # --- 1. 純記憶體反射載入 Windows 底層 API (零 Temp 編譯垃圾 + 精準 U1 布林封送) ---
 $domain = [AppDomain]::CurrentDomain
-$dynAsm = New-Object System.Reflection.AssemblyName('Win32IdleMemAsmV161')
+$dynAsm = New-Object System.Reflection.AssemblyName('Win32IdleMemAsmV164')
 $asmBuilder = $domain.DefineDynamicAssembly($dynAsm, [System.Reflection.Emit.AssemblyBuilderAccess]::Run)
-$modBuilder = $asmBuilder.DefineDynamicModule('Win32IdleMemModV161')
+$modBuilder = $asmBuilder.DefineDynamicModule('Win32IdleMemModV164')
 $typeBuilder = $modBuilder.DefineType('Win32Api', [System.Reflection.TypeAttributes]::Public -bor [System.Reflection.TypeAttributes]::Class)
 
 $marshalAttrCtor = [System.Runtime.InteropServices.MarshalAsAttribute].GetConstructor([Type[]]@([System.Runtime.InteropServices.UnmanagedType]))
@@ -252,8 +252,7 @@ $defaultConfig = @{
     CheckPowerReq      = $true        # 偵測全螢幕播放 / 系統防休眠鎖定
     MaxDelayMins       = 120          # 最大延後保險絲上限 (分鐘，0=無限等待)
     ActionType         = 0            # 0:關機, 1:重開機, 2:睡眠, 3:休眠
-    PreNotify          = $true
-    PreNotifySecs      = 60           # 最後防誤殺確認秒數 (預設 60 秒)
+    PreNotifySecs      = 60           # 強制最後防誤殺確認倒數秒數 (預設 60 秒)
     FallbackToShutdown = $true        # 禁用防呆：睡眠/休眠被系統禁用時自動降級為關機
     ForceBlockedAct    = $false       # 執行關機/重啟時直接強制結束未存檔程式
     AutoStartup        = $false
@@ -284,7 +283,6 @@ function Save-IniConfig($cfg) {
         "CheckPowerReq=$($cfg.CheckPowerReq)",
         "MaxDelayMins=$($cfg.MaxDelayMins)",
         "ActionType=$($cfg.ActionType)",
-        "PreNotify=$($cfg.PreNotify)",
         "PreNotifySecs=$($cfg.PreNotifySecs)",
         "FallbackToShutdown=$($cfg.FallbackToShutdown)",
         "ForceBlockedAct=$($cfg.ForceBlockedAct)",
@@ -381,8 +379,10 @@ $script:state = @{
     EngineState           = "Idle"
     TargetTime            = [DateTime]::MaxValue
     IdleBucketScore       = 0
+    LastUserIdleSec       = 0
     WakeGuardUntil        = [DateTime]::MinValue
     AlertTriggerReason    = ""     # "Smart" | "StrictTime" | "ForcedMaxDelay"
+    AlertStartTime        = [DateTime]::MaxValue
     AlertEndTime          = [DateTime]::MaxValue
     AlertRemainingSeconds = 0
     AlertSnoozed          = $false
@@ -394,8 +394,10 @@ $script:state = @{
 
 function Reset-TransientRuntimeState {
     $script:state.IdleBucketScore       = 0
+    $script:state.LastUserIdleSec       = 0
     $script:state.WakeGuardUntil        = [DateTime]::MinValue
     $script:state.AlertTriggerReason    = ""
+    $script:state.AlertStartTime        = [DateTime]::MaxValue
     $script:state.AlertEndTime          = [DateTime]::MaxValue
     $script:state.AlertRemainingSeconds = 0
     $script:state.AlertSnoozed          = $false
@@ -419,7 +421,7 @@ $colorLightAmber   = [System.Drawing.Color]::FromArgb(255, 210, 75)
 $colorLightRed     = [System.Drawing.Color]::FromArgb(255, 110, 110)
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "⚡ 智慧自動關機助手 v1.6.1 (雙綠燈漏斗積分版)"
+$form.Text = "⚡ 智慧自動關機助手 v1.6.4 (雙綠燈漏斗積分版)"
 $form.ClientSize = New-Object System.Drawing.Size(656, 826)
 $form.AutoScaleMode = [System.Windows.Forms.AutoScaleMode]::Dpi
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
@@ -830,12 +832,12 @@ $lblPwrCaps.ForeColor = [System.Drawing.Color]::DimGray
 $lblPwrCaps.Text = "電源狀態偵測中..."
 $grpSys.Controls.Add($lblPwrCaps)
 
-$chkPreNotify = New-Object System.Windows.Forms.CheckBox
-$chkPreNotify.Location = New-Object System.Drawing.Point(18, 57)
-$chkPreNotify.Size = New-Object System.Drawing.Size(352, 22)
-$chkPreNotify.Font = $fontMain
-$chkPreNotify.Text = "雙綠燈就緒後，跳出最後防誤殺確認視窗，倒數："
-$grpSys.Controls.Add($chkPreNotify)
+$lblPreNotify = New-Object System.Windows.Forms.Label
+$lblPreNotify.Location = New-Object System.Drawing.Point(16, 58)
+$lblPreNotify.Size = New-Object System.Drawing.Size(354, 22)
+$lblPreNotify.Font = $fontMain
+$lblPreNotify.Text = "• 條件就緒後，強制跳出最後防誤殺確認視窗，倒數："
+$grpSys.Controls.Add($lblPreNotify)
 
 $numNotifySecs = New-Object System.Windows.Forms.NumericUpDown
 $numNotifySecs.Location = New-Object System.Drawing.Point(374, 55)
@@ -850,7 +852,7 @@ $lblNotM = New-Object System.Windows.Forms.Label
 $lblNotM.Location = New-Object System.Drawing.Point(438, 58)
 $lblNotM.Size = New-Object System.Drawing.Size(182, 22)
 $lblNotM.Font = $fontMain
-$lblNotM.Text = "秒 (動滑鼠即自動取消)"
+$lblNotM.Text = "秒 (動滑鼠自動暫緩本次)"
 $grpSys.Controls.Add($lblNotM)
 
 $chkFallbackShutdown = New-Object System.Windows.Forms.CheckBox
@@ -919,7 +921,7 @@ $lnkAuthor.Location = New-Object System.Drawing.Point(12, 792)
 $lnkAuthor.Size = New-Object System.Drawing.Size(632, 22)
 $lnkAuthor.Font = $fontSmall
 $lnkAuthor.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
-$authorText = "⚡ Designed by fan666rog   |   GitHub 專案主頁   |   v1.6.1 精簡狀態機穩定版"
+$authorText = "⚡ Designed by fan666rog   |   GitHub 專案主頁   |   v1.6.4 精簡狀態機穩定版"
 $lnkAuthor.Text = $authorText
 $lnkAuthor.ForeColor = [System.Drawing.Color]::DimGray
 $lnkAuthor.LinkColor = [System.Drawing.Color]::FromArgb(0, 102, 204)
@@ -951,7 +953,7 @@ function Set-TrayText([string]$txt) {
     try { $notifyIcon.Text = $txt } catch {}
 }
 
-Set-TrayText "智慧自動關機助手 v1.6.1 - 待命中"
+Set-TrayText "智慧自動關機助手 v1.6.4 - 待命中"
 
 $ctxMenu = New-Object System.Windows.Forms.ContextMenuStrip
 $miShow = $ctxMenu.Items.Add("顯示主視窗")
@@ -961,10 +963,10 @@ $miCancel.Enabled = $false
 $miExit = $ctxMenu.Items.Add("✖ 徹底結束程式")
 $notifyIcon.ContextMenuStrip = $ctxMenu
 
-# --- 7. 置頂預警小視窗 (精簡雙按鈕設計：知道了 / 立即取消任務) ---
+# --- 7. 置頂預警小視窗 (區分自動暫緩與緊急中止雙保險) ---
 $alertForm = New-Object System.Windows.Forms.Form
 $alertForm.Text = "⚡ 最後防誤殺確認通知"
-$alertForm.ClientSize = New-Object System.Drawing.Size(470, 200)
+$alertForm.ClientSize = New-Object System.Drawing.Size(470, 212)
 $alertForm.AutoScaleMode = [System.Windows.Forms.AutoScaleMode]::Dpi
 $alertForm.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
 $alertForm.MaximizeBox = $false
@@ -977,14 +979,14 @@ $alertForm.Font = $fontMain
 
 $lblAlertMsg = New-Object System.Windows.Forms.Label
 $lblAlertMsg.Location = New-Object System.Drawing.Point(16, 14)
-$lblAlertMsg.Size = New-Object System.Drawing.Size(438, 118)
+$lblAlertMsg.Size = New-Object System.Drawing.Size(438, 128)
 $lblAlertMsg.Font = $fontTitle
 $lblAlertMsg.ForeColor = [System.Drawing.Color]::FromArgb(255, 220, 100)
 $lblAlertMsg.Text = "即將執行任務..."
 $alertForm.Controls.Add($lblAlertMsg)
 
 $btnAlertHide = New-Object System.Windows.Forms.Button
-$btnAlertHide.Location = New-Object System.Drawing.Point(16, 144)
+$btnAlertHide.Location = New-Object System.Drawing.Point(16, 156)
 $btnAlertHide.Size = New-Object System.Drawing.Size(205, 38)
 $btnAlertHide.BackColor = [System.Drawing.Color]::FromArgb(70, 80, 90)
 $btnAlertHide.ForeColor = [System.Drawing.Color]::White
@@ -993,7 +995,7 @@ $btnAlertHide.Text = "知道了 (隱藏視窗繼續倒數)"
 $alertForm.Controls.Add($btnAlertHide)
 
 $btnAlertCancel = New-Object System.Windows.Forms.Button
-$btnAlertCancel.Location = New-Object System.Drawing.Point(235, 144)
+$btnAlertCancel.Location = New-Object System.Drawing.Point(235, 156)
 $btnAlertCancel.Size = New-Object System.Drawing.Size(219, 38)
 $btnAlertCancel.BackColor = [System.Drawing.Color]::FromArgb(200, 45, 55)
 $btnAlertCancel.ForeColor = [System.Drawing.Color]::White
@@ -1003,16 +1005,42 @@ $alertForm.Controls.Add($btnAlertCancel)
 
 $alertForm.Add_FormClosing({
     param($s, $e)
+    if ($script:state.AllowExit) { return }
     if ($e.CloseReason -eq [System.Windows.Forms.CloseReason]::UserClosing) {
         $e.Cancel = $true
-        if ($script:state.AlertTriggerReason -eq "Smart") {
-            $alertForm.Hide()
-            $script:state.AlertSnoozed = $true
-        } else {
-            [System.Media.SystemSounds]::Beep.Play()
-        }
+        [System.Media.SystemSounds]::Beep.Play()
     }
 })
+
+function Render-AlertStateUI([string]$actName, [string]$fallbackNote) {
+    $now = [DateTime]::Now
+    $remAlertSpan = $script:state.AlertEndTime - $now
+    $script:state.AlertRemainingSeconds = [int][Math]::Ceiling($remAlertSpan.TotalSeconds)
+    $remSecDisplay = [Math]::Max(0, $script:state.AlertRemainingSeconds)
+
+    if ($script:cfg.Mode -eq "D" -or $script:state.TargetTime -eq [DateTime]::MaxValue) {
+        $lblTargetTime.Text = "目標執行時間： 綠燈二安全積分已滿，正在執行最後防誤殺倒數"
+    } else {
+        $lblTargetTime.Text = ("目標執行時間： {0}  (已進入最後防誤殺倒數)" -f $script:state.TargetTime.ToString("yyyy-MM-dd HH:mm:ss"))
+    }
+
+    Set-SingleStatus "●● 條件就緒！最後防誤殺倒數 ${remSecDisplay} 秒後執行【${actName}】" $colorLightRed
+    Set-TrayText "防誤殺確認：${remSecDisplay}秒後${actName}"
+
+    $fbLine = if ($fallbackNote -ne "") { "`n※ $fallbackNote" } else { "" }
+    if ($script:state.AlertTriggerReason -eq "Smart") {
+        $lblAlertMsg.Text = "雙綠燈已就緒，將於 ${remSecDisplay} 秒後執行【${actName}】！`n• 動滑鼠／按任意鍵：自動「暫緩」本次倒數（繼續監測）`n• 未自動解除或欲徹底「終止」排程：請按下方按鈕${fbLine}"
+    } elseif ($script:state.AlertTriggerReason -eq "ForcedMaxDelay") {
+        $lblAlertMsg.Text = "已達最大延後上限（逾時 $($script:cfg.MaxDelayMins) 分鐘），將於 ${remSecDisplay} 秒後執行【${actName}】！`n※ 若仍在使用電腦，請點擊下方按鈕取消任務。${fbLine}"
+    } else {
+        $lblAlertMsg.Text = "預定時間將至（嚴格準時模式），將於 ${remSecDisplay} 秒後執行【${actName}】！`n※ 若仍在使用電腦，請點擊下方按鈕取消任務。${fbLine}"
+    }
+
+    if (-not $alertForm.Visible -and (-not $script:state.AlertSnoozed)) {
+        [System.Media.SystemSounds]::Exclamation.Play()
+        $alertForm.Show()
+    }
+}
 
 # --- 8. 輔助邏輯函數與系統電源禁用防呆探測 ---
 function Get-EffectiveAutoStartup {
@@ -1090,6 +1118,8 @@ function Show-MainWindowToFront {
 }
 
 function Get-UIValuesToConfig {
+    [void]$form.ValidateChildren()
+
     if ($rbModeA.Checked) { $script:cfg.Mode = "A" }
     elseif ($rbModeB.Checked) { $script:cfg.Mode = "B" }
     elseif ($rbModeC.Checked) { $script:cfg.Mode = "C" }
@@ -1102,9 +1132,13 @@ function Get-UIValuesToConfig {
     $script:cfg.CountMins          = [int]$numCountMin.Value
     $script:cfg.DailyHour          = [int]$numDailyHour.Value
     $script:cfg.DailyMin           = [int]$numDailyMin.Value
-    $script:cfg.DelayIfBusy        = $chkDelayIfBusy.Checked
+    if (-not $rbModeD.Checked) {
+        $script:cfg.DelayIfBusy    = $chkDelayIfBusy.Checked
+    }
     $script:cfg.MaxDelayMins       = [int]$numMaxDelayMins.Value
-    $script:cfg.EarlyIfIdle        = $chkEarlyIfIdle.Checked
+    if ($rbModeA.Checked -or $rbModeB.Checked) {
+        $script:cfg.EarlyIfIdle    = $chkEarlyIfIdle.Checked
+    }
     $script:cfg.IdleMins           = [int]$numIdleMins.Value
     $script:cfg.CheckCPU           = $chkCPU.Checked
     $script:cfg.CPULimit           = [int]$numCPU.Value
@@ -1113,7 +1147,6 @@ function Get-UIValuesToConfig {
     $script:cfg.NetUnit            = $cmbNetUnit.SelectedItem.ToString()
     $script:cfg.CheckPowerReq      = $chkPowerReq.Checked
     $script:cfg.ActionType         = $cmbAction.SelectedIndex
-    $script:cfg.PreNotify          = $chkPreNotify.Checked
     $script:cfg.PreNotifySecs      = [int]$numNotifySecs.Value
     $script:cfg.FallbackToShutdown = $chkFallbackShutdown.Checked
     $script:cfg.ForceBlockedAct    = $chkForceBlocked.Checked
@@ -1152,7 +1185,6 @@ function Apply-ConfigToUI {
         $numNet.Value                = [Math]::Max(1, [Math]::Min(9999, $script:cfg.NetLimitVal))
         $chkPowerReq.Checked         = $script:cfg.CheckPowerReq
         $cmbAction.SelectedIndex     = [Math]::Max(0, [Math]::Min(3, $script:cfg.ActionType))
-        $chkPreNotify.Checked        = $script:cfg.PreNotify
         $numNotifySecs.Value         = [Math]::Max(15, [Math]::Min(600, $script:cfg.PreNotifySecs))
         $chkFallbackShutdown.Checked = $script:cfg.FallbackToShutdown
         $chkForceBlocked.Checked     = $script:cfg.ForceBlockedAct
@@ -1182,9 +1214,11 @@ function Update-ModeUIState {
             $chkDelayIfBusy.Checked  = $true
             $chkDelayIfBusy.Enabled  = $false
             $numMaxDelayMins.Enabled = $false
+            $chkEarlyIfIdle.Checked  = $false
             $chkEarlyIfIdle.Enabled  = $false
         } elseif ($rbModeC.Checked) {
             if (-not $isTaskActive) {
+                $chkDelayIfBusy.Checked  = $script:cfg.DelayIfBusy
                 $chkDelayIfBusy.Enabled  = $true
                 $numMaxDelayMins.Enabled = $chkDelayIfBusy.Checked
             }
@@ -1192,14 +1226,16 @@ function Update-ModeUIState {
             $chkEarlyIfIdle.Enabled = $false
         } else {
             if (-not $isTaskActive) {
+                $chkDelayIfBusy.Checked  = $script:cfg.DelayIfBusy
                 $chkDelayIfBusy.Enabled  = $true
                 $numMaxDelayMins.Enabled = $chkDelayIfBusy.Checked
+                $chkEarlyIfIdle.Checked  = $script:cfg.EarlyIfIdle
                 $chkEarlyIfIdle.Enabled  = $true
             }
         }
 
         if ($rbModeD.Checked -or $chkDelayIfBusy.Checked) {
-            $lblNotM.Text = "秒 (動滑鼠即自動取消)"
+            $lblNotM.Text = "秒 (動滑鼠自動暫緩本次)"
         } else {
             $lblNotM.Text = "秒 (嚴格模式需按按鈕取消)"
         }
@@ -1234,7 +1270,6 @@ function Set-ControlsLocked([bool]$locked) {
     $grpMode.Enabled             = (-not $locked)
     $grpIdle.Enabled             = (-not $locked)
     $cmbAction.Enabled           = (-not $locked)
-    $chkPreNotify.Enabled        = (-not $locked)
     $numNotifySecs.Enabled       = (-not $locked)
     $chkFallbackShutdown.Enabled = (-not $locked)
     $chkForceBlocked.Enabled     = (-not $locked)
@@ -1270,22 +1305,28 @@ function Format-TimeSpan([TimeSpan]$ts) {
     return ("{0:D2}:{1:D2}:{2:D2}" -f $totalHours, $ts.Minutes, $ts.Seconds)
 }
 
-function Enter-AlertState([string]$reason, [int]$seconds) {
+function Enter-AlertState([string]$reason, [int]$seconds, [string]$actName, [string]$fallbackNote) {
+    $now = [DateTime]::Now
     $script:state.EngineState           = "Alerting"
     $script:state.AlertTriggerReason    = $reason
+    $script:state.AlertStartTime        = $now
     $script:state.AlertRemainingSeconds = [Math]::Max(1, $seconds)
-    $script:state.AlertEndTime          = ([DateTime]::Now).AddSeconds($script:state.AlertRemainingSeconds)
+    $script:state.AlertEndTime          = $now.AddSeconds($script:state.AlertRemainingSeconds)
     $script:state.AlertSnoozed          = $false
 
     if ($reason -ne "Smart") {
         $btnAlertHide.Visible    = $true
-        $btnAlertCancel.Location = New-Object System.Drawing.Point(235, 144)
+        $btnAlertCancel.Location = New-Object System.Drawing.Point(235, 156)
         $btnAlertCancel.Size     = New-Object System.Drawing.Size(219, 38)
+        $btnAlertCancel.Text     = "立即取消任務"
     } else {
         $btnAlertHide.Visible    = $false
-        $btnAlertCancel.Location = New-Object System.Drawing.Point(16, 144)
+        $btnAlertCancel.Location = New-Object System.Drawing.Point(16, 156)
         $btnAlertCancel.Size     = New-Object System.Drawing.Size(438, 38)
+        $btnAlertCancel.Text     = "■ 緊急中止整筆排程（徹底取消任務）"
     }
+
+    Render-AlertStateUI $actName $fallbackNote
 }
 
 # --- 9. 核心引擎單步更新 (嚴格四狀態分派) ---
@@ -1298,12 +1339,13 @@ function Update-EngineTick([bool]$isInitialSync = $false) {
             Show-MainWindowToFront
         }
 
-        # 偵測系統睡眠/休眠剛喚醒 (Tick 間隔大於 15 秒)
+        # 偵測系統睡眠/休眠剛喚醒 (Tick 間隔大於 60 秒，兼顧現代 SSD 卡頓容錯與喚醒保護)
         $tickGap = ($now - $script:state.LastTickTime).TotalSeconds
         $script:state.LastTickTime = $now
 
-        if ($tickGap -gt 15) {
+        if ($tickGap -gt 60) {
             $script:state.IdleBucketScore = 0
+            $script:state.LastUserIdleSec = 0
             if ($script:state.EngineState -eq "Alerting") {
                 $script:state.EngineState  = "Monitoring"
                 $script:state.AlertSnoozed = $false
@@ -1326,7 +1368,7 @@ function Update-EngineTick([bool]$isInitialSync = $false) {
                     if ($now -gt $script:state.TargetTime) {
                         Stop-ShutdownTask
                         Set-SingleStatus "○ 待命中 (系統喚醒，原排程時間已過已自動取消)" $colorLightAmber
-                        Set-TrayText "智慧自動關機助手 v1.6.1 - 待命中 (排程已過期)"
+                        Set-TrayText "智慧自動關機助手 v1.6.4 - 待命中 (排程已過期)"
                         return
                     } else {
                         $script:state.EngineState    = "WakeGuard"
@@ -1363,14 +1405,17 @@ function Update-EngineTick([bool]$isInitialSync = $false) {
         $lblLivePwrReq.Text = "(目前：無電源鎖定)"
     }
 
-    # --- 更新【漏斗積分池】 ---
+    # --- 更新【漏斗積分池】(結合單調遞減比對，防止 Timer 輕微抖動漏判短暫點擊) ---
     $netLimitInKB = if ($cmbNetUnit.SelectedItem -eq "MB/s") { ([int]$numNet.Value) * 1024 } else { [int]$numNet.Value }
     $cpuOk = (-not $chkCPU.Checked) -or ($hw.CPU -le [int]$numCPU.Value)
     $netOk = (-not $chkNet.Checked) -or ($hw.NetKB -le $netLimitInKB)
     $pwrOk = (-not $chkPowerReq.Checked) -or (-not $pwrLocked)
 
+    $hasInputSinceLastTick = ($userIdleSec -lt 2) -or ($userIdleSec -lt $script:state.LastUserIdleSec)
+    $script:state.LastUserIdleSec = $userIdleSec
+
     if (-not $isInitialSync) {
-        if ($script:state.EngineState -eq "WakeGuard" -or $userIdleSec -lt 2) {
+        if ($script:state.EngineState -eq "WakeGuard" -or $hasInputSinceLastTick) {
             $script:state.IdleBucketScore = 0
         } elseif ($cpuOk -and $netOk -and $pwrOk) {
             $script:state.IdleBucketScore = [Math]::Min($targetScore, $script:state.IdleBucketScore + 1)
@@ -1420,11 +1465,16 @@ function Update-EngineTick([bool]$isInitialSync = $false) {
         }
     }
 
-    # 【狀態 3：Alerting 最後防誤殺確認視窗倒數】
+    # 【狀態 3：Alerting 強制最後防誤殺確認視窗倒數】
     if ($script:state.EngineState -eq "Alerting") {
         if ($script:state.AlertTriggerReason -eq "Smart") {
-            $minHoldScore = [int][Math]::Floor($targetScore * 0.9)
-            if ($userIdleSec -lt 2 -or $script:state.IdleBucketScore -lt $minHoldScore) {
+            $minHoldScore    = [int][Math]::Floor($targetScore * 0.9)
+            $alertElapsedSec = ($now - $script:state.AlertStartTime).TotalSeconds
+            $hasNewUserInput = $hasInputSinceLastTick -or ($userIdleSec -le $alertElapsedSec)
+            if ($hasNewUserInput -or $script:state.IdleBucketScore -lt $minHoldScore) {
+                if ($hasNewUserInput) {
+                    $script:state.IdleBucketScore = 0
+                }
                 $script:state.EngineState  = "Monitoring"
                 $script:state.AlertSnoozed = $false
                 $alertForm.Hide()
@@ -1432,26 +1482,7 @@ function Update-EngineTick([bool]$isInitialSync = $false) {
             }
         }
 
-        $remAlertSpan = $script:state.AlertEndTime - $now
-        $script:state.AlertRemainingSeconds = [int][Math]::Ceiling($remAlertSpan.TotalSeconds)
-        $remSecDisplay = [Math]::Max(0, $script:state.AlertRemainingSeconds)
-
-        Set-SingleStatus "●● 雙燈全亮！最後防誤殺倒數 ${remSecDisplay} 秒後執行【${actName}】" $colorLightRed
-        Set-TrayText "防誤殺確認：${remSecDisplay}秒後${actName}"
-
-        $fbLine = if ($fallbackNote -ne "") { "`n※ $fallbackNote" } else { "" }
-        if ($script:state.AlertTriggerReason -eq "Smart") {
-            $lblAlertMsg.Text = "雙綠燈已就緒，將於 ${remSecDisplay} 秒後執行【${actName}】！`n※ 零摩擦防誤殺：直接晃動滑鼠或按任意鍵即自動取消。${fbLine}"
-        } elseif ($script:state.AlertTriggerReason -eq "ForcedMaxDelay") {
-            $lblAlertMsg.Text = "已達最大延後上限（逾時 $($script:cfg.MaxDelayMins) 分鐘），將於 ${remSecDisplay} 秒後執行【${actName}】！`n※ 若仍在使用電腦，請點擊下方按鈕取消任務。${fbLine}"
-        } else {
-            $lblAlertMsg.Text = "預定時間將至（嚴格準時模式），將於 ${remSecDisplay} 秒後執行【${actName}】！`n※ 若仍在使用電腦，請點擊下方按鈕取消任務。${fbLine}"
-        }
-
-        if (-not $alertForm.Visible -and (-not $script:state.AlertSnoozed)) {
-            [System.Media.SystemSounds]::Exclamation.Play()
-            $alertForm.Show()
-        }
+        Render-AlertStateUI $actName $fallbackNote
 
         if ($script:state.AlertRemainingSeconds -le 0) {
             Execute-FinalSystemAction
@@ -1466,22 +1497,14 @@ function Update-EngineTick([bool]$isInitialSync = $false) {
         $canEarlyTrigger = (($script:cfg.Mode -eq "A" -or $script:cfg.Mode -eq "B") -and $script:cfg.EarlyIfIdle)
 
         if ($canEarlyTrigger -and ($script:state.IdleBucketScore -ge $targetScore)) {
-            if ($script:cfg.PreNotify) {
-                $smartSecs = [Math]::Min($notifyBufferSec, [Math]::Max(1, [int][Math]::Ceiling($remTime.TotalSeconds)))
-                Enter-AlertState "Smart" $smartSecs
-            } else {
-                Execute-FinalSystemAction
-            }
+            $smartSecs = [Math]::Min($notifyBufferSec, [Math]::Max(1, [int][Math]::Ceiling($remTime.TotalSeconds)))
+            Enter-AlertState "Smart" $smartSecs $actName $fallbackNote
             return
         }
 
-        if ($script:cfg.PreNotify -and ($remTime.TotalSeconds -le $notifyBufferSec)) {
+        if ($remTime.TotalSeconds -le $notifyBufferSec) {
             $secs = [Math]::Max(1, [int][Math]::Ceiling($remTime.TotalSeconds))
-            Enter-AlertState "StrictTime" $secs
-            return
-        }
-        if ($remTime.TotalSeconds -le 0) {
-            Execute-FinalSystemAction
+            Enter-AlertState "StrictTime" $secs $actName $fallbackNote
             return
         }
 
@@ -1536,12 +1559,8 @@ function Update-EngineTick([bool]$isInitialSync = $false) {
     }
 
     if ($intentReady -and $systemReady) {
-        if ($script:cfg.PreNotify) {
-            $reason = if ($maxDelayForced) { "ForcedMaxDelay" } else { "Smart" }
-            Enter-AlertState $reason $notifyBufferSec
-        } else {
-            Execute-FinalSystemAction
-        }
+        $reason = if ($maxDelayForced) { "ForcedMaxDelay" } else { "Smart" }
+        Enter-AlertState $reason $notifyBufferSec $actName $fallbackNote
         return
     }
 
@@ -1602,11 +1621,15 @@ function Start-ShutdownTask([bool]$isResuming = $false) {
                 [System.Windows.Forms.MessageBox]::Show("倒數計時不能為 0 小時 0 分鐘！", "時間設定提示", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
                 return
             }
-            # 嚴格準時模式下，若倒數總秒數小於等於預警秒數，給予明確提示避免瞬間彈窗誤會
-            if ($script:cfg.Mode -eq "B" -and (-not $script:cfg.DelayIfBusy) -and $script:cfg.PreNotify) {
-                $totalSecs = ($script:cfg.CountHours * 3600) + ($script:cfg.CountMins * 60)
-                if ($totalSecs -le $script:cfg.PreNotifySecs) {
-                    $confirmMsg = "設定的倒數時間（${totalSecs} 秒）小於或等於「最後防誤殺確認秒數（$($script:cfg.PreNotifySecs) 秒）」，啟動後將直接進入最後確認視窗。`n`n確定要立即啟動嗎？"
+            # 嚴格準時模式下，若距離目標時間的總秒數小於等於最後確認秒數，給予明確提示避免瞬間彈窗誤會
+            if (-not $script:cfg.DelayIfBusy) {
+                $totalSecs = if ($script:cfg.Mode -eq "B") {
+                    ($script:cfg.CountHours * 3600) + ($script:cfg.CountMins * 60)
+                } else {
+                    [int][Math]::Ceiling(($calc - [DateTime]::Now).TotalSeconds)
+                }
+                if ($totalSecs -gt 0 -and $totalSecs -le $script:cfg.PreNotifySecs) {
+                    $confirmMsg = "距離目標時間僅剩約 ${totalSecs} 秒（小於或等於「最後防誤殺確認倒數 $($script:cfg.PreNotifySecs) 秒」），啟動後將直接進入最後確認視窗。`n`n確定要立即啟動嗎？"
                     $res = [System.Windows.Forms.MessageBox]::Show($confirmMsg, "短時間倒數確認", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Information)
                     if ($res -ne [System.Windows.Forms.DialogResult]::Yes) { return }
                 }
@@ -1629,9 +1652,10 @@ function Start-ShutdownTask([bool]$isResuming = $false) {
 
 function Stop-ShutdownTask {
     Reset-TransientRuntimeState
-    $script:state.EngineState   = "Idle"
-    $script:cfg.IsRunning       = $false
-    $script:cfg.TargetTimestamp = ""
+    $script:state.EngineState     = "Idle"
+    $script:cfg.IsRunning         = $false
+    $script:cfg.TargetTimestamp   = ""
+    $script:cfg.LastTriggeredDate = ""
     $alertForm.Hide()
 
     if (Test-Path $iniPath) {
@@ -1641,7 +1665,7 @@ function Stop-ShutdownTask {
     Update-ModeUIState
     Update-ActionComboBoxItems
     Set-SingleStatus "○ 待命中 (任務已取消 / 停止)" $colorLightGreen
-    Set-TrayText "智慧自動關機助手 v1.6.1 - 待命中"
+    Set-TrayText "智慧自動關機助手 v1.6.4 - 待命中"
 }
 
 function Execute-FinalSystemAction {
@@ -1747,6 +1771,12 @@ function Execute-FinalSystemAction {
             Set-TrayText "智慧自動關機助手 - 【$failActName】執行失敗"
             Show-MainWindowToFront
         }
+    } elseif ($effectiveType -eq 2 -or $effectiveType -eq 3) {
+        if ($script:cfg.Mode -ne "C") {
+            $okActName = if ($effectiveType -eq 2) { "睡眠" } else { "休眠" }
+            Set-SingleStatus "○ 待命中 (上次排程【$okActName】已執行完畢)" $colorLightGreen
+            Set-TrayText "智慧自動關機助手 v1.6.4 - 待命中"
+        }
     }
 }
 
@@ -1757,8 +1787,19 @@ $rbModeC.Add_CheckedChanged({ if ($rbModeC.Checked) { Update-ModeUIState } })
 $rbModeD.Add_CheckedChanged({ if ($rbModeD.Checked) { Update-ModeUIState } })
 
 $chkDelayIfBusy.Add_CheckedChanged({
-    if (-not $script:state.IsUpdatingUI) {
+    if (-not $script:state.IsUpdatingUI -and ($script:state.EngineState -eq "Idle")) {
+        if (-not $rbModeD.Checked) {
+            $script:cfg.DelayIfBusy = $chkDelayIfBusy.Checked
+        }
         Update-ModeUIState
+    }
+})
+
+$chkEarlyIfIdle.Add_CheckedChanged({
+    if (-not $script:state.IsUpdatingUI -and ($script:state.EngineState -eq "Idle")) {
+        if ($rbModeA.Checked -or $rbModeB.Checked) {
+            $script:cfg.EarlyIfIdle = $chkEarlyIfIdle.Checked
+        }
     }
 })
 
@@ -1806,6 +1847,9 @@ $miCancel.Add_Click({
 $miExit.Add_Click({
     $script:cfg.IsRunning       = $false
     $script:cfg.TargetTimestamp = ""
+    if ($script:cfg.Mode -eq "C" -and (-not $script:cfg.AutoStartup)) {
+        Sync-StartupShortcut $false
+    }
     if (Test-Path $iniPath) { Save-IniConfig $script:cfg }
 
     $script:state.AllowExit = $true
@@ -1825,6 +1869,13 @@ $form.Add_FormClosing({
         $form.Hide()
     } else {
         $timer.Stop()
+        if ($null -ne $alertForm) {
+            try {
+                $alertForm.Hide()
+                $alertForm.Close()
+                $alertForm.Dispose()
+            } catch {}
+        }
         $notifyIcon.Visible = $false
         $notifyIcon.Dispose()
         if ($null -ne $script:wakeEvent) {
@@ -1863,7 +1914,7 @@ if ($script:cfg.IsRunning) {
                 Save-IniConfig $script:cfg
                 Update-EngineTick $true
                 Set-SingleStatus "○ 待命中 (上次排程時間已過，已自動取消任務)" $colorLightAmber
-                Set-TrayText "智慧自動關機助手 v1.6.1 - 待命中 (上次排程已過期)"
+                Set-TrayText "智慧自動關機助手 v1.6.4 - 待命中 (上次排程已過期)"
             }
         } else {
             $script:cfg.IsRunning       = $false

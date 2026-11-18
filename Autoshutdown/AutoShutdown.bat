@@ -9,7 +9,7 @@ exit /b
 #>
 
 # ==============================================================================
-# ⚡ 智慧自動關機助手 v1.6.4 (純綠色無痕版 - 精簡四狀態機 + 雙綠燈漏斗積分引擎)
+# ⚡ 智慧自動關機助手 v1.6.6 (純綠色無痕版 - 精簡四狀態機 + 雙綠燈漏斗積分引擎)
 #    Designed by fan666rog | https://github.com/fan666rog/web
 # ==============================================================================
 
@@ -33,9 +33,9 @@ Add-Type -AssemblyName System.Drawing
 
 # --- 1. 純記憶體反射載入 Windows 底層 API (零 Temp 編譯垃圾 + 精準 U1 布林封送) ---
 $domain = [AppDomain]::CurrentDomain
-$dynAsm = New-Object System.Reflection.AssemblyName('Win32IdleMemAsmV164')
+$dynAsm = New-Object System.Reflection.AssemblyName('Win32IdleMemAsmV166')
 $asmBuilder = $domain.DefineDynamicAssembly($dynAsm, [System.Reflection.Emit.AssemblyBuilderAccess]::Run)
-$modBuilder = $asmBuilder.DefineDynamicModule('Win32IdleMemModV164')
+$modBuilder = $asmBuilder.DefineDynamicModule('Win32IdleMemModV166')
 $typeBuilder = $modBuilder.DefineType('Win32Api', [System.Reflection.TypeAttributes]::Public -bor [System.Reflection.TypeAttributes]::Class)
 
 $marshalAttrCtor = [System.Runtime.InteropServices.MarshalAsAttribute].GetConstructor([Type[]]@([System.Runtime.InteropServices.UnmanagedType]))
@@ -421,7 +421,7 @@ $colorLightAmber   = [System.Drawing.Color]::FromArgb(255, 210, 75)
 $colorLightRed     = [System.Drawing.Color]::FromArgb(255, 110, 110)
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "⚡ 智慧自動關機助手 v1.6.4 (雙綠燈漏斗積分版)"
+$form.Text = "⚡ 智慧自動關機助手 v1.6.6 (雙綠燈漏斗積分版)"
 $form.ClientSize = New-Object System.Drawing.Size(656, 826)
 $form.AutoScaleMode = [System.Windows.Forms.AutoScaleMode]::Dpi
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
@@ -921,7 +921,7 @@ $lnkAuthor.Location = New-Object System.Drawing.Point(12, 792)
 $lnkAuthor.Size = New-Object System.Drawing.Size(632, 22)
 $lnkAuthor.Font = $fontSmall
 $lnkAuthor.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
-$authorText = "⚡ Designed by fan666rog   |   GitHub 專案主頁   |   v1.6.4 精簡狀態機穩定版"
+$authorText = "⚡ Designed by fan666rog   |   GitHub 專案主頁   |   v1.6.6 精簡狀態機穩定版"
 $lnkAuthor.Text = $authorText
 $lnkAuthor.ForeColor = [System.Drawing.Color]::DimGray
 $lnkAuthor.LinkColor = [System.Drawing.Color]::FromArgb(0, 102, 204)
@@ -953,7 +953,7 @@ function Set-TrayText([string]$txt) {
     try { $notifyIcon.Text = $txt } catch {}
 }
 
-Set-TrayText "智慧自動關機助手 v1.6.4 - 待命中"
+Set-TrayText "智慧自動關機助手 v1.6.6 - 待命中"
 
 $ctxMenu = New-Object System.Windows.Forms.ContextMenuStrip
 $miShow = $ctxMenu.Items.Add("顯示主視窗")
@@ -963,10 +963,10 @@ $miCancel.Enabled = $false
 $miExit = $ctxMenu.Items.Add("✖ 徹底結束程式")
 $notifyIcon.ContextMenuStrip = $ctxMenu
 
-# --- 7. 置頂預警小視窗 (區分自動暫緩與緊急中止雙保險) ---
+# --- 7. 置頂預警小視窗 (區分自動暫緩與緊急中止雙保險 + DPI 安全相對排版) ---
 $alertForm = New-Object System.Windows.Forms.Form
 $alertForm.Text = "⚡ 最後防誤殺確認通知"
-$alertForm.ClientSize = New-Object System.Drawing.Size(470, 212)
+$alertForm.ClientSize = New-Object System.Drawing.Size(470, 236)
 $alertForm.AutoScaleMode = [System.Windows.Forms.AutoScaleMode]::Dpi
 $alertForm.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
 $alertForm.MaximizeBox = $false
@@ -979,15 +979,15 @@ $alertForm.Font = $fontMain
 
 $lblAlertMsg = New-Object System.Windows.Forms.Label
 $lblAlertMsg.Location = New-Object System.Drawing.Point(16, 14)
-$lblAlertMsg.Size = New-Object System.Drawing.Size(438, 128)
+$lblAlertMsg.Size = New-Object System.Drawing.Size(438, 150)
 $lblAlertMsg.Font = $fontTitle
 $lblAlertMsg.ForeColor = [System.Drawing.Color]::FromArgb(255, 220, 100)
 $lblAlertMsg.Text = "即將執行任務..."
 $alertForm.Controls.Add($lblAlertMsg)
 
 $btnAlertHide = New-Object System.Windows.Forms.Button
-$btnAlertHide.Location = New-Object System.Drawing.Point(16, 156)
-$btnAlertHide.Size = New-Object System.Drawing.Size(205, 38)
+$btnAlertHide.Location = New-Object System.Drawing.Point(16, 180)
+$btnAlertHide.Size = New-Object System.Drawing.Size(211, 38)
 $btnAlertHide.BackColor = [System.Drawing.Color]::FromArgb(70, 80, 90)
 $btnAlertHide.ForeColor = [System.Drawing.Color]::White
 $btnAlertHide.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
@@ -995,8 +995,8 @@ $btnAlertHide.Text = "知道了 (隱藏視窗繼續倒數)"
 $alertForm.Controls.Add($btnAlertHide)
 
 $btnAlertCancel = New-Object System.Windows.Forms.Button
-$btnAlertCancel.Location = New-Object System.Drawing.Point(235, 156)
-$btnAlertCancel.Size = New-Object System.Drawing.Size(219, 38)
+$btnAlertCancel.Location = New-Object System.Drawing.Point(243, 180)
+$btnAlertCancel.Size = New-Object System.Drawing.Size(211, 38)
 $btnAlertCancel.BackColor = [System.Drawing.Color]::FromArgb(200, 45, 55)
 $btnAlertCancel.ForeColor = [System.Drawing.Color]::White
 $btnAlertCancel.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
@@ -1044,7 +1044,7 @@ function Render-AlertStateUI([string]$actName, [string]$fallbackNote) {
 
 # --- 8. 輔助邏輯函數與系統電源禁用防呆探測 ---
 function Get-EffectiveAutoStartup {
-    return ($rbModeC.Checked -or $script:cfg.AutoStartup)
+    return (($rbModeC.Checked -and $script:cfg.IsRunning) -or $script:cfg.AutoStartup)
 }
 
 function Update-ActionComboBoxItems {
@@ -1314,16 +1314,24 @@ function Enter-AlertState([string]$reason, [int]$seconds, [string]$actName, [str
     $script:state.AlertEndTime          = $now.AddSeconds($script:state.AlertRemainingSeconds)
     $script:state.AlertSnoozed          = $false
 
+    # 參照已被 WinForms DPI 自動縮放後的控制項邊界定位，確保不同 DPI 與多次彈窗皆精準對齊
     if ($reason -ne "Smart") {
-        $btnAlertHide.Visible    = $true
-        $btnAlertCancel.Location = New-Object System.Drawing.Point(235, 156)
-        $btnAlertCancel.Size     = New-Object System.Drawing.Size(219, 38)
-        $btnAlertCancel.Text     = "立即取消任務"
+        $btnAlertHide.Visible  = $true
+        $gap                   = $btnAlertHide.Left
+        $halfW                 = [int](($lblAlertMsg.Width - $gap) / 2)
+        $btnAlertHide.Width    = $halfW
+        $btnAlertCancel.Left   = $btnAlertHide.Right + $gap
+        $btnAlertCancel.Top    = $btnAlertHide.Top
+        $btnAlertCancel.Height = $btnAlertHide.Height
+        $btnAlertCancel.Width  = $lblAlertMsg.Right - $btnAlertCancel.Left
+        $btnAlertCancel.Text   = "立即取消任務"
     } else {
-        $btnAlertHide.Visible    = $false
-        $btnAlertCancel.Location = New-Object System.Drawing.Point(16, 156)
-        $btnAlertCancel.Size     = New-Object System.Drawing.Size(438, 38)
-        $btnAlertCancel.Text     = "■ 緊急中止整筆排程（徹底取消任務）"
+        $btnAlertHide.Visible  = $false
+        $btnAlertCancel.Left   = $btnAlertHide.Left
+        $btnAlertCancel.Top    = $btnAlertHide.Top
+        $btnAlertCancel.Height = $btnAlertHide.Height
+        $btnAlertCancel.Width  = $lblAlertMsg.Right - $btnAlertHide.Left
+        $btnAlertCancel.Text   = "■ 緊急中止整筆排程（徹底取消任務）"
     }
 
     Render-AlertStateUI $actName $fallbackNote
@@ -1368,7 +1376,7 @@ function Update-EngineTick([bool]$isInitialSync = $false) {
                     if ($now -gt $script:state.TargetTime) {
                         Stop-ShutdownTask
                         Set-SingleStatus "○ 待命中 (系統喚醒，原排程時間已過已自動取消)" $colorLightAmber
-                        Set-TrayText "智慧自動關機助手 v1.6.4 - 待命中 (排程已過期)"
+                        Set-TrayText "智慧自動關機助手 v1.6.6 - 待命中 (排程已過期)"
                         return
                     } else {
                         $script:state.EngineState    = "WakeGuard"
@@ -1621,7 +1629,7 @@ function Start-ShutdownTask([bool]$isResuming = $false) {
                 [System.Windows.Forms.MessageBox]::Show("倒數計時不能為 0 小時 0 分鐘！", "時間設定提示", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
                 return
             }
-            # 嚴格準時模式下，若距離目標時間的總秒數小於等於最後確認秒數，給予明確提示避免瞬間彈窗誤會
+            # 嚴格準時模式下，若距離目標時間的總秒數小於等於最後確認秒數，給予明確提示並於確認後重新校準時間
             if (-not $script:cfg.DelayIfBusy) {
                 $totalSecs = if ($script:cfg.Mode -eq "B") {
                     ($script:cfg.CountHours * 3600) + ($script:cfg.CountMins * 60)
@@ -1632,6 +1640,16 @@ function Start-ShutdownTask([bool]$isResuming = $false) {
                     $confirmMsg = "距離目標時間僅剩約 ${totalSecs} 秒（小於或等於「最後防誤殺確認倒數 $($script:cfg.PreNotifySecs) 秒」），啟動後將直接進入最後確認視窗。`n`n確定要立即啟動嗎？"
                     $res = [System.Windows.Forms.MessageBox]::Show($confirmMsg, "短時間倒數確認", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Information)
                     if ($res -ne [System.Windows.Forms.DialogResult]::Yes) { return }
+
+                    if ($script:cfg.Mode -eq "A") {
+                        if ($calc -le [DateTime]::Now) {
+                            [System.Windows.Forms.MessageBox]::Show("在確認期間，指定的日期與時間已經過去，請重新設定未來時間！", "時間已過期", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+                            return
+                        }
+                    } else {
+                        # 模式 B 從按下確認這一刻起算完整倒數；模式 C 若已過今日時間則自動順延至明日
+                        $calc = Calculate-PreviewTargetTime
+                    }
                 }
             }
             $script:state.TargetTime = $calc
@@ -1665,7 +1683,7 @@ function Stop-ShutdownTask {
     Update-ModeUIState
     Update-ActionComboBoxItems
     Set-SingleStatus "○ 待命中 (任務已取消 / 停止)" $colorLightGreen
-    Set-TrayText "智慧自動關機助手 v1.6.4 - 待命中"
+    Set-TrayText "智慧自動關機助手 v1.6.6 - 待命中"
 }
 
 function Execute-FinalSystemAction {
@@ -1695,6 +1713,10 @@ function Execute-FinalSystemAction {
             $todayTarget
         } else {
             $todayTarget.AddDays(1)
+        }
+        # 12 小時最小間隔冷卻：防止跨日極端延後（接近 24 小時）時在短時間內連環觸發兩次，同時保留睡前跨午夜排程
+        if (($nextTarget - $now).TotalHours -lt 12) {
+            $nextTarget = $nextTarget.AddDays(1)
         }
         $script:state.TargetTime    = $nextTarget
         $script:cfg.TargetTimestamp = $nextTarget.ToString("yyyy-MM-dd HH:mm:ss")
@@ -1775,7 +1797,7 @@ function Execute-FinalSystemAction {
         if ($script:cfg.Mode -ne "C") {
             $okActName = if ($effectiveType -eq 2) { "睡眠" } else { "休眠" }
             Set-SingleStatus "○ 待命中 (上次排程【$okActName】已執行完畢)" $colorLightGreen
-            Set-TrayText "智慧自動關機助手 v1.6.4 - 待命中"
+            Set-TrayText "智慧自動關機助手 v1.6.6 - 待命中"
         }
     }
 }
@@ -1899,8 +1921,13 @@ if ($script:cfg.IsRunning) {
     if ($script:cfg.Mode -eq "D") {
         Start-ShutdownTask $true
     } elseif ($script:cfg.Mode -eq "C") {
-        $script:state.TargetTime = Calculate-PreviewTargetTime
-        $script:cfg.TargetTimestamp = $script:state.TargetTime.ToString("yyyy-MM-dd HH:mm:ss")
+        $savedTarget = [DateTime]::MinValue
+        if ([DateTime]::TryParseExact($script:cfg.TargetTimestamp, "yyyy-MM-dd HH:mm:ss", $null, [System.Globalization.DateTimeStyles]::None, [ref]$savedTarget) -and ($savedTarget -gt [DateTime]::Now)) {
+            $script:state.TargetTime = $savedTarget
+        } else {
+            $script:state.TargetTime = Calculate-PreviewTargetTime
+            $script:cfg.TargetTimestamp = $script:state.TargetTime.ToString("yyyy-MM-dd HH:mm:ss")
+        }
         Start-ShutdownTask $true
     } else {
         $savedTarget = [DateTime]::MinValue
@@ -1914,7 +1941,7 @@ if ($script:cfg.IsRunning) {
                 Save-IniConfig $script:cfg
                 Update-EngineTick $true
                 Set-SingleStatus "○ 待命中 (上次排程時間已過，已自動取消任務)" $colorLightAmber
-                Set-TrayText "智慧自動關機助手 v1.6.4 - 待命中 (上次排程已過期)"
+                Set-TrayText "智慧自動關機助手 v1.6.6 - 待命中 (上次排程已過期)"
             }
         } else {
             $script:cfg.IsRunning       = $false

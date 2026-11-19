@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>fan666rog的展示區</title>
-    <meta name="description" content="fan666rog的網頁應用程式與遊戲展示區，包含多種實用工具與趣味小遊戲。">
+    <meta name="description" content="fan666rog的網頁應用程式、遊戲與 Windows 本機工具展示區，包含多種實用工具、BAT 腳本與趣味小遊戲。">
     <style>
         /* --- 載入動畫 --- */
         #loader {
@@ -19,22 +19,32 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* --- 整體與深色主題 --- */
+        /* --- 整體與深色主題變數 --- */
         :root {
-            --primary-glow-color: #00bfff; 
-            --glass-bg: rgba(20, 20, 22, 0.75); 
-            --glass-bg-inactive: rgba(14, 15, 18, 0.92);
-            --glass-border: rgba(255, 255, 255, 0.08); 
+            --primary-glow-color: #00bfff;
+            --bat-glow-color: #00ff9d;
+            --hud-accent: #00bfff;
+            --hud-accent-soft: rgba(0, 191, 255, 0.25);
+            --glass-bg: rgba(18, 20, 24, 0.78);
+            --glass-bg-inactive: rgba(13, 14, 18, 0.94);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --card-cut: 22px;
+            --card-cut-inner: 21px;
         }
+
         body {
             font-family: '微軟正黑體', 'Microsoft JhengHei', sans-serif;
-            background-color: #030303; color: #e0e0e0; margin: 0; padding: 2rem 0; 
+            background-color: #030303; color: #e0e0e0; margin: 0; padding: 1.8rem 0 0;
             display: flex; flex-direction: column; align-items: center;
             min-height: 100vh; overflow-x: hidden;
         }
+        body.modal-open {
+            overflow: hidden;
+        }
+
         .container {
             width: 100%; max-width: 1200px; position: relative; z-index: 2;
-            padding: 0 1rem; box-sizing: border-box;
+            padding: 0 1rem; box-sizing: border-box; flex: 1;
         }
 
         /* --- 蜂巢動態背景 --- */
@@ -43,8 +53,8 @@
         /* ==========================================
            終極戰士風：無邊框懸浮全息燈管 (Predator Floating Hologram)
            ========================================== */
-        header { text-align: center; margin-bottom: 2rem; display: flex; flex-direction: column; align-items: center; }
-        
+        header { text-align: center; margin-bottom: 1.6rem; display: flex; flex-direction: column; align-items: center; }
+
         .predator-panel {
             display: inline-flex;
             align-items: center;
@@ -59,10 +69,7 @@
             position: relative;
             transition: transform 0.08s ease;
         }
-
-        .predator-panel.panel-glitch {
-            transform: translateX(2px);
-        }
+        .predator-panel.panel-glitch { transform: translateX(2px); }
 
         .alien-digit {
             width: clamp(22px, 5.2vw, 42px);
@@ -70,161 +77,474 @@
             overflow: visible;
             display: block;
         }
-
-        /* 燈管底槽 (未通電時隱約可見的電子錶暗槽) */
         .alien-digit .seg {
             fill: rgba(0, 191, 255, 0.065);
             stroke: rgba(0, 191, 255, 0.03);
             stroke-width: 0.5px;
-            transition: none; /* 嚴禁平滑漸變，維持純機械硬切感 */
+            transition: none;
         }
-
-        /* 燈管通電狀態 (全息電光藍) */
         .alien-digit .seg.on {
             fill: #00bfff;
             filter: drop-shadow(0 0 5px rgba(0, 191, 255, 0.95)) drop-shadow(0 0 12px rgba(0, 191, 255, 0.5));
         }
-
-        /* 燈管高壓過載狀態 (外星解碼瞬間的高亮白藍閃光) */
         .alien-digit .seg.surge {
             fill: #e0ffff;
             filter: drop-shadow(0 0 8px #ffffff) drop-shadow(0 0 16px #00bfff);
         }
 
-        /* 無障礙隱藏文字 (供搜尋引擎與螢幕閱讀器讀取) */
         .sr-only {
             position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
             overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
         }
 
+        /* 圖例列 (對角微切角) */
         .legend-area {
-            display: inline-flex; justify-content: center; align-items: center;
-            gap: 0.5rem; margin-top: 1.2rem; color: #888; font-size: 0.9rem;
-            background: rgba(255, 255, 255, 0.03); padding: 0.5rem 1rem; border-radius: 20px;
-            backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); border: 1px solid var(--glass-border);
+            position: relative; z-index: 1;
+            display: inline-flex; justify-content: center; align-items: center; flex-wrap: wrap;
+            gap: 0.9rem; margin-top: 1rem; color: #8c96a4; font-size: 0.85rem;
+            padding: 0.48rem 1.15rem;
+            background: rgba(255, 255, 255, 0.11);
+            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
         }
-
-        /* --- 分類篩選器 --- */
-        .filter-container { display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
-        .filter-btn {
-            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border);
-            color: #aaa; padding: 0.6rem 1.5rem; border-radius: 30px; font-size: 1rem; cursor: pointer;
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: all 0.3s ease; font-family: inherit;
+        .legend-area::before {
+            content: ""; position: absolute; inset: 1px; z-index: -1;
+            background: rgba(10, 12, 16, 0.88);
+            clip-path: polygon(0 0, calc(100% - 9.5px) 0, 100% 9.5px, 100% 100%, 9.5px 100%, 0 calc(100% - 9.5px));
         }
-        .filter-btn .count-num {
-            opacity: 0.85; font-size: 0.9em; margin-left: 2px;
-        }
-        .filter-btn:hover { color: #fff; border-color: rgba(0, 191, 255, 0.5); background: rgba(0, 191, 255, 0.05); }
-        .filter-btn.active {
-            color: #fff; background: rgba(0, 191, 255, 0.15); border-color: var(--primary-glow-color);
-            box-shadow: 0 0 15px rgba(0, 191, 255, 0.3); text-shadow: 0 0 5px rgba(255,255,255,0.5);
-        }
+        .legend-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+        .legend-divider { width: 1px; height: 12px; background: rgba(255, 255, 255, 0.14); }
+        .mobile-icon { width: 1.1rem; height: 1.1rem; fill: #00bfff; opacity: 0.85; flex-shrink: 0; }
+        .terminal-icon { width: 1.1rem; height: 1.1rem; fill: #00ff9d; opacity: 0.9; flex-shrink: 0; }
 
         /* ==========================================
-           3D 全息輪播展示區 (Holographic Carousel) 
+           分類篩選器 (對角切兩角戰術頁籤)
+           ========================================== */
+        .filter-container {
+            display: flex; justify-content: center; gap: 0.75rem;
+            margin-bottom: 1.2rem; flex-wrap: wrap;
+        }
+        .filter-btn {
+            position: relative; z-index: 1;
+            background: rgba(255, 255, 255, 0.14);
+            border: none; color: #a7b1be;
+            padding: 0.58rem 1.25rem; font-size: 0.95rem; cursor: pointer;
+            font-family: inherit; letter-spacing: 0.5px;
+            clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 11px 100%, 0 calc(100% - 11px));
+            transition: color 0.25s ease, background 0.25s ease, transform 0.2s ease;
+        }
+        .filter-btn::before {
+            content: ""; position: absolute; inset: 1px; z-index: -1;
+            background: rgba(11, 13, 18, 0.92);
+            clip-path: polygon(0 0, calc(100% - 10.5px) 0, 100% 10.5px, 100% 100%, 10.5px 100%, 0 calc(100% - 10.5px));
+            transition: background 0.25s ease;
+        }
+        .filter-btn .count-num { opacity: 0.8; font-size: 0.88em; margin-left: 2px; font-family: monospace; }
+        .filter-btn:hover { color: #fff; background: rgba(0, 191, 255, 0.65); }
+        .filter-btn:hover::before { background: rgba(10, 24, 34, 0.92); }
+
+        .filter-btn.active {
+            color: #fff; background: var(--primary-glow-color);
+            text-shadow: 0 0 8px rgba(0, 191, 255, 0.65);
+        }
+        .filter-btn.active::before { background: rgba(0, 56, 82, 0.78); }
+
+        /* Win 本機分類專屬終端機綠高亮 */
+        .filter-btn[data-filter="bat"]:hover { background: rgba(0, 255, 157, 0.65); }
+        .filter-btn[data-filter="bat"]:hover::before { background: rgba(8, 30, 22, 0.92); }
+        .filter-btn[data-filter="bat"].active {
+            color: #e8fff5; background: var(--bat-glow-color);
+            text-shadow: 0 0 8px rgba(0, 255, 157, 0.65);
+        }
+        .filter-btn[data-filter="bat"].active::before { background: rgba(0, 62, 40, 0.78); }
+
+        /* ==========================================
+           3D 虛擬弧形全息展台 (Holographic Arc Stage)
            ========================================== */
         .carousel-scene {
-            width: 100%; height: 500px; 
-            perspective: 1200px; 
+            width: 100%; height: 470px;
+            perspective: 1200px;
             position: relative;
             display: flex; justify-content: center; align-items: center;
-            margin: 2rem 0 4rem 0;
-            overflow: hidden; 
-            user-select: none; 
-            touch-action: pan-y; 
+            margin: 0.4rem 0 0.8rem 0;
+            overflow: hidden;
+            user-select: none;
+            touch-action: pan-y;
             cursor: grab;
         }
-        .carousel-scene.dragging {
-            cursor: grabbing;
-        }
-        
+        .carousel-scene.dragging { cursor: grabbing; }
+
         .carousel-container {
-            width: 320px; height: 420px; 
-            position: absolute;
-            transform-style: preserve-3d; 
-            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-            will-change: transform;
+            width: 326px; height: 420px;
+            position: relative;
+            transform-style: preserve-3d;
         }
 
-        /* 效能優化：背面與側面卡片預設不開 backdrop-filter，大幅減輕手機 GPU 負擔 */
+        /* 卡片外層定位容器 (不套 clip-path，保留 3D 空間與外發光) */
         .project-card {
-            background: var(--glass-bg-inactive); border: 1px solid var(--glass-border); border-radius: 16px;
-            padding: 1.8rem; display: flex; flex-direction: column; 
-            position: absolute; 
-            top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box;
-            transition: box-shadow 0.4s ease, border-color 0.4s ease, opacity 0.4s ease, transform 0.4s ease, background-color 0.4s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
-            -webkit-backface-visibility: hidden; backface-visibility: hidden; 
+            --card-accent: #00bfff;
+            --card-accent-rgb: 0, 191, 255;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            transform-style: preserve-3d;
+            will-change: transform, opacity;
+            -webkit-backface-visibility: hidden; backface-visibility: hidden;
+            cursor: pointer;
+        }
+        .project-card[data-category="bat"] {
+            --card-accent: #00ff9d;
+            --card-accent-rgb: 0, 255, 157;
+        }
+        .project-card.active-front { cursor: default; }
+
+        /* 層 1：內縮式柔和外發光層 (避免使用 filter: drop-shadow 破壞毛玻璃) */
+        .card-aura {
+            position: absolute; inset: 10px; z-index: 0; pointer-events: none;
+            border-radius: 4px; opacity: 0;
+            box-shadow: 0 0 34px 4px rgba(var(--card-accent-rgb), 0.34);
+            transition: opacity 0.35s ease, box-shadow 0.35s ease;
+        }
+        .project-card.active-front .card-aura { opacity: 1; }
+        .project-card.active-front:hover .card-aura {
+            box-shadow: 0 0 46px 8px rgba(var(--card-accent-rgb), 0.46);
         }
 
-        /* 只有正中央的主角卡片才開啟毛玻璃與發光特效 */
-        .project-card.active-front {
+        /* 層 2：對角切角邊框層 (承載完整 45° 斜邊與滑鼠探照燈邊框) */
+        .card-frame {
+            position: absolute; inset: 0; z-index: 1;
+            clip-path: polygon(
+                0 0,
+                calc(100% - var(--card-cut)) 0,
+                100% var(--card-cut),
+                100% 100%,
+                var(--card-cut) 100%,
+                0 calc(100% - var(--card-cut))
+            );
+            background: rgba(255, 255, 255, 0.12);
+            transition: background 0.35s ease;
+        }
+        .project-card.active-front .card-frame {
+            background:
+                radial-gradient(360px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(var(--card-accent-rgb), 0.95), transparent 52%),
+                rgba(var(--card-accent-rgb), 0.45);
+        }
+
+        /* 層 3：內縮切角內容層 (僅主角卡開啟 backdrop-filter 減輕手機 GPU 負擔) */
+        .card-inner {
+            position: absolute; inset: 1.5px; z-index: 2;
+            padding: 1.5rem 1.65rem 1.65rem;
+            box-sizing: border-box;
+            display: flex; flex-direction: column;
+            background: var(--glass-bg-inactive);
+            clip-path: polygon(
+                0 0,
+                calc(100% - var(--card-cut-inner)) 0,
+                100% var(--card-cut-inner),
+                100% 100%,
+                var(--card-cut-inner) 100%,
+                0 calc(100% - var(--card-cut-inner))
+            );
+            transition: background-color 0.35s ease;
+        }
+        .project-card.active-front .card-inner {
             background: var(--glass-bg);
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 0 30px rgba(0, 191, 255, 0.4), inset 0 0 15px rgba(0, 191, 255, 0.1); 
-            border-color: rgba(0, 191, 255, 0.6); 
-            cursor: default;
-        }
-        
-        .project-card.active-front:hover {
-            box-shadow: 0 0 40px rgba(0, 191, 255, 0.6), inset 0 0 20px rgba(0, 191, 255, 0.2); 
-            border-color: var(--primary-glow-color);
         }
 
-        .project-card::before {
-            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: inherit;
-            background: radial-gradient( 800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 191, 255, 0.08), transparent 40% );
-            z-index: 0; opacity: 0; transition: opacity 0.5s ease; pointer-events: none;
+        /* 卡片內部微光探照燈與頂部微飾條 */
+        .card-inner::before {
+            content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+            background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(var(--card-accent-rgb), 0.11), transparent 45%);
+            opacity: 0; transition: opacity 0.4s ease;
         }
-        .project-card::after {
-            content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 2px; 
-            background: radial-gradient( 400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 191, 255, 0.8), transparent 40% );
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor; mask-composite: exclude;
-            z-index: 1; opacity: 0; transition: opacity 0.5s ease; pointer-events: none;
-        }
-        
-        .project-card.active-front::before, .project-card.active-front::after { opacity: 0.6; }
-        .project-card.active-front:hover::before, .project-card.active-front:hover::after { opacity: 1; }
-        
-        .project-card > * { position: relative; z-index: 2; }
+        .project-card.active-front .card-inner::before { opacity: 0.7; }
+        .project-card.active-front:hover .card-inner::before { opacity: 1; }
 
-        .project-card .project-title {
-            display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.8rem;
+        .card-inner > * { position: relative; z-index: 1; }
+
+        /* 卡片頂部戰術編號列 */
+        .card-meta {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 0.75rem; padding-right: 0.5rem;
+            font-family: monospace; font-size: 0.75rem; letter-spacing: 1.2px;
+            color: rgba(var(--card-accent-rgb), 0.82);
         }
-        .project-card h2 { font-size: 1.4rem; margin: 0; color: #fff; font-weight: 600; letter-spacing: 1px; transition: color 0.3s ease; }
-        .project-card.active-front:hover h2 { color: var(--primary-glow-color); text-shadow: 0 0 8px rgba(0, 191, 255, 0.4); }
-        .mobile-icon { width: 1.2rem; height: 1.2rem; fill: #00bfff; opacity: 0.7; flex-shrink: 0; }
-        .project-card p { font-size: 0.95rem; color: #b0b0b0; flex-grow: 1; margin-bottom: 1.8rem; line-height: 1.6; }
-        
-        /* 修正 Bug 2：非正前方的卡片內部連結預設關閉點擊，避免穿透誤觸 */
-        .project-card a {
-            display: inline-block; background: transparent; color: var(--primary-glow-color);
-            padding: 0.8rem 1.5rem; border-radius: 8px; text-decoration: none; text-align: center;
-            font-weight: bold; letter-spacing: 1px; border: 1px solid var(--primary-glow-color); transition: all 0.3s ease;
+        .card-code {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .card-code::before {
+            content: ""; width: 6px; height: 6px;
+            background: var(--card-accent);
+            box-shadow: 0 0 8px var(--card-accent);
+            display: inline-block;
+        }
+        .badge-group { display: inline-flex; align-items: center; gap: 0.35rem; }
+        .badge-new {
+            background: rgba(var(--card-accent-rgb), 0.18);
+            border: 1px solid rgba(var(--card-accent-rgb), 0.7);
+            color: #fff; font-weight: bold; font-size: 0.68rem;
+            padding: 0.1rem 0.42rem; letter-spacing: 1px;
+        }
+        .badge-env {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #9aa5b4; font-size: 0.68rem;
+            padding: 0.1rem 0.42rem;
+        }
+
+        .project-title {
+            display: flex; align-items: center; justify-content: space-between; gap: 0.55rem;
+            margin-bottom: 0.9rem; padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .project-card h2 {
+            font-size: 1.32rem; margin: 0; color: #fff; font-weight: 600;
+            letter-spacing: 0.8px; line-height: 1.35; transition: color 0.3s ease;
+        }
+        .project-card.active-front:hover h2 {
+            color: var(--card-accent);
+            text-shadow: 0 0 10px rgba(var(--card-accent-rgb), 0.45);
+        }
+        .project-card p {
+            font-size: 0.93rem; color: #b4bcc8; flex-grow: 1;
+            margin: 0 0 1.4rem; line-height: 1.65;
+        }
+
+        /* 卡片底部 CTA 按鈕 (平行對角切角) */
+        .project-cta {
+            position: relative; z-index: 1;
+            display: flex; align-items: center; justify-content: center; gap: 0.45rem;
+            color: var(--card-accent);
+            padding: 0.82rem 1.2rem;
+            text-decoration: none; text-align: center;
+            font-weight: bold; font-size: 0.95rem; letter-spacing: 1px;
+            background: var(--card-accent);
+            clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+            transition: color 0.25s ease, transform 0.2s ease;
             pointer-events: none;
         }
-        .project-card.active-front a {
-            pointer-events: auto;
+        .project-cta::before {
+            content: ""; position: absolute; inset: 1.2px; z-index: -1;
+            background: rgba(8, 12, 16, 0.92);
+            clip-path: polygon(0 0, calc(100% - 11.4px) 0, 100% 11.4px, 100% 100%, 11.4px 100%, 0 calc(100% - 11.4px));
+            transition: background 0.25s ease;
         }
-        .project-card.active-front a:hover { background-color: var(--primary-glow-color); color: #000; box-shadow: 0 0 15px rgba(0, 191, 255, 0.5); }
+        .project-card.active-front .project-cta { pointer-events: auto; }
+        .project-card.active-front .project-cta:hover { color: #020508; }
+        .project-card.active-front .project-cta:hover::before { background: var(--card-accent); }
+
+        /* ==========================================
+           拇指區戰術 HUD 導航列 (輪播正下方)
+           ========================================== */
+        .hud-wrapper {
+            display: flex; justify-content: center;
+            margin: 0.2rem 0 3rem;
+        }
+        .hud-bar {
+            position: relative; z-index: 2;
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            padding: 0.32rem;
+            background: rgba(255, 255, 255, 0.16);
+            clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+            transition: background 0.35s ease;
+        }
+        .hud-bar::before {
+            content: ""; position: absolute; inset: 1px; z-index: -1;
+            background: rgba(10, 13, 18, 0.92);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            clip-path: polygon(0 0, calc(100% - 13.5px) 0, 100% 13.5px, 100% 100%, 13.5px 100%, 0 calc(100% - 13.5px));
+        }
+
+        .hud-btn {
+            position: relative; z-index: 1;
+            background: transparent; border: none; color: #d2dbe6;
+            height: 44px; min-width: 46px; padding: 0 0.9rem;
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.55rem;
+            font-family: inherit; font-size: 0.92rem; cursor: pointer;
+            clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 9px 100%, 0 calc(100% - 9px));
+            transition: background 0.22s ease, color 0.22s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .hud-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+        .hud-btn:active {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .hud-btn svg {
+            width: 16px; height: 16px; fill: currentColor; flex-shrink: 0;
+        }
+        .hud-btn.disabled { opacity: 0.3; pointer-events: none; }
+
+        .hud-divider {
+            width: 1px; height: 22px; background: rgba(255, 255, 255, 0.12);
+        }
+
+        .hud-dir-btn {
+            padding: 0 1.25rem;
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .hud-dir-btn:hover {
+            background: var(--hud-accent-soft);
+            color: #fff;
+        }
+        .hud-counter {
+            font-family: monospace; font-size: 0.95rem; font-weight: bold;
+            color: var(--hud-accent); letter-spacing: 1px;
+            transition: color 0.3s ease;
+        }
+        .hud-sep { color: rgba(255, 255, 255, 0.25); font-size: 0.85rem; }
+        .hud-dir-label { font-weight: 600; letter-spacing: 1px; white-space: nowrap; }
+
+        /* ==========================================
+           戰術快速目錄彈窗 (Tactical Directory Modal)
+           ========================================== */
+        .dir-modal {
+            position: fixed; inset: 0; z-index: 5000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 1.2rem; box-sizing: border-box;
+            background: rgba(2, 4, 8, 0.78);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+        .dir-modal.open { opacity: 1; visibility: visible; }
+
+        .dir-panel {
+            position: relative; z-index: 1;
+            width: 100%; max-width: 720px; max-height: 82vh;
+            display: flex; flex-direction: column;
+            background: rgba(0, 191, 255, 0.55);
+            clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px));
+            transform: translateY(16px) scale(0.98);
+            transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .dir-modal.open .dir-panel { transform: translateY(0) scale(1); }
+
+        .dir-panel-inner {
+            position: relative; margin: 1.5px;
+            flex: 1; min-height: 0;
+            display: flex; flex-direction: column;
+            background: rgba(9, 12, 17, 0.96);
+            clip-path: polygon(0 0, calc(100% - 21px) 0, 100% 21px, 100% 100%, 21px 100%, 0 calc(100% - 21px));
+            overflow: hidden;
+        }
+
+        .dir-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1.1rem 1.4rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 191, 255, 0.04);
+        }
+        .dir-title-wrap { display: flex; align-items: center; gap: 0.65rem; }
+        .dir-title-dot {
+            width: 8px; height: 8px; background: var(--primary-glow-color);
+            box-shadow: 0 0 10px var(--primary-glow-color);
+        }
+        .dir-title {
+            margin: 0; font-size: 1.05rem; letter-spacing: 1.5px; color: #fff;
+        }
+        .dir-total {
+            font-family: monospace; font-size: 0.82rem; color: #7e8b9a;
+        }
+
+        .dir-close {
+            background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14);
+            color: #ccc; width: 36px; height: 36px; cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; line-height: 1;
+            clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+            transition: all 0.2s ease;
+        }
+        .dir-close:hover {
+            background: rgba(0, 191, 255, 0.22); border-color: var(--primary-glow-color); color: #fff;
+        }
+
+        .dir-body {
+            padding: 1rem 1.35rem 1.4rem;
+            overflow-y: auto; overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+        .dir-body::-webkit-scrollbar { width: 6px; }
+        .dir-body::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        .dir-body::-webkit-scrollbar-thumb { background: rgba(0, 191, 255, 0.35); }
+
+        .dir-group { margin-bottom: 1.35rem; }
+        .dir-group:last-child { margin-bottom: 0; }
+        .dir-group-title {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 0.82rem; font-family: monospace; letter-spacing: 1.2px;
+            color: #8b98a8; margin: 0 0 0.65rem; padding-bottom: 0.35rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .dir-group-title.is-bat { color: var(--bat-glow-color); border-bottom-color: rgba(0, 255, 157, 0.18); }
+
+        .dir-grid {
+            display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem;
+        }
+        .dir-item {
+            position: relative; z-index: 1;
+            width: 100%; text-align: left; font-family: inherit;
+            padding: 0.72rem 0.9rem; cursor: pointer; border: none;
+            display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.1); color: #d8e0ea;
+            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        .dir-item::before {
+            content: ""; position: absolute; inset: 1px; z-index: -1;
+            background: rgba(15, 18, 24, 0.95);
+            clip-path: polygon(0 0, calc(100% - 9.5px) 0, 100% 9.5px, 100% 100%, 9.5px 100%, 0 calc(100% - 9.5px));
+            transition: background 0.2s ease;
+        }
+        .dir-item:hover { background: var(--primary-glow-color); color: #fff; }
+        .dir-item:hover::before { background: rgba(0, 44, 66, 0.88); }
+
+        .dir-item.is-bat:hover { background: var(--bat-glow-color); color: #eafff6; }
+        .dir-item.is-bat:hover::before { background: rgba(0, 50, 32, 0.88); }
+
+        .dir-item.is-current { background: var(--primary-glow-color); color: #fff; }
+        .dir-item.is-current::before { background: rgba(0, 58, 86, 0.9); }
+        .dir-item.is-bat.is-current { background: var(--bat-glow-color); color: #eafff6; }
+        .dir-item.is-bat.is-current::before { background: rgba(0, 64, 42, 0.9); }
+
+        .dir-item-main {
+            display: flex; flex-direction: column; gap: 0.18rem; min-width: 0;
+        }
+        .dir-item-name {
+            font-size: 0.9rem; font-weight: 600;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .dir-item-sub {
+            font-size: 0.74rem; color: #7e8c9c; font-family: monospace;
+        }
+        .dir-item-tag {
+            flex-shrink: 0; font-family: monospace; font-size: 0.72rem;
+            padding: 0.15rem 0.42rem; color: var(--primary-glow-color);
+            background: rgba(0, 191, 255, 0.1);
+            border: 1px solid rgba(0, 191, 255, 0.3);
+        }
+        .dir-item.is-bat .dir-item-tag {
+            color: var(--bat-glow-color);
+            background: rgba(0, 255, 157, 0.1);
+            border-color: rgba(0, 255, 157, 0.35);
+        }
 
         /* --- 頁尾 --- */
         .gemini-text {
             font-weight: 800; font-style: italic;
-            background: linear-gradient(90deg, #00bfff, #a200ff, #ff007f); 
+            background: linear-gradient(90deg, #00bfff, #a200ff, #ff007f);
             background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 0 5px rgba(162, 0, 255, 0.4));
             animation: gradientFlow 3s linear infinite; padding-left: 0.2rem;
         }
         @keyframes gradientFlow { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
-        
+
         footer {
-            width: 100%; max-width: 1200px; padding: 3rem 1rem 2rem; box-sizing: border-box;
+            width: 100%; max-width: 1200px; padding: 2.5rem 1rem 2rem; box-sizing: border-box;
             border-top: 1px solid rgba(255, 255, 255, 0.03);
             background: linear-gradient(to top, rgba(0, 191, 255, 0.03) 0%, transparent 100%);
-            color: #888; font-size: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 2rem; position: relative; z-index: 2;
+            color: #888; font-size: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 1.8rem;
+            position: relative; z-index: 2;
         }
         footer::before {
             content: ''; position: absolute; top: -1px; left: 15%; right: 15%; height: 1px;
@@ -232,39 +552,78 @@
         }
         .footer-content { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
         .copyright { font-size: 0.95rem; color: #bbb; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+
         .github-link {
-            color: #fff; text-decoration: none; font-weight: bold; padding: 0.4rem 0.9rem;
-            border-radius: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.4rem; backdrop-filter: blur(5px);
+            position: relative; z-index: 1;
+            color: #fff; text-decoration: none; font-weight: bold; padding: 0.42rem 0.95rem;
+            background: rgba(255, 255, 255, 0.16);
+            clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 9px 100%, 0 calc(100% - 9px));
+            transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .github-link::before {
+            content: ""; position: absolute; inset: 1px; z-index: -1;
+            background: rgba(14, 17, 22, 0.92);
+            clip-path: polygon(0 0, calc(100% - 8.5px) 0, 100% 8.5px, 100% 100%, 8.5px 100%, 0 calc(100% - 8.5px));
+            transition: background 0.3s ease;
         }
         .github-link svg { width: 14px; height: 14px; fill: currentColor; }
         .github-link:hover {
-            background: rgba(0, 191, 255, 0.1); border-color: var(--primary-glow-color);
-            color: var(--primary-glow-color); box-shadow: 0 0 15px rgba(0, 191, 255, 0.3); transform: translateY(-2px);
+            background: var(--primary-glow-color); color: var(--primary-glow-color);
+            transform: translateY(-2px);
         }
+        .github-link:hover::before { background: rgba(0, 38, 56, 0.9); }
+
         .env-recommendation {
+            position: relative; z-index: 1;
             display: flex; flex-direction: column; align-items: center; gap: 1rem;
-            background: rgba(10, 12, 15, 0.6); padding: 1.5rem 2.5rem; border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.04); box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            padding: 1.4rem 2.3rem;
+            background: rgba(255, 255, 255, 0.08);
+            clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
         }
-        .env-title { font-size: 0.8rem; letter-spacing: 2px; color: #555; text-transform: uppercase; font-weight: bold; }
-        .env-badges { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+        .env-recommendation::before {
+            content: ""; position: absolute; inset: 1px; z-index: -1;
+            background: rgba(10, 12, 16, 0.86);
+            clip-path: polygon(0 0, calc(100% - 15.5px) 0, 100% 15.5px, 100% 100%, 15.5px 100%, 0 calc(100% - 15.5px));
+        }
+        .env-title { font-size: 0.78rem; letter-spacing: 2px; color: #5b6573; text-transform: uppercase; font-weight: bold; }
+        .env-badges { display: flex; gap: 0.9rem; flex-wrap: wrap; justify-content: center; }
         .env-badge {
-            display: flex; align-items: center; gap: 0.5rem; font-family: monospace; font-size: 0.9rem;
-            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 0.5rem 1rem; border-radius: 8px; color: #aaa;
+            display: flex; align-items: center; gap: 0.5rem; font-family: monospace; font-size: 0.88rem;
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07);
+            padding: 0.45rem 0.95rem; color: #aaa;
+            clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
         }
         .env-badge svg { width: 15px; height: 15px; fill: var(--primary-glow-color); opacity: 0.8; }
 
+        /* --- 手機版專屬最佳化 --- */
         @media (max-width: 768px) {
-            .carousel-scene { height: 460px; perspective: 900px; margin: 1rem 0 3rem 0; }
-            .carousel-container { width: 260px; height: 400px; }
-            .project-card { padding: 1.5rem; } .project-card a { padding: 1rem 1.5rem; } 
-            footer { padding: 2rem 1rem 1.5rem; margin-top: 2rem; }
-            .env-recommendation { padding: 1.2rem; width: 100%; box-sizing: border-box; }
-            .env-badges { flex-direction: column; width: 100%; gap: 0.6rem; }
+            body { padding-top: 1.2rem; }
+            header { margin-bottom: 1.1rem; }
+            .legend-area { font-size: 0.78rem; gap: 0.65rem; padding: 0.42rem 0.9rem; }
+            .filter-container { gap: 0.5rem; margin-bottom: 0.8rem; }
+            .filter-btn { padding: 0.48rem 0.85rem; font-size: 0.86rem; }
+
+            .carousel-scene { height: 430px; perspective: 950px; margin: 0.2rem 0 0.6rem; }
+            .carousel-container { width: 274px; height: 396px; }
+            :root { --card-cut: 18px; --card-cut-inner: 17px; }
+            .card-inner { padding: 1.25rem 1.35rem 1.4rem; }
+            .project-card h2 { font-size: 1.18rem; }
+            .project-card p { font-size: 0.9rem; margin-bottom: 1.15rem; }
+            .project-cta { padding: 0.85rem 1rem; font-size: 0.92rem; }
+
+            .hud-wrapper { margin: 0.2rem 0 2.2rem; }
+            .hud-btn { height: 46px; min-width: 48px; }
+            .hud-dir-btn { padding: 0 1.05rem; }
+
+            .dir-modal { padding: 0.75rem; align-items: flex-end; }
+            .dir-panel { max-height: 80vh; }
+            .dir-grid { grid-template-columns: 1fr; }
+            .dir-body { padding: 0.9rem 1rem 1.2rem; }
+
+            footer { padding: 2rem 1rem 1.5rem; }
+            .env-recommendation { padding: 1.15rem; width: 100%; box-sizing: border-box; }
+            .env-badges { flex-direction: column; width: 100%; gap: 0.55rem; }
             .env-badge { justify-content: center; }
-            .project-card::before, .project-card::after { --mouse-x: 50%; --mouse-y: 50%; }
         }
     </style>
 </head>
@@ -277,125 +636,73 @@
             <h1 class="sr-only" id="sr-title">fan666rog - WELCOME</h1>
             <!-- 終極戰士手腕風格：9 格無邊框分段式全息電子錶面板 -->
             <div id="predator-title" class="predator-panel" role="heading" aria-level="1" aria-label="fan666rog WELCOME 轉換面板" title="點擊切換外星解碼"></div>
+
             <div class="legend-area">
-                <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-                <span>標示支援手機瀏覽</span>
+                <span class="legend-item">
+                    <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                    <span>支援手機瀏覽</span>
+                </span>
+                <span class="legend-divider" aria-hidden="true"></span>
+                <span class="legend-item">
+                    <svg class="terminal-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M6 9a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3A.5.5 0 0 1 6 9zM3.854 4.146a.5.5 0 1 0-.708.708L4.793 6.5 3.146 8.146a.5.5 0 1 0 .708.708l2-2a.5.5 0 0 0 0-.708l-2-2z"/><path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm12 1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h12z"/></svg>
+                    <span>Win 本機免安裝 (.bat)</span>
+                </span>
             </div>
         </header>
 
-        <div class="filter-container">
+        <nav class="filter-container" id="filter-bar" aria-label="作品分類篩選">
             <button class="filter-btn active" data-filter="all">全部作品 (<span class="count-num">0</span>)</button>
-            <button class="filter-btn" data-filter="tool">🛠️ 實用工具 (<span class="count-num">0</span>)</button>
+            <button class="filter-btn" data-filter="tool">🛠️ 網頁工具 (<span class="count-num">0</span>)</button>
             <button class="filter-btn" data-filter="game">🎮 趣味遊戲 (<span class="count-num">0</span>)</button>
+            <button class="filter-btn" data-filter="bat">⚡ Win 本機 (<span class="count-num">0</span>)</button>
+        </nav>
+
+        <div class="carousel-scene" id="carousel-scene">
+            <main class="carousel-container" id="portfolio-grid"></main>
         </div>
 
-        <div class="carousel-scene">
-            <main class="carousel-container" id="portfolio-grid">
-                <div class="project-card" data-category="tool">
-                    <div class="project-title">
-                        <h2>彩券-摸彩箱抽獎程式</h2>
-                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-                    </div>
-                    <p>一個本地端執行的網頁抽獎程式，可設定標題主題、多個彩券本、手動名單或FB暱稱、獎項與排除號碼，確保抽獎公開透明。有兩種模式可供使用。建議使用PC操作較為方便。</p>
-                    <a href="./client-side-lottery/index.html" target="_blank" rel="noopener noreferrer">V5.4 開啟</a>
-                </div>
+        <!-- 輪播下方拇指區 HUD 導航列 -->
+        <div class="hud-wrapper">
+            <div class="hud-bar" id="hud-bar">
+                <button class="hud-btn" id="hud-prev" type="button" aria-label="上一個作品" title="上一個作品">
+                    <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
+                </button>
+                <span class="hud-divider" aria-hidden="true"></span>
+                <button class="hud-btn hud-dir-btn" id="hud-dir-open" type="button" aria-haspopup="dialog" aria-controls="dir-modal">
+                    <span class="hud-counter" id="hud-counter">01 / 01</span>
+                    <span class="hud-sep">|</span>
+                    <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/></svg>
+                    <span class="hud-dir-label">目錄</span>
+                </button>
+                <span class="hud-divider" aria-hidden="true"></span>
+                <button class="hud-btn" id="hud-next" type="button" aria-label="下一個作品" title="下一個作品">
+                    <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
 
-                <div class="project-card" data-category="tool">
-                    <div class="project-title">
-                        <h2>生辰命評雙系統查詢</h2>
-                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+    <!-- 戰術快速目錄彈窗 -->
+    <div class="dir-modal" id="dir-modal" role="dialog" aria-modal="true" aria-labelledby="dir-modal-title">
+        <div class="dir-panel">
+            <div class="dir-panel-inner">
+                <div class="dir-header">
+                    <div class="dir-title-wrap">
+                        <span class="dir-title-dot"></span>
+                        <h2 class="dir-title" id="dir-modal-title">作品快速目錄</h2>
+                        <span class="dir-total" id="dir-total">TOTAL 00</span>
                     </div>
-                    <p>整合兩種民俗命理系統，可依據農曆年月日時辰查詢，並包含袁天罡秤骨命評。</p>
-                    <a href="./bazi-data-query-viewer/index.html" target="_blank" rel="noopener noreferrer">展示觀看</a>
+                    <button class="dir-close" id="dir-close" type="button" aria-label="關閉目錄">&times;</button>
                 </div>
-                
-                <div class="project-card" data-category="tool">
-                    <div class="project-title">
-                        <h2>輪盤抽獎 (權重版)</h2>
-                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-                    </div>
-                    <p>可自訂獎項、權重、數量、顏色，權重越高中獎機率越大。支援更改主題與中獎紀錄功能。</p>
-                    <a href="./wheel-prize-picker/index.html" target="_blank" rel="noopener noreferrer">V3.2 開啟</a>
-                </div>
-
-                <div class="project-card" data-category="tool">
-                    <div class="project-title">
-                        <h2>生命靈數計算機</h2>
-                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-                    </div>
-                    <p>生命靈數計算和觀看，計算完畢後可以觀看總覽資料和詳細的計算方式解析。判斷邏輯為參考網路靈數解說資料。</p>
-                    <a href="./Numerology/index.html" target="_blank" rel="noopener noreferrer">展示觀看</a>
-                </div>
-
-                <div class="project-card" data-category="game">
-                    <div class="project-title">
-                        <h2>Block ART</h2>
-                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-                    </div>
-                    <p>這是一個約 1990 年的經典積木拼圖遊戲，賦予新生命程式化，挑戰你的空間創意邏輯。</p>
-                    <a href="./Ba/index.html" target="_blank" rel="noopener noreferrer">V1.5 遊玩</a>
-                </div>
-                
-                <div class="project-card" data-category="game">
-                    <div class="project-title">
-                        <h2>復古小瑪莉：零用錢殺手</h2>
-                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-                    </div>
-                    <p>經典的跑燈遊戲，透過押分贏得彩金，並挑戰刺激的「比大小」讓彩金翻倍！</p>
-                    <a href="./RetroMary/index.html" target="_blank" rel="noopener noreferrer">V2.0 啟動</a>
-                </div>
-
-                <div class="project-card" data-category="game">
-                    <div class="project-title">
-                        <h2>貪食蛇小遊戲</h2>
-                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-                    </div>
-                    <p>懷舊的貪食蛇遊戲，加入了隨機障礙物與可消除障礙物的特殊道具，增加挑戰性與變化。</p>
-                    <a href="./game-snake/snakeV151.html" target="_blank" rel="noopener noreferrer">V1.5.1 遊玩</a>
-                </div>
-
-                <div class="project-card" data-category="game">
-                    <div class="project-title">
-                        <h2>3D Rubik's Cube</h2>
-                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-                    </div>
-                    <p>這是一個使用 Three.js 函式庫建立的網頁版 3D 魔術方塊模擬器，具備完整的互動遊玩與視角旋轉功能。</p>
-                    <a href="./rubiks-cube/index.html" target="_blank" rel="noopener noreferrer">V3.6 啟動</a>
-                </div>
-
-                <div class="project-card" data-category="game">
-                    <div class="project-title">
-                        <h2>打磚塊遊戲</h2>
-                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-                    </div>
-                    <p>一個經典的復古打磚塊遊戲，支援使用鍵盤或觸控來控制球拍，挑戰你的反應速度！(共3關)</p>
-                    <a href="./brick-breaker/index.html" target="_blank" rel="noopener noreferrer">V2.6 挑戰</a>
-                </div>
-
-                <div class="project-card" data-category="game">
-                    <div class="project-title">
-                        <h2>俄羅斯方塊</h2>
-                        <svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-                    </div>
-                    <p>經典的俄羅斯方塊遊戲，具備下落、旋轉與消除整行等玩法，考驗你的反應能力與空間佈局技巧！</p>
-                    <a href="./tetris/tetris.html" target="_blank" rel="noopener noreferrer">V1.0 遊玩</a>
-                </div>
-                
-                <div class="project-card" data-category="tool">
-                    <div class="project-title">
-                        <h2>104/87鍵 鍵盤測試</h2>
-                    </div>
-                    <p>一個用於測試實體鍵盤按鍵是否正常的除錯工具，可即時切換 104 鍵與 87 鍵配置佈局。</p>
-                    <a href="./104_87key_test/index.html" target="_blank" rel="noopener noreferrer">PC版專用V2.0</a>
-                </div>
-            </main>
+                <div class="dir-body" id="dir-body"></div>
+            </div>
         </div>
     </div>
 
     <footer id="main-footer">
         <div class="footer-content">
             <div class="copyright">
-                &copy; 2026/1022
+                &copy; 2026/1119
                 <a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer" class="github-link">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
                     fan666rog
@@ -403,7 +710,7 @@
                 <span class="gemini-text">✨ Gemini</span>
             </div>
         </div>
-        
+
         <div class="env-recommendation">
             <div class="env-title">RECOMMENDED ENVIRONMENT</div>
             <div class="env-badges">
@@ -422,7 +729,158 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // ==========================================
-            // 1. 載入動畫優化：主架構就緒即刻進入，不因圖片卡死
+            // 0. 作品資料庫（日後新增作品直接加在這裡即可）
+            // category: 'tool' (網頁工具) | 'game' (趣味遊戲) | 'bat' (Win 本機)
+            // ==========================================
+            const PROJECTS = [
+                {
+                    id: 'autoshutdown',
+                    title: '智慧自動關機助手',
+                    category: 'bat',
+                    version: 'V1.6.7',
+                    envLabel: 'WIN .BAT',
+                    isNew: true,
+                    mobile: false,
+                    desc: 'AutoShutdown Helper —— Windows 本機免安裝單檔腳本，整合排程關機與硬體閒置智慧監控，純綠色執行、不寫入登錄檔。',
+                    url: 'https://github.com/fan666rog/web/tree/main/Autoshutdown',
+                    ctaText: 'GitHub 查看與下載 (V1.6.7)'
+                },
+                {
+                    id: 'aclog-cleaner',
+                    title: 'AC日誌LOG清理工具',
+                    category: 'bat',
+                    version: 'BAT',
+                    envLabel: 'WIN .BAT',
+                    isNew: true,
+                    mobile: false,
+                    desc: '專為華碩 Armoury Crate (AC) 設計的 Windows 本機清理工具，一鍵清除日漸肥大的 AC 軟體 LOG 日誌檔，釋放系統空間。',
+                    url: 'https://github.com/fan666rog/web/tree/main/ACLOG_Cleaner',
+                    ctaText: 'GitHub 查看與下載'
+                },
+                {
+                    id: 'lottery',
+                    title: '彩券-摸彩箱抽獎程式',
+                    category: 'tool',
+                    version: 'V5.4',
+                    mobile: true,
+                    desc: '一個本地端執行的網頁抽獎程式，可設定標題主題、多個彩券本、手動名單或FB暱稱、獎項與排除號碼，確保抽獎公開透明。有兩種模式可供使用。建議使用PC操作較為方便。',
+                    url: './client-side-lottery/index.html',
+                    ctaText: 'V5.4 開啟'
+                },
+                {
+                    id: 'bazi',
+                    title: '生辰命評雙系統查詢',
+                    category: 'tool',
+                    version: 'WEB',
+                    mobile: true,
+                    desc: '整合兩種民俗命理系統，可依據農曆年月日時辰查詢，並包含袁天罡秤骨命評。',
+                    url: './bazi-data-query-viewer/index.html',
+                    ctaText: '展示觀看'
+                },
+                {
+                    id: 'wheel',
+                    title: '輪盤抽獎 (權重版)',
+                    category: 'tool',
+                    version: 'V3.2',
+                    mobile: true,
+                    desc: '可自訂獎項、權重、數量、顏色，權重越高中獎機率越大。支援更改主題與中獎紀錄功能。',
+                    url: './wheel-prize-picker/index.html',
+                    ctaText: 'V3.2 開啟'
+                },
+                {
+                    id: 'numerology',
+                    title: '生命靈數計算機',
+                    category: 'tool',
+                    version: 'WEB',
+                    mobile: true,
+                    desc: '生命靈數計算和觀看，計算完畢後可以觀看總覽資料和詳細的計算方式解析。判斷邏輯為參考網路靈數解說資料。',
+                    url: './Numerology/index.html',
+                    ctaText: '展示觀看'
+                },
+                {
+                    id: 'block-art',
+                    title: 'Block ART',
+                    category: 'game',
+                    version: 'V1.5',
+                    mobile: true,
+                    desc: '這是一個約 1990 年的經典積木拼圖遊戲，賦予新生命程式化，挑戰你的空間創意邏輯。',
+                    url: './Ba/index.html',
+                    ctaText: 'V1.5 遊玩'
+                },
+                {
+                    id: 'retro-mary',
+                    title: '復古小瑪莉：零用錢殺手',
+                    category: 'game',
+                    version: 'V2.0',
+                    mobile: true,
+                    desc: '經典的跑燈遊戲，透過押分贏得彩金，並挑戰刺激的「比大小」讓彩金翻倍！',
+                    url: './RetroMary/index.html',
+                    ctaText: 'V2.0 啟動'
+                },
+                {
+                    id: 'snake',
+                    title: '貪食蛇小遊戲',
+                    category: 'game',
+                    version: 'V1.5.1',
+                    mobile: true,
+                    desc: '懷舊的貪食蛇遊戲，加入了隨機障礙物與可消除障礙物的特殊道具，增加挑戰性與變化。',
+                    url: './game-snake/snakeV151.html',
+                    ctaText: 'V1.5.1 遊玩'
+                },
+                {
+                    id: 'rubiks-cube',
+                    title: "3D Rubik's Cube",
+                    category: 'game',
+                    version: 'V3.6',
+                    mobile: true,
+                    desc: '這是一個使用 Three.js 函式庫建立的網頁版 3D 魔術方塊模擬器，具備完整的互動遊玩與視角旋轉功能。',
+                    url: './rubiks-cube/index.html',
+                    ctaText: 'V3.6 啟動'
+                },
+                {
+                    id: 'brick-breaker',
+                    title: '打磚塊遊戲',
+                    category: 'game',
+                    version: 'V2.6',
+                    mobile: true,
+                    desc: '一個經典的復古打磚塊遊戲，支援使用鍵盤或觸控來控制球拍，挑戰你的反應速度！(共3關)',
+                    url: './brick-breaker/index.html',
+                    ctaText: 'V2.6 挑戰'
+                },
+                {
+                    id: 'tetris',
+                    title: '俄羅斯方塊',
+                    category: 'game',
+                    version: 'V1.0',
+                    mobile: true,
+                    desc: '經典的俄羅斯方塊遊戲，具備下落、旋轉與消除整行等玩法，考驗你的反應能力與空間佈局技巧！',
+                    url: './tetris/tetris.html',
+                    ctaText: 'V1.0 遊玩'
+                },
+                {
+                    id: 'keyboard-test',
+                    title: '104/87鍵 鍵盤測試',
+                    category: 'tool',
+                    version: 'V2.0',
+                    envLabel: 'PC ONLY',
+                    mobile: false,
+                    desc: '一個用於測試實體鍵盤按鍵是否正常的除錯工具，可即時切換 104 鍵與 87 鍵配置佈局。',
+                    url: './104_87key_test/index.html',
+                    ctaText: 'PC版專用V2.0'
+                }
+            ];
+
+            const CATEGORY_META = {
+                bat:  { code: 'BAT', label: '⚡ Win 本機工具 (.bat)' },
+                tool: { code: 'WEB', label: '🛠️ 網頁實用工具' },
+                game: { code: 'GME', label: '🎮 網頁趣味遊戲' }
+            };
+
+            const ICON_MOBILE_SVG = `<svg class="mobile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-label="支援手機"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>`;
+            const ICON_TERM_SVG = `<svg class="terminal-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-label="Windows 本機執行"><path d="M6 9a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3A.5.5 0 0 1 6 9zM3.854 4.146a.5.5 0 1 0-.708.708L4.793 6.5 3.146 8.146a.5.5 0 1 0 .708.708l2-2a.5.5 0 0 0 0-.708l-2-2z"/><path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm12 1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h12z"/></svg>`;
+
+            // ==========================================
+            // 1. 載入動畫優化：主架構就緒即刻進入
             // ==========================================
             const loader = document.getElementById('loader');
             setTimeout(() => {
@@ -432,32 +890,22 @@
             }, 200);
 
             // ==========================================
-            // 2. 終極戰士風：20 段式異形燈管電子錶引擎 (Predator Segment Engine)
+            // 2. 終極戰士風：20 段式異形燈管電子錶引擎
             // ==========================================
             const titlePanel = document.getElementById('predator-title');
-            const NUM_DIGITS = 9; // 固定 9 格硬體燈管槽
+            const NUM_DIGITS = 9;
 
-            // 定義單格 20 段式外星幾何燈管座標 (16 段削尖米字燈管 + 4 個外星三角楔形刻痕)
             const SEGMENT_POLYGONS = [
-                // 0: A1 (上左橫), 1: A2 (上右橫)
                 "6,3 23,3 21,8 9,8", "27,3 44,3 41,8 29,8",
-                // 2: B (右上直), 3: C (右下直)
                 "46,5 46,38 41,35 41,10", "46,42 46,75 41,70 41,45",
-                // 4: D1 (下左橫), 5: D2 (下右橫)
                 "9,72 21,72 23,77 6,77", "29,72 41,72 44,77 27,77",
-                // 6: E (左下直), 7: F (左上直)
                 "4,42 9,45 9,70 4,75", "4,5 9,10 9,35 4,38",
-                // 8: G1 (中左橫), 9: G2 (中右橫)
                 "6,40 10,37 22,37 24,40 22,43 10,43", "26,40 28,37 40,37 44,40 40,43 28,43",
-                // 10: H (左上斜), 11: I (中上直), 12: J (右上斜)
                 "11,11 16,11 23,34 19,35", "23,9 27,9 27,35 23,35", "39,11 34,11 27,34 31,35",
-                // 13: K (左下斜), 14: L (中下直), 15: M (右下斜)
                 "19,45 23,46 16,69 11,69", "23,45 27,45 27,71 23,71", "27,46 31,45 39,69 34,69",
-                // 16~19: W0~W3 (終極戰士專屬：四象限內部異形三角刻痕燈號)
                 "12,20 18,23 12,27", "38,20 32,23 38,27", "12,53 18,57 12,60", "38,53 32,57 38,60"
             ];
 
-            // 英數字元對應的燈管通電編號
             const CHAR_MAP = {
                 'F': [0, 1, 6, 7, 8, 9],
                 'A': [0, 1, 2, 3, 6, 7, 8, 9],
@@ -471,12 +919,11 @@
                 'L': [4, 5, 6, 7],
                 'C': [0, 1, 4, 5, 6, 7],
                 'M': [2, 3, 6, 7, 10, 12],
-                '[': [0, 4, 16, 18], // WELCOME 兩側的外星待機邊框燈號 (左)
-                ']': [1, 5, 17, 19], // WELCOME 兩側的外星待機邊框燈號 (右)
+                '[': [0, 4, 16, 18],
+                ']': [1, 5, 17, 19],
                 ' ': []
             };
 
-            // 終極戰士手腕計時器風格：看似不規則、帶有斜角與斷裂橫槓的外星圖騰字元庫
             const PREDATOR_GLYPHS = [
                 [0, 4, 8, 10, 12, 15, 16, 19],
                 [1, 2, 5, 9, 11, 13, 17, 18],
@@ -490,7 +937,6 @@
                 [4, 5, 8, 9, 11, 16, 17, 18, 19]
             ];
 
-            // 建立 9 格 SVG 硬體燈管面板
             const digitElements = [];
             for (let d = 0; d < NUM_DIGITS; d++) {
                 const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -508,42 +954,32 @@
                 digitElements.push(segNodes);
             }
 
-            // 控制單格面板通電狀態 (surge = 瞬間高壓亮白藍光)
             function setDigitSegments(digitIdx, activeIndices, isSurge = false) {
                 const segs = digitElements[digitIdx];
                 if (!segs) return;
-                for (let i = 0; i < segs.length; i++) {
-                    segs[i].classList.remove('on', 'surge');
-                }
+                for (let i = 0; i < segs.length; i++) segs[i].classList.remove('on', 'surge');
                 for (let i = 0; i < activeIndices.length; i++) {
                     const idx = activeIndices[i];
-                    if (segs[idx]) {
-                        segs[idx].classList.add(isSurge ? 'surge' : 'on');
-                    }
+                    if (segs[idx]) segs[idx].classList.add(isSurge ? 'surge' : 'on');
                 }
             }
 
-            // 直接渲染指定字串至 9 格面板
             function renderStringToPanel(str) {
                 const padded = str.toUpperCase().padEnd(NUM_DIGITS, ' ');
                 for (let i = 0; i < NUM_DIGITS; i++) {
-                    const ch = padded[i];
-                    setDigitSegments(i, CHAR_MAP[ch] || []);
+                    setDigitSegments(i, CHAR_MAP[padded[i]] || []);
                 }
             }
 
-            // 計算從「外星圖騰」逐步拆解筆畫、重組為「目標英文字」的過渡燈管組合
             function buildMorphFrames(alienSegs, targetSegs) {
                 const alienOnly = alienSegs.filter(s => !targetSegs.includes(s));
                 const targetOnly = targetSegs.filter(s => !alienSegs.includes(s));
                 const shared = alienSegs.filter(s => targetSegs.includes(s));
 
-                // 步驟 A：退去約一半的外星多餘筆畫，點亮少許目標字母筆畫 + 1 個外星三角刻痕
                 const keepAlien1 = alienOnly.filter((_, idx) => idx % 2 === 0);
                 const addTarget1 = targetOnly.slice(0, Math.ceil(targetOnly.length * 0.35));
                 const frameA = [...new Set([...shared, ...keepAlien1, ...addTarget1, 16 + (alienSegs[0] % 4)])];
 
-                // 步驟 B：只留最後 1 根外星殘影筆畫，點亮 75% 以上的目標字母筆畫
                 const keepAlien2 = alienOnly.slice(0, 1);
                 const addTarget2 = targetOnly.slice(0, Math.ceil(targetOnly.length * 0.75));
                 const frameB = [...new Set([...shared, ...keepAlien2, ...addTarget2])];
@@ -561,65 +997,43 @@
                 activeTimeouts = [];
             }
 
-            // 終極戰士電影開頭字幕風格：慢速外星圖騰靜置 ➔ 筆畫逐步拆解重組 ➔ 鎖定校準
             function triggerPredatorDecode(targetStr) {
                 clearDecodeTimeouts();
                 currentTitleState = targetStr;
                 const paddedTarget = targetStr.toUpperCase().padEnd(NUM_DIGITS, ' ');
 
-                // 啟動瞬間微震一下
                 titlePanel.classList.add('panel-glitch');
                 activeTimeouts.push(setTimeout(() => titlePanel.classList.remove('panel-glitch'), 90));
 
                 for (let i = 0; i < NUM_DIGITS; i++) {
                     const targetSegs = CHAR_MAP[paddedTarget[i]] || [];
-                    // 挑選兩組不同的外星圖騰作為初始與校準狀態
                     const glyph1 = PREDATOR_GLYPHS[(i * 3 + Math.floor(Math.random() * 3)) % PREDATOR_GLYPHS.length];
                     const glyph2 = PREDATOR_GLYPHS[(i * 3 + 5) % PREDATOR_GLYPHS.length];
                     const [morphA, morphB] = buildMorphFrames(glyph2, targetSegs);
 
-                    // 帶有微微由左至右的雷射掃描時間差，外加少許機械不規則感
                     const enterDelay = i * 35 + Math.floor(Math.random() * 25);
                     const decodeBase = 480 + i * 75 + Math.floor(Math.random() * 35);
 
-                    // 階段 1：切換成第一組外星異形文字 (帶微閃)，並靜置約 0.45 秒讓人看清楚外星符號
                     activeTimeouts.push(setTimeout(() => {
                         setDigitSegments(i, glyph1, true);
-                        activeTimeouts.push(setTimeout(() => {
-                            setDigitSegments(i, glyph1, false);
-                        }, 70));
+                        activeTimeouts.push(setTimeout(() => setDigitSegments(i, glyph1, false), 70));
                     }, enterDelay));
 
-                    // 階段 2：慢速切換至第二組外星校準圖騰 (咔噠第一拍)
-                    activeTimeouts.push(setTimeout(() => {
-                        setDigitSegments(i, glyph2, false);
-                    }, decodeBase));
+                    activeTimeouts.push(setTimeout(() => setDigitSegments(i, glyph2, false), decodeBase));
+                    activeTimeouts.push(setTimeout(() => setDigitSegments(i, morphA, false), decodeBase + 210));
+                    activeTimeouts.push(setTimeout(() => setDigitSegments(i, morphB, false), decodeBase + 430));
 
-                    // 階段 3：筆畫重組 A — 退去部分外星斜線、浮現目標英文字母骨架 (第二拍 +210ms)
-                    activeTimeouts.push(setTimeout(() => {
-                        setDigitSegments(i, morphA, false);
-                    }, decodeBase + 210));
-
-                    // 階段 4：筆畫重組 B — 接近目標英文字形，僅留一絲外星殘影 (第三拍 +430ms，稍微減速)
-                    activeTimeouts.push(setTimeout(() => {
-                        setDigitSegments(i, morphB, false);
-                    }, decodeBase + 430));
-
-                    // 階段 5：最終校準鎖定 — 高壓白藍光閃爍 (Surge) 後定格為目標英文字 (第四拍 +670ms)
                     activeTimeouts.push(setTimeout(() => {
                         setDigitSegments(i, targetSegs, true);
                         if (i % 3 === 1) {
                             titlePanel.classList.add('panel-glitch');
                             activeTimeouts.push(setTimeout(() => titlePanel.classList.remove('panel-glitch'), 60));
                         }
-                        activeTimeouts.push(setTimeout(() => {
-                            setDigitSegments(i, targetSegs, false);
-                        }, 130));
+                        activeTimeouts.push(setTimeout(() => setDigitSegments(i, targetSegs, false), 130));
                     }, decodeBase + 670));
                 }
             }
 
-            // 錯峰排程：初始顯示 fan666rog，待下方 3D 展示櫃微轉並完全靜止歸位 (1800ms) 後，於 1950ms 啟動外星解碼
             renderStringToPanel(STATE_FAN);
             setTimeout(() => triggerPredatorDecode(STATE_WELCOME), 1950);
 
@@ -629,17 +1043,505 @@
             });
 
             // ==========================================
-            // 3. Canvas 蜂巢圖庫與電流背景系統 (背景非同步漸進式載入)
+            // 3. 動態渲染作品卡片與計數
+            // ==========================================
+            const carouselScene = document.getElementById('carousel-scene');
+            const carousel = document.getElementById('portfolio-grid');
+            const catCounters = { bat: 0, tool: 0, game: 0 };
+
+            const allCards = PROJECTS.map((proj) => {
+                catCounters[proj.category] = (catCounters[proj.category] || 0) + 1;
+                const codePrefix = CATEGORY_META[proj.category]?.code || 'PRJ';
+                const codeNum = String(catCounters[proj.category]).padStart(2, '0');
+
+                const card = document.createElement('article');
+                card.className = 'project-card';
+                card.dataset.id = proj.id;
+                card.dataset.category = proj.category;
+
+                const iconHtml = proj.category === 'bat'
+                    ? ICON_TERM_SVG
+                    : (proj.mobile ? ICON_MOBILE_SVG : '');
+
+                const badgesHtml = `
+                    <div class="badge-group">
+                        ${proj.isNew ? '<span class="badge-new">NEW</span>' : ''}
+                        ${proj.envLabel ? `<span class="badge-env">${proj.envLabel}</span>` : ''}
+                    </div>
+                `;
+
+                card.innerHTML = `
+                    <div class="card-aura" aria-hidden="true"></div>
+                    <div class="card-frame" aria-hidden="true"></div>
+                    <div class="card-inner">
+                        <div class="card-meta">
+                            <span class="card-code">${codePrefix} // ${codeNum}</span>
+                            ${badgesHtml}
+                        </div>
+                        <div class="project-title">
+                            <h2>${proj.title}</h2>
+                            ${iconHtml}
+                        </div>
+                        <p>${proj.desc}</p>
+                        <a class="project-cta" href="${proj.url}" target="_blank" rel="noopener noreferrer">${proj.ctaText}</a>
+                    </div>
+                `;
+
+                carousel.appendChild(card);
+                return card;
+            });
+
+            // 更新分類按鈕數量
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                const filter = btn.dataset.filter;
+                const numSpan = btn.querySelector('.count-num');
+                if (!numSpan) return;
+                if (filter === 'all') numSpan.textContent = PROJECTS.length;
+                else numSpan.textContent = PROJECTS.filter(p => p.category === filter).length;
+            });
+
+            // ==========================================
+            // 4. 3D 虛擬弧形輪播引擎 (支援任意數量：1 / 2 / 13 / 50+ 均不破版)
+            // ==========================================
+            const hudBar = document.getElementById('hud-bar');
+            const hudCounter = document.getElementById('hud-counter');
+            const hudPrevBtn = document.getElementById('hud-prev');
+            const hudNextBtn = document.getElementById('hud-next');
+
+            let currentFilter = 'all';
+            let visibleCards = [...allCards];
+            let currentPos = 0;
+            let targetPos = 0;
+            let animFrameId = null;
+            let isDragging = false;
+            let hasInteracted = false;
+            let dragDistance = 0;
+            let startX = 0;
+            let startPos = 0;
+            let lastActiveCard = null;
+
+            function getArcParams() {
+                const isMobile = window.innerWidth <= 768;
+                return {
+                    radius: isMobile ? 380 : 540,
+                    stepDeg: isMobile ? 36 : 32,
+                    maxVisibleRange: isMobile ? 2.15 : 2.6,
+                    dragDivisor: isMobile ? 210 : 270
+                };
+            }
+
+            function getWrappedActiveIndex(pos, count) {
+                if (count <= 0) return -1;
+                if (count <= 2) return Math.max(0, Math.min(count - 1, Math.round(pos)));
+                return ((Math.round(pos) % count) + count) % count;
+            }
+
+            function getRelativeOffset(index, pos, count) {
+                if (count <= 1) return 0;
+                if (count === 2) return index - pos;
+                let diff = ((index - pos) % count + count) % count;
+                if (diff > count / 2) diff -= count;
+                return diff;
+            }
+
+            function syncHudState(activeIdx) {
+                const count = visibleCards.length;
+                const displayIdx = count > 0 ? String(activeIdx + 1).padStart(2, '0') : '00';
+                const displayTotal = String(count).padStart(2, '0');
+                hudCounter.textContent = `${displayIdx} / ${displayTotal}`;
+
+                const disableNav = count <= 1;
+                hudPrevBtn.classList.toggle('disabled', disableNav);
+                hudNextBtn.classList.toggle('disabled', disableNav);
+
+                const activeCard = visibleCards[activeIdx];
+                const isBat = activeCard && activeCard.dataset.category === 'bat';
+                const accent = isBat ? '#00ff9d' : '#00bfff';
+                const accentSoft = isBat ? 'rgba(0, 255, 157, 0.22)' : 'rgba(0, 191, 255, 0.22)';
+                document.documentElement.style.setProperty('--hud-accent', accent);
+                document.documentElement.style.setProperty('--hud-accent-soft', accentSoft);
+                hudBar.style.background = isBat ? 'rgba(0, 255, 157, 0.48)' : 'rgba(0, 191, 255, 0.42)';
+            }
+
+            function renderCarouselFrame() {
+                const count = visibleCards.length;
+                const { radius, stepDeg, maxVisibleRange } = getArcParams();
+                const activeIdx = getWrappedActiveIndex(currentPos, count);
+
+                // 先隱藏非目前分類的卡片
+                allCards.forEach(card => {
+                    if (!visibleCards.includes(card)) {
+                        card.classList.remove('active-front');
+                        card.style.opacity = '0';
+                        card.style.visibility = 'hidden';
+                        card.style.pointerEvents = 'none';
+                        card.style.transform = 'translateZ(-400px) scale(0.6)';
+                    }
+                });
+
+                visibleCards.forEach((card, i) => {
+                    const rel = getRelativeOffset(i, currentPos, count);
+                    const absRel = Math.abs(rel);
+
+                    if (absRel > maxVisibleRange) {
+                        card.classList.remove('active-front');
+                        card.style.opacity = '0';
+                        card.style.visibility = 'hidden';
+                        card.style.pointerEvents = 'none';
+                        return;
+                    }
+
+                    const angle = rel * stepDeg;
+                    const scale = Math.max(0.72, 1 - absRel * 0.125);
+                    let opacity;
+                    if (absRel < 0.08) {
+                        opacity = 1;
+                    } else if (absRel <= 1) {
+                        opacity = 1 - absRel * 0.56; // 1.0 -> 0.44
+                    } else {
+                        opacity = Math.max(0, 0.44 - (absRel - 1) * 0.28);
+                    }
+
+                    const isFront = (i === activeIdx && absRel < 0.5);
+                    card.classList.toggle('active-front', isFront);
+                    card.style.visibility = 'visible';
+                    card.style.opacity = opacity.toFixed(3);
+                    card.style.zIndex = String(100 - Math.round(absRel * 10));
+                    card.style.pointerEvents = absRel <= 1.6 ? 'auto' : 'none';
+                    card.style.transform = `translateZ(${-radius}px) rotateY(${angle.toFixed(2)}deg) translateZ(${radius}px) scale(${scale.toFixed(3)})`;
+                });
+
+                const currentActiveCard = visibleCards[activeIdx] || null;
+                if (currentActiveCard !== lastActiveCard) {
+                    lastActiveCard = currentActiveCard;
+                    syncHudState(activeIdx);
+                }
+            }
+
+            function startSpringLoop() {
+                if (animFrameId !== null) return;
+                const tick = () => {
+                    if (isDragging) {
+                        renderCarouselFrame();
+                        animFrameId = requestAnimationFrame(tick);
+                        return;
+                    }
+
+                    const diff = targetPos - currentPos;
+                    if (Math.abs(diff) < 0.002) {
+                        currentPos = targetPos;
+                        // 靜止時把過大的累積偏移正規化，避免浮點數誤差
+                        if (visibleCards.length >= 3 && Math.abs(currentPos) > visibleCards.length * 4) {
+                            const norm = getWrappedActiveIndex(currentPos, visibleCards.length);
+                            currentPos = norm;
+                            targetPos = norm;
+                        }
+                        renderCarouselFrame();
+                        animFrameId = null;
+                        return;
+                    }
+
+                    currentPos += diff * 0.16;
+                    renderCarouselFrame();
+                    animFrameId = requestAnimationFrame(tick);
+                };
+                animFrameId = requestAnimationFrame(tick);
+            }
+
+            function stepCarousel(delta) {
+                const count = visibleCards.length;
+                if (count <= 1) return;
+                hasInteracted = true;
+
+                if (count === 2) {
+                    const currentIdx = getWrappedActiveIndex(targetPos, 2);
+                    targetPos = currentIdx === 0 ? 1 : 0;
+                } else {
+                    targetPos = Math.round(targetPos) + delta;
+                }
+                startSpringLoop();
+            }
+
+            // 進場微轉提示
+            function playIntroNudge() {
+                setTimeout(() => {
+                    if (isDragging || hasInteracted || visibleCards.length <= 1) return;
+                    targetPos = 0.36;
+                    startSpringLoop();
+                    setTimeout(() => {
+                        if (isDragging || hasInteracted) return;
+                        targetPos = 0;
+                        startSpringLoop();
+                    }, 560);
+                }, 580);
+            }
+
+            // --- 指標拖曳與滑動 ---
+            carouselScene.addEventListener('pointerdown', (e) => {
+                if (visibleCards.length <= 1) return;
+                hasInteracted = true;
+                isDragging = true;
+                dragDistance = 0;
+                startX = e.clientX;
+                startPos = currentPos;
+                carouselScene.classList.add('dragging');
+                startSpringLoop();
+            });
+
+            window.addEventListener('pointermove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                dragDistance = Math.max(dragDistance, Math.abs(dx));
+                const { dragDivisor } = getArcParams();
+                let nextPos = startPos - (dx / dragDivisor);
+
+                // 僅 2 張卡時於邊界加上橡皮筋阻力
+                if (visibleCards.length === 2) {
+                    if (nextPos < 0) nextPos = nextPos * 0.3;
+                    else if (nextPos > 1) nextPos = 1 + (nextPos - 1) * 0.3;
+                }
+                currentPos = nextPos;
+            }, { passive: true });
+
+            function endDrag() {
+                if (!isDragging) return;
+                isDragging = false;
+                carouselScene.classList.remove('dragging');
+
+                const count = visibleCards.length;
+                if (count === 2) {
+                    // 輕撥超過 22% 就切換，手機手感更輕快
+                    const delta = currentPos - startPos;
+                    if (Math.abs(delta) > 0.22) {
+                        targetPos = delta > 0 ? 1 : 0;
+                    } else {
+                        targetPos = Math.round(startPos);
+                    }
+                } else {
+                    const delta = currentPos - startPos;
+                    if (Math.abs(delta) > 0.18 && Math.abs(delta) < 0.5) {
+                        targetPos = Math.round(startPos) + (delta > 0 ? 1 : -1);
+                    } else {
+                        targetPos = Math.round(currentPos);
+                    }
+                }
+                startSpringLoop();
+            }
+
+            window.addEventListener('pointerup', endDrag);
+            window.addEventListener('pointercancel', endDrag);
+            window.addEventListener('lostpointercapture', endDrag);
+
+            // 拖曳開始於按鈕時防止誤開連結；點擊側卡則自動轉至中央
+            allCards.forEach(card => {
+                const cta = card.querySelector('.project-cta');
+                if (cta) {
+                    cta.addEventListener('click', (e) => {
+                        if (dragDistance > 8) e.preventDefault();
+                    });
+                }
+
+                card.addEventListener('click', () => {
+                    if (dragDistance > 8) return;
+                    const idx = visibleCards.indexOf(card);
+                    if (idx === -1 || card.classList.contains('active-front')) return;
+
+                    hasInteracted = true;
+                    const count = visibleCards.length;
+                    if (count === 2) {
+                        targetPos = idx;
+                    } else {
+                        const rel = getRelativeOffset(idx, Math.round(currentPos), count);
+                        targetPos = Math.round(currentPos) + rel;
+                    }
+                    startSpringLoop();
+                });
+            });
+
+            // 桌機版橫向滾輪支援（不攔截垂直頁面捲動）
+            let wheelLock = false;
+            carouselScene.addEventListener('wheel', (e) => {
+                if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || Math.abs(e.deltaX) < 12) return;
+                e.preventDefault();
+                if (wheelLock) return;
+                wheelLock = true;
+                stepCarousel(e.deltaX > 0 ? 1 : -1);
+                setTimeout(() => { wheelLock = false; }, 260);
+            }, { passive: false });
+
+            // 鍵盤左右鍵切換 & ESC 關閉目錄
+            window.addEventListener('keydown', (e) => {
+                if (dirModal.classList.contains('open')) {
+                    if (e.key === 'Escape') closeDirectory();
+                    return;
+                }
+                if (e.key === 'ArrowLeft') stepCarousel(-1);
+                else if (e.key === 'ArrowRight') stepCarousel(1);
+            });
+
+            // HUD 左右按鈕
+            hudPrevBtn.addEventListener('click', () => stepCarousel(-1));
+            hudNextBtn.addEventListener('click', () => stepCarousel(1));
+
+            // --- 分類切換邏輯 ---
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            function applyFilter(filterValue, jumpToProjectId = null) {
+                hasInteracted = true;
+                currentFilter = filterValue;
+
+                filterBtns.forEach(b => {
+                    b.classList.toggle('active', b.dataset.filter === filterValue);
+                });
+
+                visibleCards = filterValue === 'all'
+                    ? [...allCards]
+                    : allCards.filter(card => card.dataset.category === filterValue);
+
+                let nextIdx = 0;
+                if (jumpToProjectId) {
+                    const found = visibleCards.findIndex(c => c.dataset.id === jumpToProjectId);
+                    if (found !== -1) nextIdx = found;
+                }
+
+                currentPos = nextIdx;
+                targetPos = nextIdx;
+                lastActiveCard = null;
+                renderCarouselFrame();
+            }
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => applyFilter(btn.dataset.filter));
+            });
+
+            // ==========================================
+            // 5. 戰術快速目錄彈窗 (Tactical Directory Modal)
+            // ==========================================
+            const dirModal = document.getElementById('dir-modal');
+            const dirBody = document.getElementById('dir-body');
+            const dirTotal = document.getElementById('dir-total');
+            const dirOpenBtn = document.getElementById('hud-dir-open');
+            const dirCloseBtn = document.getElementById('dir-close');
+
+            function renderDirectoryList() {
+                dirTotal.textContent = `TOTAL ${String(PROJECTS.length).padStart(2, '0')}`;
+                const activeIdx = getWrappedActiveIndex(targetPos, visibleCards.length);
+                const activeId = visibleCards[activeIdx] ? visibleCards[activeIdx].dataset.id : '';
+
+                const groupOrder = ['bat', 'tool', 'game'];
+                dirBody.innerHTML = '';
+
+                groupOrder.forEach(catKey => {
+                    const items = PROJECTS.filter(p => p.category === catKey);
+                    if (items.length === 0) return;
+
+                    const groupEl = document.createElement('section');
+                    groupEl.className = 'dir-group';
+
+                    const titleEl = document.createElement('h3');
+                    titleEl.className = `dir-group-title ${catKey === 'bat' ? 'is-bat' : ''}`;
+                    titleEl.textContent = `${CATEGORY_META[catKey].label} (${items.length})`;
+                    groupEl.appendChild(titleEl);
+
+                    const gridEl = document.createElement('div');
+                    gridEl.className = 'dir-grid';
+
+                    items.forEach(proj => {
+                        const itemBtn = document.createElement('button');
+                        itemBtn.type = 'button';
+                        itemBtn.className = `dir-item ${catKey === 'bat' ? 'is-bat' : ''} ${proj.id === activeId ? 'is-current' : ''}`;
+
+                        const subText = catKey === 'bat'
+                            ? 'Windows 本機免安裝'
+                            : (proj.mobile ? 'PC / 手機支援' : 'PC 專用');
+
+                        itemBtn.innerHTML = `
+                            <span class="dir-item-main">
+                                <span class="dir-item-name">${proj.title}</span>
+                                <span class="dir-item-sub">${subText}</span>
+                            </span>
+                            <span class="dir-item-tag">${proj.version}</span>
+                        `;
+
+                        itemBtn.addEventListener('click', () => {
+                            jumpToProject(proj.id);
+                            closeDirectory();
+                        });
+
+                        gridEl.appendChild(itemBtn);
+                    });
+
+                    groupEl.appendChild(gridEl);
+                    dirBody.appendChild(groupEl);
+                });
+            }
+
+            function jumpToProject(projectId) {
+                hasInteracted = true;
+                let idx = visibleCards.findIndex(c => c.dataset.id === projectId);
+
+                // 若目標不在目前篩選分類中，自動切回「全部作品」並對準目標
+                if (idx === -1) {
+                    applyFilter('all', projectId);
+                    return;
+                }
+
+                const count = visibleCards.length;
+                if (count <= 2) {
+                    targetPos = idx;
+                } else {
+                    const base = Math.round(currentPos);
+                    const rel = getRelativeOffset(idx, base, count);
+                    targetPos = base + rel;
+                }
+                startSpringLoop();
+            }
+
+            function openDirectory() {
+                renderDirectoryList();
+                dirModal.classList.add('open');
+                document.body.classList.add('modal-open');
+            }
+
+            function closeDirectory() {
+                dirModal.classList.remove('open');
+                document.body.classList.remove('modal-open');
+            }
+
+            dirOpenBtn.addEventListener('click', openDirectory);
+            dirCloseBtn.addEventListener('click', closeDirectory);
+            dirModal.addEventListener('click', (e) => {
+                if (e.target === dirModal) closeDirectory();
+            });
+
+            // 游標探照燈 (僅支援滑鼠游標裝置)
+            if (window.matchMedia('(hover: hover)').matches) {
+                allCards.forEach(card => {
+                    card.addEventListener('mousemove', e => {
+                        if (!card.classList.contains('active-front')) return;
+                        const rect = card.getBoundingClientRect();
+                        card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                        card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+                    }, { passive: true });
+                });
+            }
+
+            // 啟動輪播初始畫面
+            renderCarouselFrame();
+            playIntroNudge();
+
+            // ==========================================
+            // 6. Canvas 蜂巢圖庫與電流背景系統
             // ==========================================
             const canvas = document.getElementById('hex-canvas');
             const ctx = canvas.getContext('2d');
             let width, height;
-            const hexRadius = 45; 
-            const gridColor = 'rgba(75, 85, 105, 0.6)'; 
-            const meteorColor = '#00bfff'; 
-            let lines = []; let meteors = []; 
-            let hexCenters = []; 
-            
+            const hexRadius = 45;
+            const gridColor = 'rgba(75, 85, 105, 0.6)';
+            const meteorColor = '#00bfff';
+            let lines = [];
+            let meteors = [];
+            let hexCenters = [];
+
             let mouseX = -1000;
             let mouseY = -1000;
             if (window.matchMedia('(hover: hover)').matches) {
@@ -649,13 +1551,11 @@
                 }, { passive: true });
             }
 
-            // --- 背景圖片漸進式載入邏輯 (僅桌機版執行，完全不阻塞手機與主架構) ---
             let loadedImages = [];
-            let imageHexes = []; 
+            let imageHexes = [];
             const totalImages = 12;
             let bgLoadStarted = false;
 
-            // 修正 Bug 5：補償 window.scrollX / scrollY，避免頁面捲動時縮放視窗造成安全迴避區計算錯位
             function getValidHexPool() {
                 if (hexCenters.length === 0) return { left: [], right: [] };
 
@@ -673,15 +1573,18 @@
                     };
                 };
 
-                const carouselRect = getStaticBounds(document.querySelector('.carousel-scene'), 50, 50, 50);
-                const headerRect = getStaticBounds(document.getElementById('main-header'), 30, 30, 30);
-                const footerRect = getStaticBounds(document.getElementById('main-footer'), 30, 30, 50);
+                const avoidRects = [
+                    getStaticBounds(document.getElementById('main-header'), 30, 30, 30),
+                    getStaticBounds(document.getElementById('filter-bar'), 30, 20, 20),
+                    getStaticBounds(document.getElementById('carousel-scene'), 50, 40, 40),
+                    getStaticBounds(document.getElementById('hud-bar'), 40, 24, 24),
+                    getStaticBounds(document.getElementById('main-footer'), 30, 30, 50)
+                ];
 
-                let validCenters = hexCenters.filter(c => {
-                    let inCarousel = c.x > carouselRect.left && c.x < carouselRect.right && c.y > carouselRect.top && c.y < carouselRect.bottom;
-                    let inHeader = c.x > headerRect.left && c.x < headerRect.right && c.y > headerRect.top && c.y < headerRect.bottom;
-                    let inFooter = c.x > footerRect.left && c.x < footerRect.right && c.y > footerRect.top && c.y < footerRect.bottom;
-                    return !(inCarousel || inHeader || inFooter);
+                const validCenters = hexCenters.filter(c => {
+                    return !avoidRects.some(r =>
+                        c.x > r.left && c.x < r.right && c.y > r.top && c.y < r.bottom
+                    );
                 });
 
                 return {
@@ -690,7 +1593,6 @@
                 };
             }
 
-            // 單張圖片載入完畢後，立即挑一個空白蜂巢格淡入顯示
             function placeSingleImageOnHex(imgObj) {
                 if (window.innerWidth <= 768 || hexCenters.length === 0) return;
                 const pools = getValidHexPool();
@@ -705,8 +1607,8 @@
                 for (let candidate of combinedPool) {
                     let tooClose = false;
                     for (let existing of imageHexes) {
-                        let dx = candidate.x - existing.x;
-                        let dy = candidate.y - existing.y;
+                        const dx = candidate.x - existing.x;
+                        const dy = candidate.y - existing.y;
                         if (dx * dx + dy * dy < minDistanceSq) {
                             tooClose = true;
                             break;
@@ -719,28 +1621,9 @@
                 }
             }
 
-            // 當視窗縮放時重新分配已載入的圖片
-            function reassignLoadedImages() {
-                imageHexes = [];
-                if (window.innerWidth <= 768) {
-                    startBackgroundImagesIfNeeded();
-                    return;
-                }
-                startBackgroundImagesIfNeeded();
-                loadedImages.forEach(img => {
-                    placeSingleImageOnHex(img);
-                    // 已經載入過的圖片直接設定為完成淡入
-                    if (imageHexes.length > 0) {
-                        imageHexes[imageHexes.length - 1].fadeAlpha = 1;
-                    }
-                });
-            }
-
             function startBackgroundImagesIfNeeded() {
                 if (bgLoadStarted || window.innerWidth <= 768) return;
                 bgLoadStarted = true;
-
-                // 延後至主畫面渲染完畢後，在背景逐一非同步拉取圖片
                 setTimeout(() => {
                     for (let i = 0; i < totalImages; i++) {
                         const img = new Image();
@@ -754,45 +1637,56 @@
                 }, 400);
             }
 
-            function resize() {
-                width = canvas.width = window.innerWidth;
-                height = canvas.height = window.innerHeight;
-                initHexGrid();
-                reassignLoadedImages(); 
+            function reassignLoadedImages() {
+                imageHexes = [];
+                startBackgroundImagesIfNeeded();
+                if (window.innerWidth <= 768) return;
+                loadedImages.forEach(img => {
+                    placeSingleImageOnHex(img);
+                    if (imageHexes.length > 0) imageHexes[imageHexes.length - 1].fadeAlpha = 1;
+                });
             }
 
             function getHexVertices(cx, cy, r) {
-                let vertices = [];
+                const vertices = [];
                 for (let i = 0; i < 6; i++) {
-                    let angle_rad = Math.PI / 180 * (60 * i);
+                    const angle_rad = Math.PI / 180 * (60 * i);
                     vertices.push({ x: cx + r * Math.cos(angle_rad), y: cy + r * Math.sin(angle_rad) });
                 }
                 return vertices;
             }
 
             function initHexGrid() {
-                lines = []; 
+                lines = [];
                 hexCenters = [];
-                const linesSet = new Set(); 
-                const horizSpacing = hexRadius * 1.5; const vertSpacing = hexRadius * Math.sqrt(3);
-                const cols = Math.ceil(width / horizSpacing) + 2; const rows = Math.ceil(height / vertSpacing) + 2;
-                
+                const linesSet = new Set();
+                const horizSpacing = hexRadius * 1.5;
+                const vertSpacing = hexRadius * Math.sqrt(3);
+                const cols = Math.ceil(width / horizSpacing) + 2;
+                const rows = Math.ceil(height / vertSpacing) + 2;
+
                 for (let q = -1; q <= cols; q++) {
                     for (let r = -1; r <= rows; r++) {
-                        let cx = q * horizSpacing; let cy = r * vertSpacing + (q % 2 !== 0 ? vertSpacing / 2 : 0);
-                        
-                        let margin = hexRadius * 1.5;
-                        if(cx > margin && cx < width - margin && cy > margin && cy < height - margin) {
-                            hexCenters.push({x: cx, y: cy});
+                        const cx = q * horizSpacing;
+                        const cy = r * vertSpacing + (q % 2 !== 0 ? vertSpacing / 2 : 0);
+
+                        const margin = hexRadius * 1.5;
+                        if (cx > margin && cx < width - margin && cy > margin && cy < height - margin) {
+                            hexCenters.push({ x: cx, y: cy });
                         }
 
-                        let pts = getHexVertices(cx, cy, hexRadius);
-                        for(let i=0; i<6; i++) {
-                            let p1 = pts[i]; let p2 = pts[(i+1)%6];
-                            if(p1.x > -50 && p1.x < width+50 && p1.y > -50 && p1.y < height+50) {
-                                let kX1 = Math.round(p1.x*10), kY1 = Math.round(p1.y*10), kX2 = Math.round(p2.x*10), kY2 = Math.round(p2.y*10);
-                                let key1 = `${kX1},${kY1}-${kX2},${kY2}`, key2 = `${kX2},${kY2}-${kX1},${kY1}`;
-                                if(!linesSet.has(key1) && !linesSet.has(key2)) { lines.push({x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, progress: 0}); linesSet.add(key1); }
+                        const pts = getHexVertices(cx, cy, hexRadius);
+                        for (let i = 0; i < 6; i++) {
+                            const p1 = pts[i], p2 = pts[(i + 1) % 6];
+                            if (p1.x > -50 && p1.x < width + 50 && p1.y > -50 && p1.y < height + 50) {
+                                const kX1 = Math.round(p1.x * 10), kY1 = Math.round(p1.y * 10);
+                                const kX2 = Math.round(p2.x * 10), kY2 = Math.round(p2.y * 10);
+                                const key1 = `${kX1},${kY1}-${kX2},${kY2}`;
+                                const key2 = `${kX2},${kY2}-${kX1},${kY1}`;
+                                if (!linesSet.has(key1) && !linesSet.has(key2)) {
+                                    lines.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+                                    linesSet.add(key1);
+                                }
                             }
                         }
                     }
@@ -800,58 +1694,67 @@
             }
 
             function drawGrid() {
-                ctx.clearRect(0, 0, width, height); 
+                ctx.clearRect(0, 0, width, height);
 
                 if (window.innerWidth > 768 && imageHexes.length > 0) {
                     imageHexes.forEach(item => {
                         if (item.fadeAlpha < 1) item.fadeAlpha = Math.min(1, item.fadeAlpha + 0.03);
                         ctx.save();
                         ctx.beginPath();
-                        let pts = getHexVertices(item.x, item.y, hexRadius - 2); 
+                        const pts = getHexVertices(item.x, item.y, hexRadius - 2);
                         ctx.moveTo(pts[0].x, pts[0].y);
-                        for(let i=1; i<6; i++) ctx.lineTo(pts[i].x, pts[i].y);
+                        for (let i = 1; i < 6; i++) ctx.lineTo(pts[i].x, pts[i].y);
                         ctx.closePath();
-                        ctx.clip(); 
-                        
-                        let dx = mouseX - item.x;
-                        let dy = mouseY - item.y;
-                        let distance = Math.sqrt(dx*dx + dy*dy);
-                        
-                        let targetAlpha = (distance < hexRadius) ? 0.9 : 0.35;
+                        ctx.clip();
+
+                        const dx = mouseX - item.x;
+                        const dy = mouseY - item.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const targetAlpha = (distance < hexRadius) ? 0.9 : 0.35;
                         ctx.globalAlpha = targetAlpha * item.fadeAlpha;
-                        
-                        let imgSize = hexRadius * 2; 
+
+                        const imgSize = hexRadius * 2;
                         ctx.drawImage(item.img, item.x - hexRadius, item.y - hexRadius, imgSize, imgSize);
                         ctx.restore();
                     });
                 }
 
-                ctx.beginPath(); ctx.strokeStyle = gridColor; ctx.lineWidth = 1;
-                lines.forEach(line => { ctx.moveTo(line.x1, line.y1); ctx.lineTo(line.x2, line.y2); }); ctx.stroke();
+                ctx.beginPath();
+                ctx.strokeStyle = gridColor;
+                ctx.lineWidth = 1;
+                lines.forEach(line => {
+                    ctx.moveTo(line.x1, line.y1);
+                    ctx.lineTo(line.x2, line.y2);
+                });
+                ctx.stroke();
             }
 
             function spawnMeteor() {
                 if (lines.length === 0) return;
                 const line = lines[Math.floor(Math.random() * lines.length)];
-                meteors.push({ x1: line.x1, y1: line.y1, x2: line.x2, y2: line.y2, progress: 0, speed: 0.015 + Math.random() * 0.02, length: 0.3 + Math.random() * 0.4, opacity: 1 });
+                meteors.push({
+                    x1: line.x1, y1: line.y1, x2: line.x2, y2: line.y2,
+                    progress: 0, speed: 0.015 + Math.random() * 0.02,
+                    length: 0.3 + Math.random() * 0.4
+                });
             }
 
-            // 優化項目 7：移除高消耗的 shadowBlur，改以雙層線段模擬電光發光感
             function animateCanvas() {
                 drawGrid();
-                if(Math.random() < 0.08 && meteors.length < 25) spawnMeteor();
+                if (Math.random() < 0.08 && meteors.length < 25) spawnMeteor();
                 ctx.lineCap = 'round';
                 for (let i = meteors.length - 1; i >= 0; i--) {
-                    let m = meteors[i]; m.progress += m.speed;
-                    let tailP = Math.max(0, m.progress - m.length), headP = Math.min(1, m.progress);
-                    let hX = m.x1 + (m.x2 - m.x1) * headP, hY = m.y1 + (m.y2 - m.y1) * headP;
-                    let tX = m.x1 + (m.x2 - m.x1) * tailP, tY = m.y1 + (m.y2 - m.y1) * tailP;
+                    const m = meteors[i];
+                    m.progress += m.speed;
+                    const tailP = Math.max(0, m.progress - m.length);
+                    const headP = Math.min(1, m.progress);
+                    const hX = m.x1 + (m.x2 - m.x1) * headP, hY = m.y1 + (m.y2 - m.y1) * headP;
+                    const tX = m.x1 + (m.x2 - m.x1) * tailP, tY = m.y1 + (m.y2 - m.y1) * tailP;
 
-                    let gradient = ctx.createLinearGradient(tX, tY, hX, hY);
+                    const gradient = ctx.createLinearGradient(tX, tY, hX, hY);
                     gradient.addColorStop(0, 'rgba(0, 191, 255, 0)');
                     gradient.addColorStop(1, meteorColor);
 
-                    // 第一層：外圍柔和電光暈
                     ctx.beginPath();
                     ctx.strokeStyle = gradient;
                     ctx.lineWidth = 6;
@@ -859,7 +1762,6 @@
                     ctx.moveTo(tX, tY); ctx.lineTo(hX, hY);
                     ctx.stroke();
 
-                    // 第二層：高亮核心電流
                     ctx.beginPath();
                     ctx.strokeStyle = gradient;
                     ctx.lineWidth = 2.2;
@@ -871,229 +1773,18 @@
                 }
                 requestAnimationFrame(animateCanvas);
             }
-            window.addEventListener('resize', resize); resize(); animateCanvas();
 
-            // ==========================================
-            // 4. 3D 全息輪播引擎 (含 GPU 與觸控效能優化)
-            // ==========================================
-            const carouselScene = document.querySelector('.carousel-scene');
-            const carousel = document.querySelector('.carousel-container');
-            const allCards = Array.from(document.querySelectorAll('.project-card'));
-            
-            const updateCategoryCounts = () => {
-                const totalCount = allCards.length;
-                const toolCount = allCards.filter(card => card.getAttribute('data-category') === 'tool').length;
-                const gameCount = allCards.filter(card => card.getAttribute('data-category') === 'game').length;
-
-                document.querySelectorAll('.filter-btn').forEach(btn => {
-                    const filter = btn.getAttribute('data-filter');
-                    const numSpan = btn.querySelector('.count-num');
-                    if (!numSpan) return;
-                    if (filter === 'all') numSpan.textContent = totalCount;
-                    else if (filter === 'tool') numSpan.textContent = toolCount;
-                    else if (filter === 'game') numSpan.textContent = gameCount;
-                });
-            };
-            updateCategoryCounts();
-
-            let currentAngle = 0;
-            let radius = 0;
-            let theta = 0;
-            let visibleCards = allCards;
-            let isDragging = false;
-            let hasInteracted = false; // 修正項目 3：防止使用者提早互動後被進場微轉拉回
-            let dragDistance = 0;      // 紀錄拖曳位移，區分「純點擊側面卡片」與「拖曳旋轉」
-            let lastActiveIndex = -1;
-
-            function updateCarouselTransform(forceCardUpdate = false) {
-                carousel.style.transform = `translateZ(${-radius}px) rotateY(${currentAngle}deg)`;
-                
-                if (visibleCards.length === 0) return;
-
-                let minDiff = Infinity;
-                let activeIndex = 0;
-
-                for (let i = 0; i < visibleCards.length; i++) {
-                    const cardAngle = theta * i;
-                    let diff = ((cardAngle + currentAngle) % 360 + 360) % 360;
-                    if (diff > 180) diff -= 360;
-                    
-                    if (Math.abs(diff) < minDiff) {
-                        minDiff = Math.abs(diff);
-                        activeIndex = i;
-                    }
-                }
-
-                // 效能優化：拖曳過程中若最前方的卡片沒換人，不重複觸發 11 張卡片的 DOM style 重繪
-                if (!forceCardUpdate && activeIndex === lastActiveIndex) return;
-                lastActiveIndex = activeIndex;
-
-                visibleCards.forEach((card, i) => {
-                    const cardAngle = theta * i;
-                    if (i === activeIndex) {
-                        card.classList.add('active-front');
-                        card.style.opacity = 1;
-                        card.style.transform = `rotateY(${cardAngle}deg) translateZ(${radius}px) scale(1)`;
-                        card.style.pointerEvents = 'auto';
-                    } else {
-                        card.classList.remove('active-front');
-                        card.style.opacity = 0.3;
-                        card.style.transform = `rotateY(${cardAngle}deg) translateZ(${radius}px) scale(0.85)`;
-                        // 允許側面可見卡片接收點擊以旋轉至正中央（內部 <a> 已被 CSS pointer-events: none 保護）
-                        card.style.pointerEvents = 'auto';
-                    }
-                });
+            function handleResize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+                initHexGrid();
+                reassignLoadedImages();
+                renderCarouselFrame();
             }
 
-            function setupCarousel() {
-                if (visibleCards.length === 0) return;
-                theta = 360 / visibleCards.length;
-                const cardWidth = carousel.offsetWidth;
-                radius = Math.max(Math.round((cardWidth / 2) / Math.tan(Math.PI / visibleCards.length)) + 40, 200);
-
-                allCards.forEach(card => {
-                    if (!visibleCards.includes(card)) {
-                        card.classList.remove('active-front');
-                        card.style.transform = `rotateY(0deg) translateZ(0px) scale(0)`;
-                        card.style.opacity = 0;
-                        card.style.pointerEvents = 'none'; 
-                    }
-                });
-                updateCarouselTransform(true);
-            }
-
-            // 進場微轉提示：若使用者已經開始操作 (hasInteracted)，則立即中止微轉排程
-            function playIntroNudge() {
-                setTimeout(() => {
-                    if (isDragging || hasInteracted) return; 
-                    currentAngle = -22;
-                    updateCarouselTransform(false);
-                    setTimeout(() => {
-                        if (isDragging || hasInteracted) return;
-                        currentAngle = 0;
-                        updateCarouselTransform(false);
-                    }, 600);
-                }, 600);
-            }
-
-            // --- 觸控與拖曳控制 ---
-            let startX = 0;
-            let startAngle = 0;
-            
-            carouselScene.addEventListener('pointerdown', (e) => {
-                hasInteracted = true;
-                isDragging = true;
-                dragDistance = 0;
-                startX = e.clientX;
-                startAngle = currentAngle;
-                carousel.style.transition = 'none'; 
-                carouselScene.classList.add('dragging');
-            });
-
-            window.addEventListener('pointermove', (e) => {
-                if (!isDragging) return;
-                const dx = e.clientX - startX;
-                dragDistance = Math.max(dragDistance, Math.abs(dx));
-                currentAngle = startAngle + (dx * 0.4);
-                updateCarouselTransform(false);
-            }, { passive: true });
-
-            // 修正項目 4：統一處理 pointerup 與 pointercancel，防止手機斜滑捲動時卡死
-            function endDrag() {
-                if (!isDragging) return;
-                isDragging = false;
-                carouselScene.classList.remove('dragging');
-                
-                carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
-                
-                if (theta > 0) {
-                    currentAngle = Math.round(currentAngle / theta) * theta;
-                }
-                updateCarouselTransform(true);
-            }
-
-            window.addEventListener('pointerup', endDrag);
-            window.addEventListener('pointercancel', endDrag);
-            window.addEventListener('lostpointercapture', endDrag);
-
-            // 優化項目 6A：點擊左右側面半透明卡片時，自動最短路徑旋轉至正中央
-            allCards.forEach(card => {
-                card.addEventListener('click', () => {
-                    if (dragDistance > 6) return; // 屬於拖曳放開，不觸發點擊切換
-                    const idx = visibleCards.indexOf(card);
-                    if (idx === -1 || card.classList.contains('active-front')) return;
-
-                    hasInteracted = true;
-                    const cardAngle = theta * idx;
-                    let diff = ((cardAngle + currentAngle) % 360 + 360) % 360;
-                    if (diff > 180) diff -= 360;
-
-                    carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
-                    currentAngle -= diff;
-                    updateCarouselTransform(true);
-                });
-            });
-
-            // 優化項目 6B：支援鍵盤左右方向鍵切換作品
-            window.addEventListener('keydown', (e) => {
-                if (theta === 0 || visibleCards.length <= 1) return;
-                if (e.key === 'ArrowLeft') {
-                    hasInteracted = true;
-                    carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
-                    currentAngle += theta;
-                    updateCarouselTransform(true);
-                } else if (e.key === 'ArrowRight') {
-                    hasInteracted = true;
-                    carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
-                    currentAngle -= theta;
-                    updateCarouselTransform(true);
-                }
-            });
-
-            // --- 分類篩選器 ---
-            const filterBtns = document.querySelectorAll('.filter-btn');
-            filterBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    hasInteracted = true;
-                    filterBtns.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    const filterValue = btn.getAttribute('data-filter');
-
-                    if (filterValue === 'all') {
-                        visibleCards = allCards;
-                    } else {
-                        visibleCards = allCards.filter(card => card.getAttribute('data-category') === filterValue);
-                    }
-                    currentAngle = 0;
-                    carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
-                    setupCarousel();
-                });
-            });
-
-            setupCarousel();
-            playIntroNudge();
-
-            window.addEventListener('resize', () => {
-                carousel.style.transition = 'none';
-                setupCarousel();
-                setTimeout(() => {
-                    carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
-                }, 50);
-            });
-
-            // --- 游標探照燈 (僅在支援滑鼠游標的設備上啟用) ---
-            // 修正 Bug 1：補齊 --mouse-y 的 px 單位
-            if (window.matchMedia('(hover: hover)').matches) {
-                allCards.forEach(card => {
-                    card.addEventListener('mousemove', e => {
-                        const rect = card.getBoundingClientRect(),
-                              x = e.clientX - rect.left,
-                              y = e.clientY - rect.top;
-                        card.style.setProperty('--mouse-x', `${x}px`);
-                        card.style.setProperty('--mouse-y', `${y}px`);
-                    }, { passive: true });
-                });
-            }
+            window.addEventListener('resize', handleResize);
+            handleResize();
+            animateCanvas();
         });
     </script>
 </body>

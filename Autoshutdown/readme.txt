@@ -1,4 +1,4 @@
-# ⚡ 智慧自動關機助手 (AutoShutdown Helper) v1.6.6
+# ⚡ 智慧自動關機助手 (AutoShutdown Helper) v1.6.7
 
 Windows **純綠色、免安裝、單一腳本圖形化自動關機工具**。
 
@@ -93,9 +93,11 @@ Windows **純綠色、免安裝、單一腳本圖形化自動關機工具**。
 ## 👤 作者與專案資訊
 
 * **Designed & Shared by:** [fan666rog](https://github.com/fan666rog/web/tree/main/Autoshutdown)
-* **Version:** v1.6.6
+* **Version:** v1.6.7
 
 更新：
+V1.6.7 2026/1119 更新一些極端狀況的小BUG，這次用Neon這個模型HIGH模式來檢查的。
+
 V1.6.6 2026/1118 更新了一些小瑕疵和一些屬於比較極端狀況出現的小問題。加強部分原視窗介面語意。
 
 V1.6.1 2026/1117 08:11 對於本程式跑過好幾輪的AI模擬，才終於抓不太出BUG，看似基本的功能要做好卻不容易。

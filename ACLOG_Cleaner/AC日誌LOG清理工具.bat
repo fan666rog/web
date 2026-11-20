@@ -23,6 +23,7 @@ exit /b
 #   Name       : 顯示在畫面上的規則名稱
 #   Path       : 資料夾完整路徑
 #   KeepDays   : 保留最新的幾個「有紀錄的日期(開機日)」(0 = 全部清空；3 = 保留最新 3 個日期的檔案)
+#   MaxAgeDays : (選填) 自然日過期上限，搭配 KeepDays > 0 使用；凡檔案日期距今天超過此天數一律淘汰
 #   Filter     : 檔名過濾規則 (預設 "*.log" 代表所有 log 檔；也可指定特定檔名、前綴或萬用字元)
 #   Recurse    : 是否連同內部的子資料夾一起掃描 ($true = 是, $false = 否)
 #   PerSubDir  : (選填) 是否將該路徑下的每個第一層子目錄視為獨立單位各自計算保留天數 ($true / $false)
@@ -43,16 +44,21 @@ $Rules.Add(@{ Name = "AacMouseSetup";             Path = "$BasePath\AacMouseSetu
 $Rules.Add(@{ Name = "AcNodeAddon";               Path = "$BasePath\AcNodeAddon";       KeepDays = 3; Filter = "*.log"; Recurse = $false })
 $Rules.Add(@{ Name = "AIOFanSDK";                 Path = "$BasePath\AIOFanSDK";         KeepDays = 3; Filter = "*.log"; Recurse = $false })
 $Rules.Add(@{ Name = "AppLog (系統)";             Path = "$BasePath\AppLog";            KeepDays = 3; Filter = "*.log"; Recurse = $false })
+$Rules.Add(@{ Name = "HTML";                      Path = "$BasePath\HTML";              KeepDays = 3; Filter = "Type*_*.log"; Recurse = $false })
 $Rules.Add(@{ Name = "KeyboardSDK";               Path = "$BasePath\KeyboardSDK";       KeepDays = 3; Filter = "*.log"; Recurse = $false })
 $Rules.Add(@{ Name = "LightingService";           Path = "$BasePath\LightingService";   KeepDays = 3; Filter = "LightingService.log*"; Recurse = $false })
 $Rules.Add(@{ Name = "MouseSDK";                  Path = "$BasePath\MouseSDK";          KeepDays = 3; Filter = "*.log"; Recurse = $false })
 $Rules.Add(@{ Name = "ROG Live Service";          Path = "$BasePath\ROG Live Service";  KeepDays = 3; Filter = "ROGLiveService_*.log"; Recurse = $false })
 $Rules.Add(@{ Name = "UnifyScanner";              Path = "$BasePath\UnifyScanner";      KeepDays = 3; Filter = "*.log"; Recurse = $false })
 
-# --- 3. Framework 隨機碼子資料夾區 (引擎自動偵測各子目錄並各自獨立保留最新 3 個開機日) ---
-$Rules.Add(@{ Name = "Framework";                 Path = "$BasePath\Framework";         KeepDays = 3; Filter = "*.log"; Recurse = $false; PerSubDir = $true })
+# --- 3. 偶發性更新紀錄區：保留最新 3 個開機日，且距今超過 7 個自然日自動淘汰 ---
+$Rules.Add(@{ Name = "ASUS Update (ACS AppLog)";  Path = "$BasePath\ASUS Update\ACS\AppLog"; KeepDays = 3; MaxAgeDays = 7; Filter = "*.log"; Recurse = $false })
 
-# --- 4. 使用者個人資料夾區 (自動偵測電腦內所有使用者帳號的 AppData\Local) ---
+# --- 4. 多子目錄獨立計算區 (引擎自動偵測第一層各子目錄，各自獨立保留最新 3 個開機日) ---
+$Rules.Add(@{ Name = "Framework";                 Path = "$BasePath\Framework";         KeepDays = 3; Filter = "*.log"; Recurse = $false; PerSubDir = $true })
+$Rules.Add(@{ Name = "MainSDK";                   Path = "$BasePath\MainSDK";           KeepDays = 3; Filter = "*.log"; Recurse = $false; PerSubDir = $true })
+
+# --- 5. 使用者個人資料夾區 (自動偵測電腦內所有使用者帳號的 AppData\Local) ---
 $UserFolders = @(Get-ChildItem -LiteralPath "C:\Users" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -notin @("Public", "Default", "Default User", "All Users") })
 $AddedUserPaths = @()
 
@@ -118,11 +124,13 @@ foreach ($Rule in $Rules) {
             $RootFiles = @(Get-ChildItem -LiteralPath $Rule.Path -Filter $Rule.Filter -File -ErrorAction SilentlyContinue)
             if ($RootFiles.Count -gt 0) {
                 $RootRule = $Rule.Clone()
+                $RootRule.Name = "$($Rule.Name) (根目錄)"
                 $RootRule.PerSubDir = $false
                 $ExpandedRules.Add($RootRule)
             }
             foreach ($SubDir in $SubDirs) {
-                $ShortName = if ($SubDir.Name.Length -gt 8) { "$($SubDir.Name.Substring(0,8))..." } else { $SubDir.Name }
+                # 僅在目錄名稱超過 24 字元時縮短顯示 (避免 MainSDK 具名子目錄撞名，同時維持 Framework 隨機碼精簡)
+                $ShortName = if ($SubDir.Name.Length -gt 24) { "$($SubDir.Name.Substring(0,12))..." } else { $SubDir.Name }
                 $SubRule = $Rule.Clone()
                 $SubRule.Name = "$($Rule.Name) (子目錄: $ShortName)"
                 $SubRule.Path = $SubDir.FullName
@@ -140,7 +148,15 @@ $RuleIndex = 0
 
 foreach ($Rule in $ExpandedRules) {
     $RuleIndex++
-    $KeepText = if ($Rule.KeepDays -le 0) { "全部清空" } else { "保留最新 $($Rule.KeepDays) 個紀錄日" }
+    $HasMaxAge = ($null -ne $Rule.MaxAgeDays) -and ($Rule.MaxAgeDays -gt 0)
+    if ($Rule.KeepDays -le 0) {
+        $KeepText = "全部清空"
+    } elseif ($HasMaxAge) {
+        $KeepText = "保留最新 $($Rule.KeepDays) 個紀錄日，且限 $($Rule.MaxAgeDays) 天內"
+    } else {
+        $KeepText = "保留最新 $($Rule.KeepDays) 個紀錄日"
+    }
+
     Write-Host "[規則 $RuleIndex] $($Rule.Name) ($KeepText | 目標: $($Rule.Filter))" -ForegroundColor Yellow
     Write-Host "  路徑: $($Rule.Path)" -ForegroundColor DarkGray
 
@@ -164,26 +180,36 @@ foreach ($Rule in $ExpandedRules) {
     }
 
     # 為每個檔案標記所屬日期
-    $FileEntries = foreach ($File in $Files) {
+    $FileEntries = @(foreach ($File in $Files) {
         [PSCustomObject]@{
             File    = $File
             DateStr = Get-FileLogDate $File
         }
-    }
+    })
 
     # 判斷哪些檔案需要刪除
     if ($Rule.KeepDays -le 0) {
         $TargetEntries = $FileEntries
     } else {
-        # 取出所有不重複的日期，由新到舊排序，挑出要保留的前 N 個最新日期
+        # 取出所有不重複的日期，由新到舊排序
         $UniqueDates = @($FileEntries | Select-Object -ExpandProperty DateStr -Unique | Sort-Object -Descending)
-        $KeepDates = @($UniqueDates | Select-Object -First $Rule.KeepDays)
+
+        # 若有設定 MaxAgeDays，先剔除超過自然日上限的舊日期，再從有效日期中挑出最新 N 天
+        if ($HasMaxAge) {
+            $CutoffDateStr = (Get-Date).Date.AddDays(-$Rule.MaxAgeDays).ToString('yyyy-MM-dd')
+            $ValidDates = @($UniqueDates | Where-Object { $_ -ge $CutoffDateStr })
+            $KeepDates = @($ValidDates | Select-Object -First $Rule.KeepDays)
+        } else {
+            $KeepDates = @($UniqueDates | Select-Object -First $Rule.KeepDays)
+        }
 
         if ($KeepDates.Count -gt 0) {
             Write-Host "  -> 系統保留日期: $($KeepDates -join ', ')" -ForegroundColor DarkCyan
+        } elseif ($HasMaxAge) {
+            Write-Host "  -> 系統保留日期: 無 (現有檔案皆已超過 $($Rule.MaxAgeDays) 天自然日上限，基準日: $CutoffDateStr)" -ForegroundColor DarkCyan
         }
 
-        $TargetEntries = $FileEntries | Where-Object { $KeepDates -notcontains $_.DateStr }
+        $TargetEntries = @($FileEntries | Where-Object { $KeepDates -notcontains $_.DateStr })
     }
 
     $MatchedCount = 0

@@ -1,17 +1,16 @@
-這是一個清除華碩AC軟體產生的LOG日誌bat
+這是一個清除華碩AC軟體產生的LOG日誌bat  2026/1121更新
 
-Gemini 4 Hydrogen HIGH模式優化程式碼
-主要是清理這裡面C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis的log
+主要是清理這裡面 `C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis` 的 log
 程式點擊執行時，會先進行提權，不然無法清理系統資料夾的檔案
 會先掃描檔案，顯示給你看之後，經過你的同意，才會進行清理刪除
 
 #### ✨ 工具特色與安全機制
 1. **先檢查、後刪除（兩階段確認）：** 
    點開後**不會**馬上亂砍檔案！它會先掃描並列出「找到哪些舊檔、預計可釋放多少空間」，等你親眼確認清單、輸入 `Y` 並按下 Enter 後才會執行刪除。
-2. **智慧保留「最新 3 個開機日」紀錄：**
-   不是死板地用日曆天數計算。就算你出門好幾天沒開機，工具也會聰明地辨識檔名上的日期（如 `2026-11-11`）或滾動日誌的封存日期，自動幫你保留**最近 3 次有開機紀錄當天**的所有 Log（含同日 `_00`、`_01`、`.1` 分片），只清理更早之前的歷史舊檔。
-3. **自動適配所有人的使用者帳號與隨機碼目錄：**
-   除了清理系統共用日誌外，也會自動偵測每個人電腦自己的使用者資料夾（`C:\Users\[你的帳號]\AppData\Local\...`）以及 `Framework` 底下的隨機碼子目錄，不需手動修改任何路徑即可通用。
+2. **智慧保留「最新 3 個開機日」紀錄（並支援過期日自動淘汰）：**
+   不是死板地用日曆天數計算。就算你出門好幾天沒開機，工具也會聰明地辨識檔名上的日期（如 `2026-11-11`）或滾動日誌的封存日期，自動幫你保留**最近 3 次有開機紀錄當天**的所有 Log（含同日 `_00`、`_01`、`.1` 分片），只清理更早之前的歷史舊檔；針對偶爾更新才產生的紀錄目錄，則額外搭配「超過 7 個自然日自動淘汰」機制，兼顧更新後排錯與避免陳年殘檔常駐。
+3. **自動適配所有人的使用者帳號與多層模組目錄：**
+   除了清理系統共用日誌外，也會自動偵測每個人電腦自己的使用者資料夾（`C:\Users\[你的帳號]\AppData\Local\...`），以及 `Framework` 底下的隨機碼子目錄、`MainSDK` 底下的各個功能模組子目錄，不需手動修改任何路徑即可通用。
 4. **沒裝的功能自動略過、不報錯：**
    每個人的主機板與周邊不同，工具找不到該資料夾時會自動跳過；遇到系統正在寫入中的檔案也會安全略過，絕對不會卡死或跳紅字。
 5. **純系統內建指令：**
@@ -20,14 +19,19 @@ Gemini 4 Hydrogen HIGH模式優化程式碼
 ---
 
 #### 📂 目前支援清理的資料夾清單
-* **1. 系統目錄 (`C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis`)：**
-  * **發現即全清：** `GameFirst` 內所有 `.log`、根目錄下因更新或異常觸發產生的 `ArmouryCrate.ErrorReporter.txt` 錯誤回報檔。
-  * **保留最新 3 個紀錄日：** `AacAIOFanSetup`、`AacKBSetup`、`AacMouseSetup`、`AcNodeAddon`、`AIOFanSDK`、`AppLog`、`KeyboardSDK`、`MouseSDK`、`UnifyScanner`
-  * **容量滾動日誌清理（保留最新 3 個紀錄日）：** `LightingService`（連同 `LightingService.log.1` ~ `.9` 等單檔 10 MB 的肥胖滾動備份檔一併依據修改日期清理）。
-  * **Framework 隨機碼子目錄（各自獨立保留最新 3 個紀錄日）：** 自動偵測 `Framework` 底下所有亂碼子資料夾，僅清理持續增加超過 3 個開機日的活躍目錄，不會誤刪僅有單日紀錄的初始安裝檔。
-  * **指定前綴保留最新 3 個紀錄日：** `ROG Live Service`（僅清理 `ROGLiveService_*.log`）
-* **2. 使用者個人目錄 (`C:\Users\[使用者名稱]\AppData\Local\ASUS\Armoury Crate Diagnosis\AppLog`)：**
-  * **指定前綴保留最新 3 個紀錄日：** 僅針對 `ArmouryCrate.UserSessionHelper_*.log` 進行清理，不影響同資料夾其他檔案。
+- **1. 系統目錄 (`C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis`)：**
+  - **發現即全清：** `GameFirst` 內所有 `.log`、根目錄下因更新或異常觸發產生的 `ArmouryCrate.ErrorReporter.txt` 錯誤回報檔。
+  - **保留最新 3 個紀錄日：** `AacAIOFanSetup`、`AacKBSetup`、`AacMouseSetup`、`AcNodeAddon`、`AIOFanSDK`、`AppLog`、`KeyboardSDK`、`MouseSDK`、`UnifyScanner`。
+  - **容量滾動日誌清理（保留最新 3 個紀錄日）：** `LightingService`（連同 `LightingService.log.1` ~ `.9` 等單檔 10 MB 的肥胖滾動備份檔一併依據修改日期清理）。
+  - **指定前綴保留最新 3 個紀錄日：**
+    - `ROG Live Service`（僅清理 `ROGLiveService_*.log`）
+    - `HTML`（僅清理 `Type*_*.log`，將軟體預設保留約 10 天的紀錄縮減為最新 3 個開機日）
+  - **偶發更新紀錄（保留最新 3 個紀錄日，且超過 7 個自然日自動淘汰）：** `ASUS Update\ACS\AppLog`（軟體剛更新後 7 天內會自動保留供檢視，超過 7 天無新紀錄即自動清空，避免舊更新日誌長期堆積）。
+  - **多子目錄各自獨立計算（保留最新 3 個紀錄日）：**
+    - `Framework`（自動偵測底下所有亂碼子資料夾，僅清理持續增加超過 3 個開機日的活躍目錄）
+    - `MainSDK`（自動偵測底下 `AcPowerNotification`、`ArmourySocketServer`、`ArmourySwAgent`、`SDK`、`UnifyDeviceDetector` 等子資料夾各自獨立計算，不會誤刪僅有單日紀錄的初始安裝檔如 `installHelper.log`）
+- **2. 使用者個人目錄 (`C:\Users\[使用者名稱]\AppData\Local\ASUS\Armoury Crate Diagnosis\AppLog`)：**
+  - **指定前綴保留最新 3 個紀錄日：** 僅針對 `ArmouryCrate.UserSessionHelper_*.log` 進行清理，不影響同資料夾其他檔案。
 
 ---
 

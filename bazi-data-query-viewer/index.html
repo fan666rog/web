@@ -1,118 +1,182 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" data-theme="paper">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>生辰命評民俗資料查詢</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>生辰命評民俗資料查詢單機版</h1>
+    <div class="book-shell container">
+        <header class="book-header">
+            <div class="header-top-bar">
+                <span class="edition-tag">農曆排查 ‧ 離線典藏</span>
+                <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="切換宣紙與玄墨主題">
+                    <span class="theme-icon" aria-hidden="true">☾</span>
+                    <span class="theme-label">切換玄墨</span>
+                </button>
+            </div>
+
+            <div class="title-plaque">
+                <div class="seal-stamp" aria-hidden="true">單機典藏</div>
+                <div class="title-text-group">
+                    <h1>生辰命評民俗資料查詢</h1>
+                    <p class="subtitle">時辰命評 × 袁天罡先師秤骨神數 ‧ 雙系統合參</p>
+                </div>
+            </div>
         </header>
 
+        <nav class="full-view-controls book-nav" aria-label="書冊目錄">
+            <button id="navMainQueryBtn" type="button" class="nav-tab active">生辰排查</button>
+            <button id="viewAllYearBtn" type="button" class="nav-tab">年冊</button>
+            <button id="viewAllMonthBtn" type="button" class="nav-tab">月冊</button>
+            <button id="viewAllDayBtn" type="button" class="nav-tab">日冊</button>
+            <button id="viewAllHourBtn" type="button" class="nav-tab">時辰冊</button>
+            <button id="viewAllBoneFortuneBtn" type="button" class="nav-tab">秤骨總錄</button>
+        </nav>
+
         <main>
-            <section class="full-view-controls">
-                <h3>完整資料瀏覽：</h3>
-                <button id="viewAllYearBtn">瀏覽全部「年」資料</button>
-                <button id="viewAllMonthBtn">瀏覽全部「月」資料</button>
-                <button id="viewAllDayBtn">瀏覽全部「日」資料</button>
-                <button id="viewAllHourBtn">瀏覽全部「時辰」資料</button>
-                <button id="viewAllBoneFortuneBtn">瀏覽全部「稱骨命評」</button>
-            </section>
             <section class="query-section">
-                <h2>請以農曆為準，請選擇查詢條件（可多選）</h2>
+                <div class="section-heading">
+                    <h2>生辰四柱排查</h2>
+                    <p class="section-note">請以<strong>農曆</strong>為準，可任意單選或多選查詢</p>
+                </div>
+
                 <div class="selection-area">
-                    <fieldset>
-                        <legend>年 (天干地支)</legend>
-                        <div id="yearSelection" class="specific-selection">
-                            <div class="input-group">
-                                <label for="shengxiaoSelect">生肖：</label>
-                                <select id="shengxiaoSelect">
-                                    <option value="">--選擇生肖--</option>
+                    <div class="pillars-grid">
+                        <fieldset class="pillar-card">
+                            <legend><span class="pillar-badge">年柱</span> 天干地支</legend>
+                            <div id="yearSelection" class="specific-selection">
+                                <div class="input-group">
+                                    <label for="shengxiaoSelect">生肖</label>
+                                    <select id="shengxiaoSelect">
+                                        <option value="">--選擇生肖--</option>
                                     </select>
-                            </div>
-                            <div class="input-group">
-                                <label for="ganzhiSelect">天干地支：</label>
-                                <select id="ganzhiSelect" disabled>
-                                    <option value="">--請先選生肖--</option>
+                                </div>
+                                <div class="input-group">
+                                    <label for="ganzhiSelect">天干地支</label>
+                                    <select id="ganzhiSelect" disabled>
+                                        <option value="">--請先選生肖--</option>
                                     </select>
+                                </div>
                             </div>
-                        </div>
-                    </fieldset>
+                        </fieldset>
 
-                    <fieldset>
-                        <legend>月</legend>
-                        <div id="monthSelection" class="specific-selection">
-                            <div class="input-group">
-                                <label for="monthSelect">月份：</label>
-                                <select id="monthSelect">
-                                    <option value="">--選擇月份--</option>
+                        <fieldset class="pillar-card">
+                            <legend><span class="pillar-badge">月柱</span> 農曆月份</legend>
+                            <div id="monthSelection" class="specific-selection">
+                                <div class="input-group">
+                                    <label for="monthSelect">月份</label>
+                                    <select id="monthSelect">
+                                        <option value="">--選擇月份--</option>
                                     </select>
+                                </div>
+                                <p class="field-hint">含受胎節氣、月評與古詩斷語</p>
                             </div>
-                        </div>
-                    </fieldset>
+                        </fieldset>
 
-                    <fieldset>
-                        <legend>日</legend>
-                        <div id="daySelection" class="specific-selection">
-                            <div class="input-group">
-                                <label for="daySelect">日期：</label>
-                                <select id="daySelect">
-                                    <option value="">--選擇日期--</option>
+                        <fieldset class="pillar-card">
+                            <legend><span class="pillar-badge">日柱</span> 農曆日期</legend>
+                            <div id="daySelection" class="specific-selection">
+                                <div class="input-group">
+                                    <label for="daySelect">日期</label>
+                                    <select id="daySelect">
+                                        <option value="">--選擇日期--</option>
                                     </select>
+                                </div>
+                                <p class="field-hint">含農曆初一至三十日生人命評</p>
                             </div>
-                        </div>
-                    </fieldset>
+                        </fieldset>
 
-                    <fieldset>
-                        <legend>時辰</legend>
-                        <div id="hourSelection" class="specific-selection">
-                            <div class="input-group">
-                                <label for="hourMainSelect">時辰：</label>
-                                <select id="hourMainSelect">
-                                    <option value="">--選擇時辰--</option>
+                        <fieldset class="pillar-card">
+                            <legend><span class="pillar-badge">時柱</span> 出生時辰</legend>
+                            <div id="hourSelection" class="specific-selection">
+                                <div class="input-group">
+                                    <label for="hourMainSelect">時辰</label>
+                                    <select id="hourMainSelect">
+                                        <option value="">--選擇時辰--</option>
                                     </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="hourDetailSelect">時辰細分</label>
+                                    <!-- 保留原生 select 與原 script.js 同步，介面由下方古風按鈕呈現 -->
+                                    <select id="hourDetailSelect" class="visually-hidden-select" disabled>
+                                        <option value="main">主要描述</option>
+                                        <option value="頭">時頭</option>
+                                        <option value="中">時中</option>
+                                        <option value="末">時末</option>
+                                    </select>
+                                    <div class="detail-pill-group" id="hourDetailPills" role="group" aria-label="時辰細分">
+                                        <button type="button" class="detail-pill active" data-detail="main" disabled aria-pressed="true">主要描述</button>
+                                        <button type="button" class="detail-pill" data-detail="頭" disabled aria-pressed="false">時頭</button>
+                                        <button type="button" class="detail-pill" data-detail="中" disabled aria-pressed="false">時中</button>
+                                        <button type="button" class="detail-pill" data-detail="末" disabled aria-pressed="false">時末</button>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="input-group">
-                                <label for="hourDetailSelect">時辰細分：</label>
-                                <select id="hourDetailSelect" disabled>
-                                    <option value="main">主要描述</option>
-                                    <option value="頭">時頭</option>
-                                    <option value="中">時中</option>
-                                    <option value="末">時末</option>
-                                </select>
-                            </div>
+                        </fieldset>
+                    </div>
+
+                    <div id="pillarStatusBar" class="pillar-status-bar" aria-live="polite">
+                        <div class="pillar-stamps">
+                            <span class="mini-stamp" data-pillar="year">年</span>
+                            <span class="mini-stamp" data-pillar="month">月</span>
+                            <span class="mini-stamp" data-pillar="day">日</span>
+                            <span class="mini-stamp" data-pillar="hour">時</span>
                         </div>
-                    </fieldset>
-                    
+                        <p id="pillarStatusText" class="pillar-status-text">可任意組合查詢；選齊四柱將自動合算袁天罡秤骨命評。</p>
+                    </div>
+
                     <div class="action-buttons">
-                       <button id="queryButton">查詢所選項目</button>
-                       <button id="resetButton" type="button">清除重選</button>
+                        <button id="queryButton" type="button">查詢所選項目</button>
+                        <button id="resetButton" type="button">清除重選</button>
                     </div>
                 </div>
             </section>
 
             <section id="resultSection" class="result-section hidden">
-                <h2>查詢結果</h2>
-                <div id="resultOutput">
-                    </div>
+                <div class="section-heading">
+                    <h2>排查批錄</h2>
+                </div>
+                <div id="resultOutput"></div>
             </section>
+
             <section id="fullDataViewSection" class="full-data-view-section hidden">
-                <button id="backToMainQueryBtn" class="back-button">返回主查詢介面</button>
-                <h2 id="fullDataViewTitle"></h2>
-                <div id="fullDataViewOutput">
-                   </div>
+                <div class="full-view-header">
+                    <h2 id="fullDataViewTitle"></h2>
+                    <button id="backToMainQueryBtn" class="back-button" type="button">返回生辰排查</button>
+                </div>
+                <div id="quickIndexBar" class="quick-index-bar hidden" aria-label="快速索引與篩選"></div>
+                <div id="fullDataViewOutput"></div>
             </section>
         </main>
 
-        <footer>
-            <p>資料來源：公開之民俗資料僅供參考 / 時辰命評+袁天罡先師秤骨神數 雙顯示</p>
-            <p>fan666rog&Gemini編寫 / Github: <a href="https://github.com/fan666rog/web" target="_blank">fan666rog/web</a></p>
+        <footer class="book-footer">
+            <p>資料來源：公開之民俗資料僅供參考 ／ 時辰命評 ＋ 袁天罡先師秤骨神數 雙顯示</p>
+            <p class="credit-line">fan666rog &amp; Gemini 編寫 ／ GitHub：<a href="https://github.com/fan666rog/web" target="_blank" rel="noopener noreferrer">fan666rog/web</a></p>
         </footer>
     </div>
 
+    <!-- 電腦版捲動回頂端鈕 -->
+    <button id="scrollTopBtn" class="scroll-top-btn hidden" type="button" aria-label="回到頂端" title="回到頂端">▲</button>
+
+    <!-- 手機版拇指區底部導覽列 -->
+    <div class="mobile-hud" role="toolbar" aria-label="快速操作列">
+        <button id="mobileQueryBtn" class="mobile-hud-btn" type="button">
+            <span class="hud-icon" aria-hidden="true">❖</span>
+            <span>生辰排查</span>
+        </button>
+        <button id="mobileTopBtn" class="mobile-hud-btn" type="button">
+            <span class="hud-icon" aria-hidden="true">▲</span>
+            <span>回頂端</span>
+        </button>
+        <button id="mobileThemeBtn" class="mobile-hud-btn" type="button">
+            <span class="hud-icon" aria-hidden="true">☾</span>
+            <span class="mobile-theme-label">切換玄墨</span>
+        </button>
+    </div>
+
     <script src="script.js"></script>
+    <script src="ui-enhance.js"></script>
 </body>
 </html>

@@ -386,13 +386,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }).filter(t => t.label);
             buildJumpChips('快速跳轉：', targets);
         } else if (title.includes('「日」')) {
-            const milestones = ['初一日', '初六日', '十一日', '十六日', '二十一日', '二十六日'];
+            const milestones = [
+                { match: '初一日', label: '初一' },
+                { match: '初六日', label: '初六' },
+                { match: '十一日', label: '十一' },
+                { match: '十六日', label: '十六' },
+                { match: '二十一日', label: '廿一' },
+                { match: '二十六日', label: '廿六' }
+            ];
             const targets = [];
             blocks.forEach(block => {
                 const h3 = block.querySelector('h3');
                 if (!h3) return;
-                const found = milestones.find(m => h3.textContent.includes(m));
-                if (found) targets.push({ label: found, element: block });
+                const text = h3.textContent.trim();
+                const found = milestones.find(m => text.startsWith(m.match));
+                if (found) targets.push({ label: found.label, element: block });
             });
             buildJumpChips('跳至區段：', targets);
         } else if (title.includes('「時辰」')) {

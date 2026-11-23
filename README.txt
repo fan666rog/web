@@ -9,7 +9,6 @@ https://fan666rog.github.io/web/
 client-side-lottery / 彩券-摸彩箱抽獎程式
 bazi-data-query-viewer / 生辰命評-袁天罡秤骨命評 雙系統民俗查詢小程式
 wheel-prize-picker / 輪盤抽獎(含權重版)
-Numerology / 生命靈數
 Ba(Block art) / 積木拼圖
 Retro Mary: Pocket Money Killer / 復古小瑪莉：零用錢殺手
 game-snake / 貪食蛇小遊戲

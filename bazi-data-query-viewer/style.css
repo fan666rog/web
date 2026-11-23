@@ -1,351 +1,1161 @@
+/* =========================================================
+   雙復古主題變數：宣紙（日） / 玄墨（夜）
+   ========================================================= */
+:root,
+[data-theme="paper"] {
+    color-scheme: light;
+    --bg-outer: #e5dac5;
+    --bg-outer-dot: rgba(120, 96, 62, 0.08);
+    --bg-paper: #f8f2e4;
+    --bg-card: #fdf9f0;
+    --bg-inset: #efe6d2;
+    --bg-nav: rgba(248, 242, 228, 0.96);
+    --bg-slip: #fbf5e6;
+
+    --ink-primary: #2a2118;
+    --ink-secondary: #5a4c3b;
+    --ink-muted: #84745f;
+
+    --border-strong: #9f8a69;
+    --border-mid: #cbb99a;
+    --border-soft: #dfd3bd;
+
+    --accent-seal: #9c2b2b;
+    --accent-seal-hover: #7c1f1f;
+    --accent-seal-soft: rgba(156, 43, 43, 0.1);
+    --accent-gold: #9a702c;
+    --accent-gold-soft: rgba(154, 112, 44, 0.14);
+    --accent-indigo: #2c4d63;
+    --accent-indigo-soft: rgba(44, 77, 99, 0.1);
+
+    --shadow-book: 0 12px 36px rgba(58, 42, 22, 0.14);
+    --shadow-card: 0 2px 8px rgba(72, 54, 30, 0.06);
+
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235a4c3b' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+
+    /* 五行礦物低飽和印記色（日） */
+    --wx-metal-bg: rgba(168, 134, 58, 0.16);
+    --wx-metal-fg: #7a5c14;
+    --wx-wood-bg: rgba(56, 118, 79, 0.15);
+    --wx-wood-fg: #265c3a;
+    --wx-water-bg: rgba(44, 86, 128, 0.15);
+    --wx-water-fg: #1f4b78;
+    --wx-fire-bg: rgba(168, 52, 46, 0.14);
+    --wx-fire-fg: #8f221d;
+    --wx-earth-bg: rgba(145, 96, 52, 0.16);
+    --wx-earth-fg: #72471d;
+}
+
+[data-theme="ink"] {
+    color-scheme: dark;
+    --bg-outer: #0e1013;
+    --bg-outer-dot: rgba(207, 165, 88, 0.05);
+    --bg-paper: #16181d;
+    --bg-card: #1d2027;
+    --bg-inset: #13151a;
+    --bg-nav: rgba(22, 24, 29, 0.96);
+    --bg-slip: #191b21;
+
+    --ink-primary: #ebe3d3;
+    --ink-secondary: #bcb19d;
+    --ink-muted: #8a8070;
+
+    --border-strong: #6b593c;
+    --border-mid: #433a2c;
+    --border-soft: #2e2a23;
+
+    --accent-seal: #c43c35;
+    --accent-seal-hover: #da4a42;
+    --accent-seal-soft: rgba(196, 60, 53, 0.18);
+    --accent-gold: #cfa355;
+    --accent-gold-soft: rgba(207, 163, 85, 0.16);
+    --accent-indigo: #88b4d0;
+    --accent-indigo-soft: rgba(136, 180, 208, 0.14);
+
+    --shadow-book: 0 16px 44px rgba(0, 0, 0, 0.55);
+    --shadow-card: 0 3px 10px rgba(0, 0, 0, 0.3);
+
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23cfa355' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+
+    /* 五行礦物低飽和印記色（夜） */
+    --wx-metal-bg: rgba(218, 178, 92, 0.18);
+    --wx-metal-fg: #e6c478;
+    --wx-wood-bg: rgba(94, 172, 122, 0.18);
+    --wx-wood-fg: #8dd1a4;
+    --wx-water-bg: rgba(102, 158, 210, 0.18);
+    --wx-water-fg: #94c3ee;
+    --wx-fire-bg: rgba(216, 92, 82, 0.2);
+    --wx-fire-fg: #ef978f;
+    --wx-earth-bg: rgba(198, 142, 86, 0.18);
+    --wx-earth-fg: #dfb07e;
+}
+
+/* =========================================================
+   基礎排版與字體（純本機系統字體，免聯網）
+   ========================================================= */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
 body {
-    font-family: 'Arial', '微軟正黑體', 'Microsoft JhengHei', sans-serif;
-    line-height: 1.6;
     margin: 0;
+    padding: 20px 14px 36px;
+    font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "Heiti TC", sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--ink-primary);
+    background-color: var(--bg-outer);
+    background-image:
+        radial-gradient(var(--bg-outer-dot) 1px, transparent 1px),
+        radial-gradient(circle at 50% 0%, rgba(180, 145, 86, 0.08), transparent 65%);
+    background-size: 20px 20px, 100% 100%;
+    transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+h1, h2, h3, legend, .nav-tab, .seal-stamp, .poem, .bone-fortune-poem, .bone-weight-total {
+    font-family: "Noto Serif TC", "Source Han Serif TC", "Songti TC", "PMingLiU", "MingLiU", Georgia, serif;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.filter-hidden {
+    display: none !important;
+}
+
+.visually-hidden-select {
+    position: absolute;
+    width: 1px;
+    height: 1px;
     padding: 0;
-    background-color: #f4f4f4;
-    color: #333;
-}
-
-.container {
-    width: 80%;
-    max-width: 960px;
-    margin: auto;
+    margin: -1px;
     overflow: hidden;
-    padding: 0 20px;
-    background-color: #fff;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
-header {
-    background: #333;
-    color: #fff;
-    padding: 1rem 0;
+/* =========================================================
+   古籍外框容器
+   ========================================================= */
+.book-shell {
+    position: relative;
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    background-color: var(--bg-paper);
+    border: 2px solid var(--border-strong);
+    outline: 1px solid var(--border-mid);
+    outline-offset: -7px;
+    box-shadow: var(--shadow-book);
+    padding: 0;
+}
+
+/* =========================================================
+   卷首牌匾與主題切換
+   ========================================================= */
+.book-header {
+    padding: 18px 28px 22px;
+    border-bottom: 1px solid var(--border-mid);
+    background: linear-gradient(180deg, var(--accent-gold-soft) 0%, transparent 100%);
+}
+
+.header-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.edition-tag {
+    font-size: 0.82rem;
+    letter-spacing: 0.12em;
+    color: var(--ink-muted);
+}
+
+.theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    background-color: var(--bg-card);
+    color: var(--ink-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.theme-toggle-btn:hover {
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+}
+
+.title-plaque {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
     text-align: center;
-    border-bottom: #77aaff 3px solid;
+    padding: 4px 0 2px;
 }
 
-header h1 {
+.seal-stamp {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    font-size: 0.78rem;
+    font-weight: bold;
+    letter-spacing: 0.14em;
+    color: #fff8f0;
+    background-color: var(--accent-seal);
+    border: 1px solid rgba(255, 240, 225, 0.45);
+    outline: 1px solid var(--accent-seal);
+    outline-offset: 2px;
+    padding: 5px 4px;
+    line-height: 1.15;
+    border-radius: 2px;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.title-text-group h1 {
     margin: 0;
-    font-size: 2rem;
+    font-size: clamp(1.45rem, 3.2vw, 2.05rem);
+    letter-spacing: 0.14em;
+    color: var(--ink-primary);
+    line-height: 1.3;
 }
 
+.subtitle {
+    margin: 6px 0 0;
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-secondary);
+}
+
+/* =========================================================
+   書冊目錄分頁列（原本的五顆藍鈕整合）
+   ========================================================= */
+.book-nav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 20px;
+    background-color: var(--bg-nav);
+    border-bottom: 2px solid var(--border-mid);
+    backdrop-filter: blur(6px);
+}
+
+.nav-tab {
+    padding: 7px 16px;
+    background-color: transparent;
+    color: var(--ink-secondary);
+    border: 1px solid var(--border-mid);
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.nav-tab:hover {
+    color: var(--ink-primary);
+    border-color: var(--accent-gold);
+    background-color: var(--accent-gold-soft);
+}
+
+.nav-tab.active {
+    background-color: var(--accent-seal);
+    border-color: var(--accent-seal);
+    color: #fffaf3;
+    font-weight: bold;
+    box-shadow: 0 2px 6px rgba(156, 43, 43, 0.22);
+}
+
+/* =========================================================
+   主內容區通用樣式
+   ========================================================= */
 main {
-    padding: 20px 0;
+    padding: 24px 28px 30px;
 }
 
-.query-section, .result-section, .full-data-view-section { /* 合併通用樣式 */
-    padding: 20px;
-    margin-bottom: 20px;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-.query-section h2, .result-section h2, .full-data-view-section h2 { /* 合併通用樣式 */
+.section-heading {
     text-align: center;
-    color: #333;
-    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.section-heading h2 {
+    position: relative;
+    display: inline-block;
+    margin: 0;
+    padding: 0 22px;
+    font-size: 1.35rem;
+    letter-spacing: 0.14em;
+    color: var(--ink-primary);
+}
+
+.section-heading h2::before,
+.section-heading h2::after {
+    content: "◆";
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.65rem;
+    color: var(--accent-gold);
+}
+
+.section-heading h2::before {
+    left: 0;
+}
+
+.section-heading h2::after {
+    right: 0;
+}
+
+.section-note {
+    margin: 6px 0 0;
+    font-size: 0.9rem;
+    color: var(--ink-secondary);
+}
+
+/* =========================================================
+   主查詢表單：四柱 2×2 網格
+   ========================================================= */
+.query-section {
+    margin-bottom: 26px;
 }
 
 .selection-area {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 18px;
 }
 
-fieldset {
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 20px;
-    margin-bottom: 20px;
-    background-color: #f9f9f9;
+.pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
 }
 
-legend {
+.pillar-card {
+    margin: 0;
+    padding: 16px 18px 18px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-mid);
+    border-radius: 2px;
+    box-shadow: var(--shadow-card);
+    min-width: 0;
+}
+
+.pillar-card legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 8px;
+    font-size: 1.05rem;
     font-weight: bold;
-    color: #333;
-    padding: 0 10px;
-    font-size: 1.2em;
-    background-color: #f9f9f9;
-    margin-left: 10px;
+    letter-spacing: 0.08em;
+    color: var(--ink-primary);
+}
+
+.pillar-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    font-size: 0.78rem;
+    background-color: var(--accent-gold-soft);
+    color: var(--accent-gold);
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
 }
 
 .input-group {
     display: flex;
     flex-direction: column;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
+}
+
+.input-group:last-child {
+    margin-bottom: 0;
 }
 
 .input-group label {
-    margin-bottom: 8px;
+    margin-bottom: 5px;
+    font-size: 0.88rem;
+    font-weight: bold;
+    color: var(--ink-secondary);
+    letter-spacing: 0.04em;
+}
+
+.input-group select {
+    width: 100%;
+    padding: 10px 34px 10px 12px;
+    font-size: 0.96rem;
+    font-family: inherit;
+    color: var(--ink-primary);
+    background-color: var(--bg-paper);
+    border: 1px solid var(--border-mid);
+    border-radius: 2px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: var(--select-arrow);
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 11px 7px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-group select:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 0 2px var(--accent-gold-soft);
+}
+
+.input-group select:disabled {
+    opacity: 0.52;
+    cursor: not-allowed;
+    background-color: var(--bg-inset);
+}
+
+.field-hint {
+    margin: 10px 0 0;
+    font-size: 0.82rem;
+    color: var(--ink-muted);
+}
+
+/* 時辰細分分段按鈕 */
+.detail-pill-group {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.detail-pill {
+    padding: 8px 4px;
+    font-size: 0.86rem;
+    font-family: inherit;
+    background-color: var(--bg-paper);
+    color: var(--ink-secondary);
+    border: 1px solid var(--border-mid);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+}
+
+.detail-pill:hover:not(:disabled) {
+    border-color: var(--accent-gold);
+    color: var(--ink-primary);
+}
+
+.detail-pill.active:not(:disabled) {
+    background-color: var(--accent-indigo);
+    border-color: var(--accent-indigo);
+    color: #ffffff;
     font-weight: bold;
 }
 
-.input-group select, .input-group input {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 100%;
-    box-sizing: border-box;
+[data-theme="ink"] .detail-pill.active:not(:disabled) {
+    background-color: var(--accent-gold);
+    border-color: var(--accent-gold);
+    color: #16181d;
 }
 
-.action-buttons {
+.detail-pill:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background-color: var(--bg-inset);
+}
+
+/* =========================================================
+   四柱秤骨狀態提示條
+   ========================================================= */
+.pillar-status-bar {
     display: flex;
-    gap: 15px;
-    margin-top: 20px;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 11px 16px;
+    background-color: var(--bg-inset);
+    border: 1px dashed var(--border-strong);
+    border-radius: 2px;
+    transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.pillar-status-bar.ready {
+    border-style: solid;
+    border-color: var(--accent-seal);
+    background-color: var(--accent-seal-soft);
+}
+
+.pillar-stamps {
+    display: inline-flex;
+    gap: 8px;
+}
+
+.mini-stamp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    font-family: "Noto Serif TC", "PMingLiU", serif;
+    color: var(--ink-muted);
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-mid);
+    border-radius: 2px;
+    transition: all 0.2s ease;
+}
+
+.mini-stamp.partial {
+    border-style: dashed;
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+}
+
+.mini-stamp.filled {
+    background-color: var(--accent-seal);
+    border-color: var(--accent-seal);
+    color: #fff9f0;
+}
+
+.pillar-status-text {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--ink-secondary);
+    flex: 1 1 240px;
+}
+
+.pillar-status-bar.ready .pillar-status-text {
+    color: var(--ink-primary);
+    font-weight: bold;
+}
+
+/* =========================================================
+   查詢與清除操作鈕
+   ========================================================= */
+.action-buttons {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 14px;
 }
 
 .action-buttons button {
-    flex-grow: 1;
-    padding: 12px 10px;
-    border: none;
-    border-radius: 4px;
+    padding: 13px 16px;
+    font-size: 1.02rem;
+    font-family: "Noto Serif TC", "PMingLiU", serif;
+    letter-spacing: 0.14em;
+    border-radius: 2px;
     cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.3s ease;
-    white-space: nowrap;
-    text-align: center;
-    min-width: 120px;
+    transition: all 0.2s ease;
 }
 
 button#queryButton {
-    background-color: #5cb85c;
-    color: white;
-}
-
-button#queryButton:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
+    background-color: var(--accent-seal);
+    color: #fff9f0;
+    border: 1px solid var(--accent-seal);
+    font-weight: bold;
 }
 
 button#queryButton:hover:not(:disabled) {
-    background-color: #4cae4c;
+    background-color: var(--accent-seal-hover);
+    box-shadow: 0 4px 12px rgba(156, 43, 43, 0.26);
 }
 
 button#resetButton {
-    background-color: #f0ad4e;
-    color: white;
+    background-color: transparent;
+    color: var(--ink-secondary);
+    border: 1px solid var(--border-strong);
 }
 
 button#resetButton:hover {
-    background-color: #ec971f;
+    background-color: var(--bg-inset);
+    color: var(--ink-primary);
+    border-color: var(--ink-primary);
 }
 
-.specific-selection {
-    padding-left: 0;
+/* =========================================================
+   查詢結果與完整資料瀏覽卡片
+   ========================================================= */
+.result-section,
+.full-data-view-section {
+    scroll-margin-top: 76px;
 }
 
-.hidden {
-    display: none;
+.result-section {
+    padding-top: 22px;
+    border-top: 2px double var(--border-strong);
 }
 
-/* --- 完整資料瀏覽區塊的樣式 --- */
-.full-view-controls {
-    text-align: center;
-    margin-bottom: 30px;
-    padding: 15px;
-    background-color: #e7e7e7;
-    border-radius: 5px;
-}
-.full-view-controls h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
-}
-.full-view-controls button {
-    margin: 5px;
-    padding: 10px 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    white-space: nowrap;
-}
-.full-view-controls button:hover {
-    background-color: #0056b3;
+#resultOutput,
+#fullDataViewOutput {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
 }
 
-.back-button {
-    display: block;
-    margin: 0 auto 20px auto;
-    padding: 10px 20px;
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    white-space: nowrap;
-}
-.back-button:hover {
-    background-color: #545b62;
+.result-block,
+.data-item-block {
+    padding: 20px 22px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-mid);
+    border-left: 4px solid var(--border-strong);
+    border-radius: 2px;
+    box-shadow: var(--shadow-card);
+    scroll-margin-top: 84px;
 }
 
-/* --- 查詢結果與完整資料瀏覽共用樣式 --- */
-#resultOutput, #fullDataViewOutput {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #e9e9e9;
-    border-radius: 4px;
+#resultOutput h3,
+#fullDataViewOutput h3 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    margin: 0 0 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 1.24rem;
+    letter-spacing: 0.06em;
+    color: var(--ink-primary);
 }
 
-.result-block, .data-item-block { /* 用於分隔每個獨立的查詢結果或總覽條目 */
-    border-bottom: 1px dashed #bbb;
-    padding-bottom: 20px;
-    margin-bottom: 20px;
-}
-
-.result-block:last-child, .data-item-block:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-}
-
-#resultOutput h3, #fullDataViewOutput h3 { /* 民俗命評結果主標題 */
-    margin-top: 0;
-    color: #77aaff;
-    margin-bottom: 10px;
-}
-#resultOutput h4, #fullDataViewOutput h4 { /* 民俗命評結果次標題 (如詩曰、事業) */
-    margin-top: 15px;
-    margin-bottom: 8px;
-    color: #444;
-    font-size: 1.1em;
-}
-#resultOutput h5, #fullDataViewOutput h5 { /* 民俗命評結果更小標題 (如又曰) */
-    margin-top: 10px;
-    margin-bottom: 5px;
-    color: #555;
-    font-size: 1em;
-    font-weight: bold;
-}
-#resultOutput h6, #fullDataViewOutput h6 { /* 例如 "又曰：" 用在總覽時辰中 */
-    font-weight:normal;
-    font-style:italic;
-    margin-top:5px;
-    margin-bottom:3px;
-    color: #555;
-}
-#resultOutput p, #fullDataViewOutput p {
-    margin-bottom: 10px;
-    line-height: 1.7;
-}
-#resultOutput .poem, 
-#fullDataViewOutput .poem {
-    font-style: italic;
-    color: #555;
-    margin-bottom: 15px;
-    padding-left: 15px;
-    border-left: 2px solid #aaa;
-}
-#resultOutput .career,
-#fullDataViewOutput .career {
-    font-style: italic;
-    color: #555;
-    margin-bottom: 15px;
-    padding-left: 15px;
-    border-left: 2px solid #aaa;
-}
 #resultOutput .range,
-#fullDataViewOutput .range { /* 時辰的時間範圍 */
-    font-style: normal;
-    color: #666;
-    font-size: 0.9em;
+#fullDataViewOutput .range {
+    font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+    font-size: 0.84rem;
+    font-weight: normal;
+    color: var(--ink-muted);
+    letter-spacing: 0;
+}
+
+/* 五行與生肖印記（由 ui-enhance.js 注入） */
+.badge-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.seal-tag {
     display: inline-block;
-    margin-left: 5px;
-    border-left: none;
-    padding-left: 0;
-}
-
-/* --- 新增：袁天罡稱骨算命結果區塊樣式 --- */
-.bone-weight-result-block {
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 2px solid #007bff; /* 藍色分隔線 */
-}
-
-.bone-weight-result-block h3 { /* 稱骨結果的主標題 */
-    color: #0056b3; /* 深藍色 */
-    text-align: center;
-    margin-bottom: 15px;
-}
-
-.bone-weight-details p { /* 顯示年月日時各骨重 */
-    margin-bottom: 8px;
-    font-size: 0.95em;
-}
-
-.bone-weight-details strong { /* 例如 "年份 (甲子)：" */
-    display: inline-block;
-    width: 130px; /* 調整寬度以對齊，根據最長標題調整 */
+    padding: 2px 9px;
+    font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+    font-size: 0.8rem;
     font-weight: bold;
-    margin-right: 5px;
+    letter-spacing: 0.05em;
+    border-radius: 2px;
+    border: 1px solid var(--border-mid);
+    background-color: var(--bg-inset);
+    color: var(--ink-secondary);
 }
 
-.bone-weight-total { /* 顯示總骨重 */
-    font-weight: bold;
-    color: #d9534f; /* 紅色 */
-    font-size: 1.1em;
-    margin-top: 10px;
-    text-align: center; /* 總骨重也置中一下 */
-    padding: 5px;
-    background-color: #fdf5e6; /* 給個淺背景 */
-    border-radius: 3px;
-}
+.seal-tag.wuxing-金 { background-color: var(--wx-metal-bg); color: var(--wx-metal-fg); border-color: currentColor; }
+.seal-tag.wuxing-木 { background-color: var(--wx-wood-bg); color: var(--wx-wood-fg); border-color: currentColor; }
+.seal-tag.wuxing-水 { background-color: var(--wx-water-bg); color: var(--wx-water-fg); border-color: currentColor; }
+.seal-tag.wuxing-火 { background-color: var(--wx-fire-bg); color: var(--wx-fire-fg); border-color: currentColor; }
+.seal-tag.wuxing-土 { background-color: var(--wx-earth-bg); color: var(--wx-earth-fg); border-color: currentColor; }
 
-.bone-fortune-poem { /* 稱骨命評詩句 */
-    font-style: italic;
-    white-space: pre-line; /* 保留詩句中的換行 */
-    background-color: #f0f8ff; /* 淺藍色背景 */
-    padding: 10px;
-    border-radius: 4px;
-    margin-top: 10px;
-    border-left: 3px solid #007bff; /* 藍色左邊框 */
-    line-height: 1.8; /* 詩句行高可略大 */
-}
-
-.bone-fortune-explanation { /* 稱骨命評解釋 */
-    margin-top: 10px;
-    line-height: 1.7;
-    font-size: 0.95em;
-    color: #444;
-}
-
-/* --- 單項骨重顯示樣式 (用於民俗命評旁和總覽中) --- */
+/* 單項骨重標籤 */
 .item-bone-weight {
-    font-size: 0.9em;
-    color: #4682B4; /* 鋼青色，使其與民俗命評的顏色有所區分 */
-    font-style: normal; /* 不用斜體，以示區別 */
-    margin-top: 3px;
-    margin-bottom: 7px;
-    padding-left: 10px;
-    border-left: 2px solid #4682B4;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0 0 12px;
+    padding: 3px 11px;
+    font-size: 0.88rem;
+    color: var(--accent-indigo);
+    background-color: var(--accent-indigo-soft);
+    border: 1px solid var(--accent-indigo);
+    border-radius: 2px;
 }
+
 .item-bone-weight strong {
     font-weight: bold;
 }
 
+#resultOutput h4,
+#fullDataViewOutput h4,
+#resultOutput h5,
+#fullDataViewOutput h5 {
+    margin: 14px 0 6px;
+    font-size: 0.98rem;
+    letter-spacing: 0.06em;
+    color: var(--accent-gold);
+}
 
-hr.divider { /* 分隔線樣式 */
+#resultOutput h6,
+#fullDataViewOutput h6 {
+    margin: 10px 0 5px !important;
+    font-size: 0.9rem !important;
+    font-weight: bold !important;
+    font-style: normal !important;
+    color: var(--ink-secondary) !important;
+}
+
+#resultOutput p,
+#fullDataViewOutput p {
+    margin: 0 0 10px;
+    line-height: 1.85;
+    color: var(--ink-primary);
+}
+
+#resultOutput p:last-child,
+#fullDataViewOutput p:last-child {
+    margin-bottom: 0;
+}
+
+/* 詩曰與事業區塊 */
+#resultOutput .poem,
+#fullDataViewOutput .poem {
+    margin: 6px 0 12px;
+    padding: 12px 16px;
+    background-color: var(--bg-inset);
+    border-left: 3px solid var(--accent-seal);
+    color: var(--ink-primary);
+    font-size: 1.02rem;
+    letter-spacing: 0.08em;
+    line-height: 1.9;
+}
+
+#resultOutput .career,
+#fullDataViewOutput .career {
+    margin: 6px 0 12px;
+    padding: 10px 14px;
+    background-color: var(--bg-inset);
+    border-left: 3px solid var(--accent-gold);
+    color: var(--ink-secondary);
+    font-size: 0.94rem;
+}
+
+hr.divider {
     border: 0;
     height: 1px;
-    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0));
-    margin-top: 20px;
-    margin-bottom: 20px;
+    margin: 16px 0;
+    background-image: linear-gradient(to right, transparent, var(--border-mid), transparent);
 }
 
-footer {
+/* =========================================================
+   壓軸：袁天罡稱骨批命箋
+   ========================================================= */
+.bone-weight-result-block {
+    position: relative;
+    margin-top: 8px;
+    padding: 26px 24px 28px;
+    background-color: var(--bg-slip);
+    border: 2px solid var(--accent-seal);
+    outline: 1px solid var(--border-strong);
+    outline-offset: -7px;
+    border-radius: 2px;
+    box-shadow: var(--shadow-card);
+}
+
+.bone-weight-result-block h3 {
+    justify-content: center;
     text-align: center;
-    padding: 20px;
-    background: #333;
-    color: #fff;
-    margin-top: 30px;
+    font-size: 1.4rem !important;
+    letter-spacing: 0.18em !important;
+    color: var(--accent-seal) !important;
+    border-bottom: 1px dashed var(--border-strong) !important;
+    padding-bottom: 12px !important;
+    margin-bottom: 18px !important;
 }
-footer a {
-    color: #77aaff;
+
+/* 四柱骨重橫向古帳簿明細 */
+.bone-weight-details {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.bone-weight-details p {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 0 !important;
+    padding: 10px 8px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-mid);
+    border-radius: 2px;
+    line-height: 1.45 !important;
+}
+
+.bone-weight-details .bw-label {
+    font-size: 0.82rem;
+    color: var(--ink-secondary);
+    margin-bottom: 4px;
+}
+
+.bone-weight-details .bw-value {
+    font-family: "Noto Serif TC", "PMingLiU", serif;
+    font-size: 1.08rem;
+    font-weight: bold;
+    color: var(--ink-primary);
+}
+
+/* 總骨重紅底印記 */
+.bone-weight-total {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin: 0 auto 20px !important;
+    padding: 11px 18px;
+    max-width: 340px;
+    font-size: 1.28rem !important;
+    letter-spacing: 0.1em;
+    color: #fff9f0 !important;
+    background-color: var(--accent-seal);
+    border: 1px solid rgba(255, 240, 225, 0.35);
+    outline: 1px solid var(--accent-seal);
+    outline-offset: 3px;
+    border-radius: 2px;
+}
+
+.bone-weight-result-block h4 {
+    text-align: center;
+    color: var(--accent-gold) !important;
+    margin-bottom: 10px !important;
+}
+
+.bone-fortune-poem {
+    margin: 0 !important;
+    padding: 18px 20px;
+    text-align: center;
+    white-space: pre-line;
+    font-size: 1.12rem;
+    letter-spacing: 0.1em;
+    line-height: 2.1 !important;
+    color: var(--ink-primary);
+    background-color: var(--bg-inset);
+    border: 1px solid var(--border-mid);
+    border-top: 3px solid var(--accent-gold);
+    border-radius: 2px;
+}
+
+/* 總覽頁面中的秤骨詩句改靠左閱讀更自然 */
+#fullDataViewOutput .bone-fortune-poem {
+    text-align: left;
+    font-size: 1.02rem;
+    line-height: 1.95 !important;
+    padding: 14px 16px;
+}
+
+.bone-fortune-explanation {
+    margin-top: 12px !important;
+    line-height: 1.8;
+    color: var(--ink-secondary);
+}
+
+/* =========================================================
+   完整資料瀏覽：標題列與快速篩選／跳轉列
+   ========================================================= */
+.full-view-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-mid);
+}
+
+.full-view-header h2 {
+    margin: 0;
+    font-size: 1.32rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-primary);
+}
+
+.back-button {
+    padding: 7px 16px;
+    background-color: var(--bg-card);
+    color: var(--ink-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    letter-spacing: 0.06em;
+    transition: all 0.2s ease;
+}
+
+.back-button:hover {
+    border-color: var(--accent-seal);
+    color: var(--accent-seal);
+}
+
+.quick-index-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+    background-color: var(--bg-inset);
+    border: 1px solid var(--border-mid);
+    border-radius: 2px;
+}
+
+.quick-index-label {
+    font-size: 0.84rem;
+    font-weight: bold;
+    color: var(--ink-secondary);
+    margin-right: 4px;
+}
+
+.index-chip {
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background-color: var(--bg-card);
+    color: var(--ink-secondary);
+    border: 1px solid var(--border-mid);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.index-chip:hover {
+    border-color: var(--accent-gold);
+    color: var(--ink-primary);
+}
+
+.index-chip.active {
+    background-color: var(--accent-seal);
+    border-color: var(--accent-seal);
+    color: #fff9f0;
+    font-weight: bold;
+}
+
+/* =========================================================
+   頁尾與浮動回頂端
+   ========================================================= */
+.book-footer {
+    padding: 18px 24px 22px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    border-top: 1px solid var(--border-mid);
+    background-color: var(--bg-inset);
+}
+
+.book-footer p {
+    margin: 4px 0;
+}
+
+.book-footer a {
+    color: var(--accent-gold);
     text-decoration: none;
+    border-bottom: 1px dotted currentColor;
 }
-footer a:hover {
-    text-decoration: underline;
+
+.book-footer a:hover {
+    color: var(--accent-seal);
+}
+
+.scroll-top-btn {
+    position: fixed;
+    right: 22px;
+    bottom: 24px;
+    z-index: 45;
+    width: 42px;
+    height: 42px;
+    border-radius: 2px;
+    border: 1px solid var(--border-strong);
+    background-color: var(--bg-card);
+    color: var(--accent-gold);
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-card);
+    transition: all 0.2s ease;
+}
+
+.scroll-top-btn:hover {
+    background-color: var(--accent-seal);
+    border-color: var(--accent-seal);
+    color: #fff9f0;
+}
+
+/* 手機版拇指區底部工具列（預設隱藏） */
+.mobile-hud {
+    display: none;
+}
+
+/* =========================================================
+   響應式設計：平板與手機版面優化
+   ========================================================= */
+@media (max-width: 768px) {
+    body {
+        padding: 8px 8px calc(76px + env(safe-area-inset-bottom));
+        font-size: 15px;
+    }
+
+    .book-shell {
+        outline-offset: -5px;
+    }
+
+    .book-header {
+        padding: 14px 16px 16px;
+    }
+
+    .header-top-bar {
+        margin-bottom: 10px;
+    }
+
+    .title-plaque {
+        gap: 10px;
+    }
+
+    .seal-stamp {
+        font-size: 0.72rem;
+        padding: 4px 3px;
+    }
+
+    .subtitle {
+        font-size: 0.82rem;
+        letter-spacing: 0.04em;
+    }
+
+    /* 手機版書冊目錄改為 3×2 完整顯示，不佔捲動高度 */
+    .book-nav {
+        position: static;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        padding: 10px 12px;
+    }
+
+    .nav-tab {
+        padding: 8px 4px;
+        font-size: 0.88rem;
+        letter-spacing: 0.04em;
+        text-align: center;
+    }
+
+    main {
+        padding: 18px 14px 22px;
+    }
+
+    /* 四柱改單欄寬裕卡片 */
+    .pillars-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .pillar-card {
+        padding: 14px 14px 16px;
+    }
+
+    .action-buttons {
+        grid-template-columns: 1.5fr 1fr;
+        gap: 10px;
+    }
+
+    .action-buttons button {
+        padding: 12px 10px;
+        font-size: 0.96rem;
+        letter-spacing: 0.08em;
+    }
+
+    .result-block,
+    .data-item-block {
+        padding: 16px 14px;
+    }
+
+    .badge-group {
+        margin-left: 0;
+    }
+
+    /* 批命箋四柱帳簿在手機版改 2×2 */
+    .bone-weight-result-block {
+        padding: 20px 14px 22px;
+    }
+
+    .bone-weight-details {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .bone-fortune-poem {
+        padding: 14px 12px;
+        font-size: 1.02rem;
+        letter-spacing: 0.06em;
+    }
+
+    .full-view-header {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .back-button {
+        width: 100%;
+    }
+
+    /* 隱藏電腦版單獨回頂端鈕，交給底部拇指列 */
+    .scroll-top-btn {
+        display: none !important;
+    }
+
+    /* 顯示手機拇指區 HUD */
+    .mobile-hud {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 60;
+        background-color: var(--bg-nav);
+        border-top: 2px solid var(--border-strong);
+        padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+        backdrop-filter: blur(8px);
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.16);
+    }
+
+    .mobile-hud-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 5px 4px;
+        background: transparent;
+        border: none;
+        color: var(--ink-primary);
+        font-size: 0.78rem;
+        font-family: inherit;
+        cursor: pointer;
+    }
+
+    .mobile-hud-btn .hud-icon {
+        font-size: 0.95rem;
+        color: var(--accent-gold);
+    }
+
+    .mobile-hud-btn:active {
+        background-color: var(--accent-gold-soft);
+        border-radius: 2px;
+    }
 }
